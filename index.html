@@ -813,6 +813,12 @@ async function cobrarCoordenador(){
     "<p>Por favor, acesse o Painel de Implantacao de Servicos e preencha o quanto antes, para que o DP possa providenciar a entrega.</p>" +
     "<p><a href='" + SP_EDIT_URL + item.id + "'>Ver no SharePoint</a></p>" +
     "<p style='color:#888;font-size:12px;'>Mensagem automatica do Painel de Implantacao de Servicos - nao responda este e-mail.</p>";
+  var htmlTeams = "<p><b>" + subject + "</b></p>" +
+    "<p>Ola,</p>" +
+    "<p>O checklist de EPIs e uniformes da etapa 20 (Realizar entrega de uniformes e EPIs) do cliente <b>" + clienteLabel(item.cliente) + "</b> ainda nao foi preenchido.</p>" +
+    "<p>Por favor, acesse o Painel de Implantacao de Servicos e preencha o quanto antes, para que o DP possa providenciar a entrega.</p>" +
+    "<p><a href=\"" + SP_EDIT_URL + item.id + "\">Ver no SharePoint</a></p>" +
+    "<p><i>Mensagem automatica do Painel de Implantacao de Servicos.</i></p>";
   var body = {
     message: {
       subject: subject,
@@ -827,9 +833,19 @@ async function cobrarCoordenador(){
       item.emailCoordenador = email;
       await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ EmailCoordenador: email }) });
     }
-    showToast("Cobranca enviada para " + email);
+    showToast("Cobranca enviada por e-mail para " + email);
   } catch (err){
-    showToast("Nao consegui enviar a cobranca: " + err.message, true);
+    showToast("Nao consegui enviar a cobranca por e-mail: " + err.message, true);
+  }
+  try {
+    var teamsResult = await sendTeamsMessageToEmail(email, htmlTeams);
+    if (teamsResult === "SELF"){
+      showToast("Voce e o coordenador: cobranca no Teams nao se aplica (apenas o e-mail foi enviado).");
+    } else {
+      showToast("Cobranca enviada por Teams para " + email);
+    }
+  } catch (err){
+    showToast("Nao consegui enviar a cobranca por Teams: " + err.message, true);
   }
 }
 
@@ -912,11 +928,15 @@ async function getOrCreateOneOnOneChat(email){
   return chat.id;
 }
 
-async function sendTeamsNotification(item){
-  var chatId = await getOrCreateOneOnOneChat(item.emailResponsavel);
+async function sendTeamsMessageToEmail(email, html){
+  var chatId = await getOrCreateOneOnOneChat(email);
   if (chatId === "SELF") return "SELF";
-  var body = { body: { contentType: "html", content: notificationHtml(item) } };
+  var body = { body: { contentType: "html", content: html } };
   await graphFetch("https://graph.microsoft.com/v1.0/chats/" + chatId + "/messages", { method: "POST", body: JSON.stringify(body) });
+}
+
+async function sendTeamsNotification(item){
+  return sendTeamsMessageToEmail(item.emailResponsavel, notificationHtml(item));
 }
 
 async function maybeSendNotification(item, oldStatus, oldPrazo){
