@@ -125,6 +125,21 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .epi-actions button{font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:#fff;}
 .epi-actions button.primary{background:var(--grena);color:#fff;border-color:var(--grena);}
 .epi-actions button.warn{background:var(--amber-bg);color:var(--amber-tx);border-color:var(--amber-bg);}
+.da-subhead{font-size:12px;font-weight:700;color:var(--grena);text-transform:uppercase;letter-spacing:0.03em;margin:16px 0 8px;padding-top:12px;border-top:1px dashed var(--border);}
+.da-subhead:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;}
+.chip{padding:7px 15px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .12s;}
+.chip:hover{border-color:var(--grena);color:var(--grena);}
+.chip.active{background:var(--grena);border-color:var(--grena);color:#fff;}
+.switch-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid #eee;}
+.switch-row:last-child{border-bottom:none;}
+.switch-label{font-size:13px;font-weight:500;color:var(--text);}
+.switch{position:relative;display:inline-block;width:40px;height:23px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch-track{position:absolute;inset:0;background:var(--gray-bg);border-radius:24px;transition:.15s;cursor:pointer;}
+.switch-track:before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,0.25);}
+.switch input:checked + .switch-track{background:var(--grena);}
+.switch input:checked + .switch-track:before{transform:translateX(17px);}
 </style>
 </head>
 <body>
@@ -337,6 +352,55 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       </div>
     </div>
 
+    <div class="epi-box hidden" id="dadosAcessoBox">
+      <div class="epi-box-head">
+        <span class="epi-box-title">Dados de acesso e documentacao do colaborador</span>
+        <span class="epi-badge" id="dadosAcessoBadge"></span>
+      </div>
+
+      <div class="da-subhead">Documentos necessarios para acesso na unidade</div>
+      <div id="docItemsList"></div>
+      <label style="margin-top:12px;">Outros documentos</label>
+      <textarea id="docOutros" placeholder="Especifique outros documentos, se houver..." style="min-height:50px;"></textarea>
+
+      <div class="da-subhead">Checklist de EPIs e uniformes (sincroniza com a etapa de entrega)</div>
+      <label>E-mail do coordenador</label>
+      <input type="email" id="daEpiEmailCoordenador" placeholder="coordenador@elevalife.com.br">
+      <div id="dadosEpiItemsList"></div>
+
+      <div class="da-subhead">Inicio do trabalho</div>
+      <div class="field-row">
+        <div><label>Data de inicio prevista</label><input type="date" id="daDataInicio"></div>
+      </div>
+      <label>Dias de trabalho</label>
+      <div class="chip-row" id="daDiasChips"></div>
+      <div class="field-row">
+        <div><label>Horario de inicio</label><input type="time" id="daHorarioInicio"></div>
+        <div><label>Horario de termino</label><input type="time" id="daHorarioTermino"></div>
+      </div>
+      <label>Endereco do local de trabalho</label>
+      <textarea id="daEndereco" placeholder="Endereco completo do local de trabalho..." style="min-height:50px;"></textarea>
+
+      <div class="da-subhead">Beneficios disponibilizados</div>
+      <div class="switch-row">
+        <span class="switch-label">Alimentacao</span>
+        <label class="switch"><input type="checkbox" id="daAlimentacaoChk"><span class="switch-track"></span></label>
+      </div>
+      <div class="switch-row">
+        <span class="switch-label">Transporte</span>
+        <label class="switch"><input type="checkbox" id="daTransporteChk"><span class="switch-track"></span></label>
+      </div>
+      <div class="switch-row">
+        <span class="switch-label">Estacionamento</span>
+        <label class="switch"><input type="checkbox" id="daEstacionamentoChk"><span class="switch-track"></span></label>
+      </div>
+
+      <div class="epi-actions" style="margin-top:14px;">
+        <button type="button" class="primary" onclick="saveDadosAcesso()">Salvar dados de acesso</button>
+      </div>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--text2);">Quem abrir este card, ou o card de entrega de EPIs, vera as informacoes ja preenchidas aqui.</p>
+    </div>
+
     <p style="margin:-8px 0 16px;"><a class="card-link" id="cardSpLink" href="#" target="_blank" rel="noopener">Ver no SharePoint &#8594;</a></p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeCardModal()">Cancelar</button>
@@ -426,6 +490,59 @@ function parseEpiChecklist(raw){
   });
 }
 
+var DADOS_ACESSO_STEP_NUM = 5;
+var DOC_ITEMS = [
+  "RG",
+  "CPF",
+  "Comprovante de residencia",
+  "ASO admissional",
+  "Comprovante de treinamentos/NRs da funcao",
+  "CNH (se aplicavel)",
+  "Foto 3x4",
+  "Contrato/termo de prestacao de servico"
+];
+var WEEKDAYS = [
+  {key:"seg", label:"Seg"},
+  {key:"ter", label:"Ter"},
+  {key:"qua", label:"Qua"},
+  {key:"qui", label:"Qui"},
+  {key:"sex", label:"Sex"},
+  {key:"sab", label:"Sab"},
+  {key:"dom", label:"Dom"}
+];
+
+function isDadosAcessoStep(item){ return item && Number(item.num) === DADOS_ACESSO_STEP_NUM; }
+
+function parseDadosAcesso(raw){
+  var parsed = {};
+  if (raw){
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = {}; }
+  }
+  var docs = DOC_ITEMS.map(function(name){
+    var found = (parsed.documentos || []).filter(function(p){ return p.item === name; })[0];
+    return { item: name, necessario: found ? !!found.necessario : false };
+  });
+  return {
+    documentos: docs,
+    documentosOutros: parsed.documentosOutros || "",
+    dataInicio: parsed.dataInicio || "",
+    dias: parsed.dias || [],
+    horarioInicio: parsed.horarioInicio || "",
+    horarioTermino: parsed.horarioTermino || "",
+    endereco: parsed.endereco || "",
+    alimentacao: !!parsed.alimentacao,
+    transporte: !!parsed.transporte,
+    estacionamento: !!parsed.estacionamento
+  };
+}
+
+function findItemByClienteNum(cliente, num){
+  for (var i=0;i<ITEMS.length;i++){
+    if (ITEMS[i].cliente === cliente && Number(ITEMS[i].num) === Number(num)) return ITEMS[i];
+  }
+  return null;
+}
+
 var COLS = ["A definir","A fazer","Em andamento","Atrasado","Concluido"];
 var currentClient = null;
 var chartInstance = null;
@@ -502,7 +619,9 @@ async function loadItems(){
       epiDataPreenchimento: f.EPIDataPreenchimento || null,
       emailCoordenador: f.EmailCoordenador || "",
       reuniaoAgendada: !!f.ReuniaoAgendada,
-      comemoracaoEnviada: !!f.ComemoracaoEnviada
+      comemoracaoEnviada: !!f.ComemoracaoEnviada,
+      dadosAcesso: parseDadosAcesso(f.DadosAcesso),
+      dadosAcessoPreenchido: !!f.DadosAcessoPreenchido
     };
   });
   await checkOverdueItems();
@@ -757,6 +876,7 @@ function openCardModal(id){
   renderEpiBox(item);
   renderMeetingBox(item);
   renderLinkBox(item);
+  renderDadosAcessoBox(item);
 }
 
 function renderMeetingBox(item){
@@ -848,6 +968,149 @@ function readEpiBoxState(){
     result.push({ item: EPI_ITEMS[idx], necessario: chk.checked, tamanho: size.value.trim() });
   });
   return result;
+}
+
+function renderDadosAcessoBox(item){
+  var box = document.getElementById("dadosAcessoBox");
+  if (!isDadosAcessoStep(item)){
+    box.classList.add("hidden");
+    return;
+  }
+  box.classList.remove("hidden");
+  var badge = document.getElementById("dadosAcessoBadge");
+  badge.className = "epi-badge " + (item.dadosAcessoPreenchido ? "ok" : "pending");
+  badge.textContent = item.dadosAcessoPreenchido ? "Preenchido" : "Pendente";
+
+  var d = item.dadosAcesso;
+  var docList = document.getElementById("docItemsList");
+  docList.innerHTML = "";
+  d.documentos.forEach(function(row, idx){
+    var div = document.createElement("div");
+    div.className = "epi-item";
+    var checkboxId = "docChk" + idx;
+    div.innerHTML = '<input type="checkbox" id="' + checkboxId + '" ' + (row.necessario ? "checked" : "") + '><label for="' + checkboxId + '">' + row.item + '</label>';
+    docList.appendChild(div);
+  });
+  document.getElementById("docOutros").value = d.documentosOutros || "";
+
+  var epiSibling = findItemByClienteNum(item.cliente, EPI_STEP_NUM);
+  var epiState = epiSibling ? epiSibling.epiChecklist : parseEpiChecklist(null);
+  document.getElementById("daEpiEmailCoordenador").value = (epiSibling && epiSibling.emailCoordenador) || "";
+  var epiList = document.getElementById("dadosEpiItemsList");
+  epiList.innerHTML = "";
+  epiState.forEach(function(row, idx){
+    var div = document.createElement("div");
+    div.className = "epi-item";
+    var checkboxId = "daEpiChk" + idx;
+    var sizeId = "daEpiSize" + idx;
+    div.innerHTML =
+      '<input type="checkbox" id="' + checkboxId + '" ' + (row.necessario ? "checked" : "") + '>' +
+      '<label for="' + checkboxId + '">' + row.item + '</label>' +
+      '<input type="text" id="' + sizeId + '" placeholder="tamanho/obs" value="' + (row.tamanho || "").replace(/"/g,"&quot;") + '" ' + (row.necessario ? "" : "disabled") + '>';
+    epiList.appendChild(div);
+    div.querySelector('input[type=checkbox]').addEventListener("change", function(){
+      div.querySelector('input[type=text]').disabled = !this.checked;
+    });
+  });
+
+  document.getElementById("daDataInicio").value = d.dataInicio || "";
+  document.getElementById("daHorarioInicio").value = d.horarioInicio || "";
+  document.getElementById("daHorarioTermino").value = d.horarioTermino || "";
+  document.getElementById("daEndereco").value = d.endereco || "";
+  document.getElementById("daAlimentacaoChk").checked = !!d.alimentacao;
+  document.getElementById("daTransporteChk").checked = !!d.transporte;
+  document.getElementById("daEstacionamentoChk").checked = !!d.estacionamento;
+
+  var chipsDiv = document.getElementById("daDiasChips");
+  chipsDiv.innerHTML = "";
+  WEEKDAYS.forEach(function(wd){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip" + (d.dias.indexOf(wd.key) !== -1 ? " active" : "");
+    btn.textContent = wd.label;
+    btn.dataset.key = wd.key;
+    btn.onclick = function(){ this.classList.toggle("active"); };
+    chipsDiv.appendChild(btn);
+  });
+}
+
+function readDaEpiState(){
+  var list = document.getElementById("dadosEpiItemsList");
+  var rows = list.querySelectorAll(".epi-item");
+  var result = [];
+  rows.forEach(function(row, idx){
+    var chk = row.querySelector('input[type=checkbox]');
+    var size = row.querySelector('input[type=text]');
+    result.push({ item: EPI_ITEMS[idx], necessario: chk.checked, tamanho: size.value.trim() });
+  });
+  return result;
+}
+
+async function saveDadosAcesso(){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var coordEmail = document.getElementById("daEpiEmailCoordenador").value.trim();
+  if (coordEmail && !isValidEmail(coordEmail)){
+    showToast("Digite um e-mail valido para o coordenador.", true);
+    return;
+  }
+  var docList = document.getElementById("docItemsList");
+  var docRows = docList.querySelectorAll(".epi-item");
+  var documentos = [];
+  docRows.forEach(function(row, idx){
+    var chk = row.querySelector('input[type=checkbox]');
+    documentos.push({ item: DOC_ITEMS[idx], necessario: chk.checked });
+  });
+  var dias = [];
+  document.querySelectorAll("#daDiasChips .chip.active").forEach(function(btn){ dias.push(btn.dataset.key); });
+
+  var payload = {
+    documentos: documentos,
+    documentosOutros: document.getElementById("docOutros").value.trim(),
+    dataInicio: document.getElementById("daDataInicio").value || "",
+    dias: dias,
+    horarioInicio: document.getElementById("daHorarioInicio").value || "",
+    horarioTermino: document.getElementById("daHorarioTermino").value || "",
+    endereco: document.getElementById("daEndereco").value.trim(),
+    alimentacao: document.getElementById("daAlimentacaoChk").checked,
+    transporte: document.getElementById("daTransporteChk").checked,
+    estacionamento: document.getElementById("daEstacionamentoChk").checked
+  };
+
+  var previousPayload = item.dadosAcesso;
+  var previousPreenchido = item.dadosAcessoPreenchido;
+  item.dadosAcesso = payload;
+  item.dadosAcessoPreenchido = true;
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({
+      DadosAcesso: JSON.stringify(payload),
+      DadosAcessoPreenchido: true
+    }) });
+
+    var epiSibling = findItemByClienteNum(item.cliente, EPI_STEP_NUM);
+    if (epiSibling){
+      var epiChecklist = readDaEpiState();
+      var nowIso = new Date().toISOString();
+      epiSibling.epiChecklist = epiChecklist;
+      epiSibling.epiPreenchido = true;
+      epiSibling.epiDataPreenchimento = nowIso;
+      epiSibling.emailCoordenador = coordEmail;
+      await graphFetch(GRAPH_BASE + "/items/" + epiSibling.id + "/fields", { method: "PATCH", body: JSON.stringify({
+        EPIChecklist: JSON.stringify(epiChecklist),
+        EPIPreenchido: true,
+        EPIDataPreenchimento: nowIso,
+        EmailCoordenador: coordEmail
+      }) });
+    }
+
+    showToast("Dados de acesso salvos com sucesso.");
+    renderDadosAcessoBox(item);
+    renderAll();
+  } catch (err){
+    item.dadosAcesso = previousPayload;
+    item.dadosAcessoPreenchido = previousPreenchido;
+    showToast("Nao consegui salvar os dados de acesso: " + err.message, true);
+  }
 }
 
 async function markEpiPreenchido(){
@@ -1056,6 +1319,11 @@ async function saveCardModal(){
 
   if (newEmail && !isValidEmail(newEmail)){
     showToast("Digite um e-mail valido para o responsavel.", true);
+    return;
+  }
+
+  if (newStatus === "Concluido" && isDadosAcessoStep(item) && !item.dadosAcessoPreenchido){
+    showToast("Preencha e salve os dados de acesso do colaborador antes de concluir esta etapa.", true);
     return;
   }
 
