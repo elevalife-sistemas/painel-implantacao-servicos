@@ -300,6 +300,29 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <label>Anotacoes</label>
     <textarea id="cardObs" placeholder="Observacoes sobre esta etapa..."></textarea>
 
+    <div class="epi-box hidden" id="meetingBox">
+      <div class="epi-box-head">
+        <span class="epi-box-title">Reuniao via Teams</span>
+        <span class="epi-badge" id="meetingBoxBadge"></span>
+      </div>
+      <div class="epi-actions">
+        <button type="button" class="primary" onclick="openTeamsMeeting()">Agendar reuniao no Teams</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;font-weight:500;font-size:13px;color:var(--text);">
+        <input type="checkbox" id="meetingScheduledChk" style="width:auto;margin:0;">
+        Reuniao ja agendada
+      </label>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--text2);">Nao e possivel concluir esta etapa enquanto a reuniao nao for marcada como agendada.</p>
+    </div>
+
+    <div class="epi-box hidden" id="linkBox">
+      <div class="epi-box-head">
+        <span class="epi-box-title">Formulario de requisicao de pessoal</span>
+      </div>
+      <p style="margin:0 0 8px;font-size:13px;color:var(--text2);">Use o link abaixo para registrar a requisicao diretamente no sistema.</p>
+      <a class="card-link" id="linkBoxHref" href="#" target="_blank" rel="noopener">Abrir formulario de requisicao de pessoal &#8594;</a>
+    </div>
+
     <div class="epi-box hidden" id="epiBox">
       <div class="epi-box-head">
         <span class="epi-box-title">Checklist de EPIs e uniformes</span>
@@ -367,7 +390,9 @@ var AREA_COLORS = {
 };
 function areaColor(area){ return AREA_COLORS[area] || {bg:"#F1EFE8", tx:"#444441"}; }
 
-var EPI_STEP_NUM = 20;
+var EPI_STEP_NUM = 19;
+var MEETING_STEPS = [1, 4];
+var LINK_STEPS = { 3: "https://talent-pathway-36.lovable.app/solicitacao-pessoal" };
 var EPI_ITEMS = [
   "Capacete com jugular",
   "Oculos de protecao simples",
@@ -387,6 +412,8 @@ var EPI_ITEMS = [
 ];
 
 function isEpiItem(item){ return item && Number(item.num) === EPI_STEP_NUM; }
+function isMeetingStep(item){ return item && MEETING_STEPS.indexOf(Number(item.num)) !== -1; }
+function linkForStep(item){ return item ? LINK_STEPS[Number(item.num)] : null; }
 
 function parseEpiChecklist(raw){
   var parsed = [];
@@ -473,7 +500,9 @@ async function loadItems(){
       epiChecklist: parseEpiChecklist(f.EPIChecklist),
       epiPreenchido: !!f.EPIPreenchido,
       epiDataPreenchimento: f.EPIDataPreenchimento || null,
-      emailCoordenador: f.EmailCoordenador || ""
+      emailCoordenador: f.EmailCoordenador || "",
+      reuniaoAgendada: !!f.ReuniaoAgendada,
+      comemoracaoEnviada: !!f.ComemoracaoEnviada
     };
   });
   await checkOverdueItems();
@@ -726,6 +755,58 @@ function openCardModal(id){
   document.getElementById("cardModalOverlay").classList.add("show");
   updateCardAvatarPreview(item.emailResponsavel || "");
   renderEpiBox(item);
+  renderMeetingBox(item);
+  renderLinkBox(item);
+}
+
+function renderMeetingBox(item){
+  var box = document.getElementById("meetingBox");
+  if (!isMeetingStep(item)){
+    box.classList.add("hidden");
+    return;
+  }
+  box.classList.remove("hidden");
+  var badge = document.getElementById("meetingBoxBadge");
+  badge.className = "epi-badge " + (item.reuniaoAgendada ? "ok" : "pending");
+  badge.textContent = item.reuniaoAgendada ? "Agendada" : "Pendente";
+  document.getElementById("meetingScheduledChk").checked = !!item.reuniaoAgendada;
+}
+
+function renderLinkBox(item){
+  var box = document.getElementById("linkBox");
+  var url = linkForStep(item);
+  if (!url){
+    box.classList.add("hidden");
+    return;
+  }
+  box.classList.remove("hidden");
+  document.getElementById("linkBoxHref").href = url;
+}
+
+function openTeamsMeeting(){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var subject = "[" + clienteLabel(item.cliente) + "] " + item.title;
+  var url = "https://teams.microsoft.com/l/meeting/new?subject=" + encodeURIComponent(subject);
+  window.open(url, "_blank");
+}
+
+async function onMeetingScheduledChange(){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var chk = document.getElementById("meetingScheduledChk");
+  var checked = chk.checked;
+  var previous = !!item.reuniaoAgendada;
+  item.reuniaoAgendada = checked;
+  renderMeetingBox(item);
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ ReuniaoAgendada: checked }) });
+    showToast(checked ? "Reuniao marcada como agendada." : "Reuniao marcada como pendente.");
+  } catch (err){
+    item.reuniaoAgendada = previous;
+    renderMeetingBox(item);
+    showToast("Nao consegui salvar: " + err.message, true);
+  }
 }
 
 function renderEpiBox(item){
@@ -983,6 +1064,11 @@ async function saveCardModal(){
     return;
   }
 
+  if (newStatus === "Concluido" && isMeetingStep(item) && !item.reuniaoAgendada){
+    showToast("Marque a reuniao como agendada antes de concluir esta etapa.", true);
+    return;
+  }
+
   var fields = {};
   if (newStatus !== item.status) fields.field_12 = newStatus;
   if ((newPrazo||null) !== (item.dataPrevista||null)) fields.field_10 = newPrazo;
@@ -1196,47 +1282,47 @@ function toPrazoIso(date){
 }
 
 // Prazos padrao por etapa, definidos pelo Cristiano em 03/08/2026.
-// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 25.
+// Renumerados em 05/08/2026 apos exclusao da antiga etapa 4 (duplicada da etapa 3).
+// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 24.
 function computeAutoPrazos(abertura){
   var d = {};
   d[1] = addDays(abertura, 1);
   d[2] = addDays(abertura, 1);
   d[3] = addDays(d[2], 1);
-  d[4] = addDays(d[3], 2);
+  d[4] = addDays(d[3], 3);
   d[5] = addDays(d[4], 1);
   d[6] = addDays(d[5], 1);
   d[7] = addDays(d[6], 1);
-  d[8] = addDays(d[7], 1);
-  d[9] = addDays(abertura, 7);
-  d[10] = addDays(abertura, 15);
+  d[8] = addDays(abertura, 7);
+  d[9] = addDays(abertura, 15);
+  d[10] = addDays(abertura, 16);
   d[11] = addDays(abertura, 16);
   d[12] = addDays(abertura, 16);
   d[13] = addDays(abertura, 16);
   d[14] = addDays(abertura, 16);
   d[15] = addDays(abertura, 16);
   d[16] = addDays(abertura, 16);
-  d[17] = addDays(abertura, 16);
-  d[25] = addDays(d[1], 25);
-  d[18] = addDays(d[25], -7);
-  d[19] = addDays(d[25], -5);
-  d[20] = addDays(d[25], -5);
-  d[21] = addDays(d[25], -5);
-  d[22] = addDays(d[25], -5);
-  d[23] = addDays(d[25], -5);
-  d[24] = addDays(d[25], -2);
-  d[26] = addDays(d[25], 7);
-  d[27] = addDays(d[25], 30);
-  d[28] = addDays(d[25], 30);
-  d[29] = addDays(d[25], 30);
+  d[24] = addDays(d[1], 25);
+  d[17] = addDays(d[24], -7);
+  d[18] = addDays(d[24], -5);
+  d[19] = addDays(d[24], -5);
+  d[20] = addDays(d[24], -5);
+  d[21] = addDays(d[24], -5);
+  d[22] = addDays(d[24], -5);
+  d[23] = addDays(d[24], -2);
+  d[25] = addDays(d[24], 7);
+  d[26] = addDays(d[24], 30);
+  d[27] = addDays(d[24], 30);
+  d[28] = addDays(d[24], 30);
   return d;
 }
 
-// Etapa 22 nao inclui mais o plant tour (movido para a etapa 25).
+// Etapa 21 nao inclui mais o plant tour (movido para a etapa 24).
 function adjustPlantTourTitle(num, title){
-  if (num === 22){
+  if (num === 21){
     return title.replace(/\s*e\s*plant tour/i, "").replace(/\s*plant tour/i, "").replace(/\s{2,}/g, " ").trim();
   }
-  if (num === 25 && !/plant tour/i.test(title)){
+  if (num === 24 && !/plant tour/i.test(title)){
     return title.replace(/\s*$/, "") + " e plant tour";
   }
   return title;
@@ -1296,6 +1382,7 @@ document.getElementById("cardEmail").addEventListener("blur", function(){
   var v = this.value.trim();
   if (!v || isValidEmail(v)) updateCardAvatarPreview(v);
 });
+document.getElementById("meetingScheduledChk").addEventListener("change", onMeetingScheduledChange);
 
 // Fecha qualquer modal ao clicar fora dele (no fundo escurecido) ou ao apertar Esc.
 document.querySelectorAll(".modal-overlay").forEach(function(ov){
