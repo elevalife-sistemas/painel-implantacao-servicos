@@ -338,6 +338,16 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <a class="card-link" id="linkBoxHref" href="#" target="_blank" rel="noopener">Abrir formulario de requisicao de pessoal &#8594;</a>
     </div>
 
+    <div class="epi-box hidden" id="recruitmentBox">
+      <div class="epi-box-head">
+        <span class="epi-box-title">Evolucao do processo seletivo</span>
+        <span class="epi-badge" id="recruitmentBadge"></span>
+      </div>
+      <div class="progress-track" style="margin-bottom:14px;"><div class="progress-fill" id="recruitmentProgressFill" style="width:0%;"></div></div>
+      <div id="recruitmentItemsList"></div>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--text2);">O item "Divulgacao da vaga" e marcado automaticamente quando a etapa de comunicacao visual for concluida.</p>
+    </div>
+
     <div class="epi-box hidden" id="epiBox">
       <div class="epi-box-head">
         <span class="epi-box-title">Checklist de EPIs e uniformes</span>
@@ -454,7 +464,7 @@ var AREA_COLORS = {
 };
 function areaColor(area){ return AREA_COLORS[area] || {bg:"#F1EFE8", tx:"#444441"}; }
 
-var EPI_STEP_NUM = 19;
+var EPI_STEP_NUM = 18;
 var MEETING_STEPS = [1, 4];
 var LINK_STEPS = { 3: "https://talent-pathway-36.lovable.app/solicitacao-pessoal" };
 var EPI_ITEMS = [
@@ -543,6 +553,29 @@ function findItemByClienteNum(cliente, num){
   return null;
 }
 
+var RECRUITMENT_STEP_NUM = 7;
+var RECRUITMENT_PREV_STEP_NUM = 6;
+var RECRUITMENT_ITEMS = [
+  "Divulgacao da vaga",
+  "Triagem de curriculos",
+  "Entrevista com RH",
+  "Entrevista com gestor de area",
+  "Envio de carta proposta"
+];
+
+function isRecruitmentStep(item){ return item && Number(item.num) === RECRUITMENT_STEP_NUM; }
+
+function parseRecruitmentChecklist(raw){
+  var parsed = [];
+  if (raw){
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = []; }
+  }
+  return RECRUITMENT_ITEMS.map(function(name){
+    var found = parsed.filter(function(p){ return p.item === name; })[0];
+    return { item: name, done: found ? !!found.done : false };
+  });
+}
+
 var COLS = ["A definir","A fazer","Em andamento","Atrasado","Concluido"];
 var currentClient = null;
 var chartInstance = null;
@@ -621,7 +654,8 @@ async function loadItems(){
       reuniaoAgendada: !!f.ReuniaoAgendada,
       comemoracaoEnviada: !!f.ComemoracaoEnviada,
       dadosAcesso: parseDadosAcesso(f.DadosAcesso),
-      dadosAcessoPreenchido: !!f.DadosAcessoPreenchido
+      dadosAcessoPreenchido: !!f.DadosAcessoPreenchido,
+      recruitmentChecklist: parseRecruitmentChecklist(f.RecrutamentoChecklist)
     };
   });
   await checkOverdueItems();
@@ -877,6 +911,7 @@ function openCardModal(id){
   renderMeetingBox(item);
   renderLinkBox(item);
   renderDadosAcessoBox(item);
+  renderRecruitmentBox(item);
 }
 
 function renderMeetingBox(item){
@@ -1110,6 +1145,76 @@ async function saveDadosAcesso(){
     item.dadosAcesso = previousPayload;
     item.dadosAcessoPreenchido = previousPreenchido;
     showToast("Nao consegui salvar os dados de acesso: " + err.message, true);
+  }
+}
+
+function renderRecruitmentBox(item){
+  var box = document.getElementById("recruitmentBox");
+  if (!isRecruitmentStep(item)){
+    box.classList.add("hidden");
+    return;
+  }
+  box.classList.remove("hidden");
+  var checklist = item.recruitmentChecklist;
+  var doneCount = checklist.filter(function(r){ return r.done; }).length;
+  var pct = Math.round((doneCount / checklist.length) * 100);
+  var badge = document.getElementById("recruitmentBadge");
+  badge.className = "epi-badge " + (doneCount === checklist.length ? "ok" : "pending");
+  badge.textContent = doneCount + " de " + checklist.length + " concluidas";
+  document.getElementById("recruitmentProgressFill").style.width = pct + "%";
+  var list = document.getElementById("recruitmentItemsList");
+  list.innerHTML = "";
+  checklist.forEach(function(row, idx){
+    var div = document.createElement("div");
+    div.className = "epi-item";
+    var checkboxId = "recruitChk" + idx;
+    div.innerHTML = '<input type="checkbox" id="' + checkboxId + '" ' + (row.done ? "checked" : "") + '><label for="' + checkboxId + '">' + row.item + '</label>';
+    list.appendChild(div);
+    div.querySelector('input[type=checkbox]').addEventListener("change", function(){ saveRecruitmentChecklist(); });
+  });
+}
+
+function readRecruitmentState(){
+  var list = document.getElementById("recruitmentItemsList");
+  var rows = list.querySelectorAll(".epi-item");
+  var result = [];
+  rows.forEach(function(row, idx){
+    var chk = row.querySelector('input[type=checkbox]');
+    result.push({ item: RECRUITMENT_ITEMS[idx], done: chk.checked });
+  });
+  return result;
+}
+
+async function saveRecruitmentChecklist(){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var checklist = readRecruitmentState();
+  var previous = item.recruitmentChecklist;
+  item.recruitmentChecklist = checklist;
+  renderRecruitmentBox(item);
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ RecrutamentoChecklist: JSON.stringify(checklist) }) });
+    renderAll();
+  } catch (err){
+    item.recruitmentChecklist = previous;
+    renderRecruitmentBox(item);
+    showToast("Nao consegui salvar o progresso do processo seletivo: " + err.message, true);
+  }
+}
+
+async function syncRecruitmentFirstStep(sourceItem){
+  var recruitItem = findItemByClienteNum(sourceItem.cliente, RECRUITMENT_STEP_NUM);
+  if (!recruitItem) return;
+  if (recruitItem.recruitmentChecklist[0] && recruitItem.recruitmentChecklist[0].done) return;
+  var checklist = recruitItem.recruitmentChecklist.map(function(row){ return { item: row.item, done: row.done }; });
+  checklist[0].done = true;
+  recruitItem.recruitmentChecklist = checklist;
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + recruitItem.id + "/fields", { method: "PATCH", body: JSON.stringify({ RecrutamentoChecklist: JSON.stringify(checklist) }) });
+    if (currentCardItem && currentCardItem.id === recruitItem.id) renderRecruitmentBox(recruitItem);
+    renderAll();
+  } catch (err){
+    showToast("Nao consegui sincronizar o processo seletivo: " + err.message, true);
   }
 }
 
@@ -1360,6 +1465,9 @@ async function saveCardModal(){
   try {
     await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify(fields) });
     showToast("Etapa " + item.num + " atualizada (salvo no SharePoint)");
+    if (newStatus === "Concluido" && Number(item.num) === RECRUITMENT_PREV_STEP_NUM){
+      await syncRecruitmentFirstStep(item);
+    }
     await maybeSendNotification(item, oldStatus, oldPrazo);
   } catch (err){
     showToast("Nao consegui salvar no SharePoint: " + err.message, true);
@@ -1550,8 +1658,9 @@ function toPrazoIso(date){
 }
 
 // Prazos padrao por etapa, definidos pelo Cristiano em 03/08/2026.
-// Renumerados em 05/08/2026 apos exclusao da antiga etapa 4 (duplicada da etapa 3).
-// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 24.
+// Renumerados em 06/08/2026 apos exclusao das etapas "Verificar com coordenacao
+// documentos necessarios..." (antiga 6) e "Entregar comunicacao visual" (antiga 15).
+// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 22.
 function computeAutoPrazos(abertura){
   var d = {};
   d[1] = addDays(abertura, 1);
@@ -1559,38 +1668,36 @@ function computeAutoPrazos(abertura){
   d[3] = addDays(d[2], 1);
   d[4] = addDays(d[3], 3);
   d[5] = addDays(d[4], 1);
-  d[6] = addDays(d[5], 1);
-  d[7] = addDays(d[6], 1);
-  d[8] = addDays(abertura, 7);
-  d[9] = addDays(abertura, 15);
+  d[6] = addDays(d[5], 2);
+  d[7] = addDays(abertura, 7);
+  d[8] = addDays(abertura, 15);
+  d[9] = addDays(abertura, 16);
   d[10] = addDays(abertura, 16);
   d[11] = addDays(abertura, 16);
   d[12] = addDays(abertura, 16);
   d[13] = addDays(abertura, 16);
   d[14] = addDays(abertura, 16);
-  d[15] = addDays(abertura, 16);
-  d[16] = addDays(abertura, 16);
-  d[24] = addDays(d[1], 25);
-  d[17] = addDays(d[24], -7);
-  d[18] = addDays(d[24], -5);
-  d[19] = addDays(d[24], -5);
-  d[20] = addDays(d[24], -5);
-  d[21] = addDays(d[24], -5);
-  d[22] = addDays(d[24], -5);
-  d[23] = addDays(d[24], -2);
-  d[25] = addDays(d[24], 7);
-  d[26] = addDays(d[24], 30);
-  d[27] = addDays(d[24], 30);
-  d[28] = addDays(d[24], 30);
+  d[22] = addDays(d[1], 25);
+  d[15] = addDays(d[22], -7);
+  d[16] = addDays(d[22], -5);
+  d[17] = addDays(d[22], -5);
+  d[18] = addDays(d[22], -5);
+  d[19] = addDays(d[22], -5);
+  d[20] = addDays(d[22], -5);
+  d[21] = addDays(d[22], -2);
+  d[23] = addDays(d[22], 7);
+  d[24] = addDays(d[22], 30);
+  d[25] = addDays(d[22], 30);
+  d[26] = addDays(d[22], 30);
   return d;
 }
 
-// Etapa 21 nao inclui mais o plant tour (movido para a etapa 24).
+// Etapa 19 nao inclui mais o plant tour (movido para a etapa 22).
 function adjustPlantTourTitle(num, title){
-  if (num === 21){
+  if (num === 19){
     return title.replace(/\s*e\s*plant tour/i, "").replace(/\s*plant tour/i, "").replace(/\s{2,}/g, " ").trim();
   }
-  if (num === 24 && !/plant tour/i.test(title)){
+  if (num === 22 && !/plant tour/i.test(title)){
     return title.replace(/\s*$/, "") + " e plant tour";
   }
   return title;
