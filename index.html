@@ -23,12 +23,20 @@
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);font-size:15px;}
-.app{width:100%;max-width:none;margin:0;padding:20px 28px 36px;}
-.header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:22px 30px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;}
-.header-left{display:flex;align-items:center;gap:16px;}
-.header-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:24px;}
-.header-title{font-size:23px;font-weight:600;margin:0;}
-.header-sub{font-size:14px;opacity:0.85;margin:3px 0 0;}
+.shell{display:flex;align-items:stretch;min-height:100vh;}
+.sidebar{width:232px;flex-shrink:0;background:linear-gradient(180deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;padding:22px 0 18px;display:flex;flex-direction:column;gap:28px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:0 20px;}
+.sidebar-logo-icon{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.sidebar-title{font-size:14.5px;font-weight:700;margin:0;color:#fff;line-height:1.3;}
+.sidebar-sub{font-size:12px;margin:2px 0 0;opacity:0.8;}
+.sidebar-nav-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,255,255,0.55);padding:0 22px;margin:0;}
+.tabs{display:flex;flex-direction:column;gap:2px;padding:0 12px;}
+.tab{display:flex;align-items:center;gap:11px;padding:12px 14px;font-size:14.5px;font-weight:500;color:rgba(255,255,255,0.78);cursor:pointer;border-radius:9px;border-left:3px solid transparent;}
+.tab:hover{background:rgba(255,255,255,0.09);color:#fff;}
+.tab.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;border-left-color:#fff;}
+.tab-icon{font-size:16.5px;width:20px;text-align:center;flex-shrink:0;}
+.app{flex:1;min-width:0;width:100%;max-width:none;margin:0;padding:20px 28px 36px;}
+.header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:18px 26px;display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:22px;}
 .header-right{text-align:right;display:flex;align-items:center;gap:14px;}
 .user-chip{font-size:13px;opacity:0.9;text-align:right;}
 .btn-refresh, .btn-login, .btn-logout{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:9px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
@@ -36,10 +44,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .gate{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:60px 40px;text-align:center;}
 .gate h2{font-size:19px;font-weight:600;margin:0 0 8px;}
 .gate p{font-size:14px;color:var(--text2);margin:0 0 22px;}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:0;background:var(--card);border-radius:12px 12px 0 0;padding:0 12px;}
-.tab{padding:15px 20px;font-size:15.5px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:3px solid transparent;}
-.tab.active{color:var(--grena);border-bottom-color:var(--grena);font-weight:600;}
-.clientbar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:0 0 12px 12px;padding:14px 16px;margin-bottom:22px;border-top:1px solid var(--border);}
+.clientbar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:22px;border:1px solid var(--border);}
 .clientbar label{font-size:12.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.02em;}
 .clientbar select{font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);min-width:220px;}
 .btn-new{margin-left:auto;background:var(--grena);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
@@ -140,19 +145,47 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .switch-track:before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,0.25);}
 .switch input:checked + .switch-track{background:var(--grena);}
 .switch input:checked + .switch-track:before{transform:translateX(17px);}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;}
+.action-card{border-radius:14px;padding:20px 22px;background:var(--card);border:1px solid var(--border);}
+.action-card-label{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--text2);margin:0 0 10px;}
+.action-icon{font-size:16px;}
+.action-card-title{font-size:19px;font-weight:700;margin:0 0 6px;color:var(--text);line-height:1.35;}
+.action-card-sub{font-size:13.5px;color:var(--text2);margin:0;}
+.action-progress{border-left:5px solid var(--blue-tx);}
+.action-progress .action-card-label{color:var(--blue-tx);}
+.action-late{border:2px solid var(--red-tx);background:var(--red-bg);box-shadow:0 4px 18px rgba(176,42,42,0.16);}
+.action-late .action-card-label{color:var(--red-tx);}
+.action-late .action-card-title{color:var(--red-tx);font-size:21px;}
+.action-late.is-empty{border:1px solid var(--border);background:var(--card);box-shadow:none;}
+.action-late.is-empty .action-card-label{color:var(--green-tx);}
+.action-late.is-empty .action-card-title{color:var(--text);font-size:19px;}
+.hide-completed-wrap{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.hide-completed-wrap .switch-label{font-size:13px;font-weight:600;color:var(--text2);}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="shell">
 
-  <div class="header">
-    <div class="header-left">
-      <div class="header-icon">&#128202;</div>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">&#128202;</div>
       <div>
-        <p class="header-title">Painel Implantacao de Servicos</p>
-        <p class="header-sub">ElevaLife</p>
+        <p class="sidebar-title">Painel Implantacao</p>
+        <p class="sidebar-sub">ElevaLife</p>
       </div>
     </div>
+    <div>
+      <p class="sidebar-nav-label">Menu</p>
+      <nav class="tabs">
+        <div class="tab active" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
+        <div class="tab" data-tab="kanban"><span class="tab-icon">&#128203;</span>Kanban</div>
+      </nav>
+    </div>
+  </aside>
+
+  <div class="app">
+
+  <div class="header">
     <div class="header-right">
       <div class="user-chip hidden" id="userChip"></div>
       <button class="btn-login hidden" id="loginBtn">Entrar com Microsoft</button>
@@ -168,11 +201,6 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   </div>
 
   <div id="mainArea" class="hidden">
-
-    <div class="tabs">
-      <div class="tab active" data-tab="geral">Visao Geral</div>
-      <div class="tab" data-tab="kanban">Kanban</div>
-    </div>
 
     <div class="clientbar">
       <label>Cliente / Implantacao</label>
@@ -209,6 +237,19 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
           <p class="kpi-label">Proxima acao</p>
           <p class="kpi-value" id="kpi-proxima" style="font-size:17px;line-height:1.35;">-</p>
           <p class="kpi-sub" id="kpi-proxima-sub"></p>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <div class="action-card action-progress">
+          <p class="action-card-label"><span class="action-icon">&#9203;</span>Em andamento agora</p>
+          <p class="action-card-title" id="action-andamento-title">-</p>
+          <p class="action-card-sub" id="action-andamento-sub"></p>
+        </div>
+        <div class="action-card action-late" id="action-late-card">
+          <p class="action-card-label" id="action-late-label"><span class="action-icon">&#128680;</span>Atencao: etapa atrasada</p>
+          <p class="action-card-title" id="action-atrasada-title">-</p>
+          <p class="action-card-sub" id="action-atrasada-sub"></p>
         </div>
       </div>
 
@@ -251,9 +292,15 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <div class="kanban-header">
         <h2 class="kanban-client-name" id="kanbanClientName"></h2>
         <span class="badge-note" id="badgeKanban"></span>
+        <div class="hide-completed-wrap">
+          <label class="switch"><input type="checkbox" id="hideCompletedChk"><span class="switch-track"></span></label>
+          <span class="switch-label">Ocultar concluidas</span>
+        </div>
       </div>
       <div class="board" id="board"></div>
     </div>
+
+  </div>
 
   </div>
 
@@ -618,6 +665,25 @@ var COLS = ["A definir","A fazer","Em andamento","Atrasado","Concluido"];
 var currentClient = null;
 var chartInstance = null;
 var TEMPLATE_CLIENT_LABEL = "Checklist Mestre (modelo)";
+var HIDE_COMPLETED = false;
+try { HIDE_COMPLETED = localStorage.getItem("hideCompletedCards") === "1"; } catch (e) {}
+
+// Quando uma etapa entra em "Em andamento" ou "Atrasado", a proxima etapa (num+1)
+// do mesmo cliente sai de "A definir" e passa para "A fazer" automaticamente,
+// sinalizando que ela ja pode ser iniciada.
+async function advanceNextStepToFazer(item){
+  var next = findItemByClienteNum(item.cliente, Number(item.num) + 1);
+  if (!next || next.status !== "A definir") return;
+  var oldStatus = next.status;
+  next.status = "A fazer";
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + next.id + "/fields", { method: "PATCH", body: JSON.stringify({ field_12: "A fazer" }) });
+    if (currentClient === clienteLabel(next.cliente)) renderAll();
+  } catch (err){
+    next.status = oldStatus;
+    console.error("Nao consegui avancar a etapa " + next.num + " para A fazer: " + err.message);
+  }
+}
 
 function showToast(msg, isError){
   var t = document.getElementById("toast");
@@ -718,6 +784,7 @@ async function checkOverdueItems(){
     try {
       await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ field_12: "Atrasado" }) });
       await maybeSendNotification(item, oldStatus, oldPrazo);
+      await advanceNextStepToFazer(item);
     } catch (err){
       item.status = oldStatus;
       console.error("Falha ao mover etapa " + item.num + " para Atrasado: " + err.message);
@@ -870,6 +937,9 @@ async function onColDrop(e){
     await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify(fields) });
     showToast("Etapa " + item.num + ": " + oldStatus + " -> " + newStatus + " (salvo no SharePoint)");
     await maybeSendNotification(item, oldStatus, oldPrazo);
+    if (newStatus === "Em andamento" || newStatus === "Atrasado"){
+      await advanceNextStepToFazer(item);
+    }
   } catch (err){
     item.status = oldStatus;
     renderAll();
@@ -880,9 +950,10 @@ async function onColDrop(e){
 function buildBoard(){
   var board = document.getElementById("board");
   board.innerHTML = "";
-  board.style.gridTemplateColumns = "repeat(" + COLS.length + ",minmax(0,1fr))";
+  var cols = HIDE_COMPLETED ? COLS.filter(function(s){ return s !== "Concluido"; }) : COLS;
+  board.style.gridTemplateColumns = "repeat(" + cols.length + ",minmax(0,1fr))";
   var items = itemsForClient(currentClient);
-  COLS.forEach(function(status){
+  cols.forEach(function(status){
     var colItems = items.filter(function(it){ return it.status === status; });
     var col = document.createElement("div");
     col.className = "col";
@@ -1575,6 +1646,9 @@ async function saveCardModal(){
       await syncRecruitmentFirstStep(item);
     }
     await maybeSendNotification(item, oldStatus, oldPrazo);
+    if (newStatus === "Em andamento" || newStatus === "Atrasado"){
+      await advanceNextStepToFazer(item);
+    }
   } catch (err){
     showToast("Nao consegui salvar no SharePoint: " + err.message, true);
     await loadItems();
@@ -1586,8 +1660,8 @@ function updateKPIs(){
   var items = itemsForClient(currentClient);
   var total = items.length || 1;
   var concluidas = items.filter(function(it){ return it.status === "Concluido"; }).length;
-  var andamento = items.filter(function(it){ return it.status === "Em andamento"; });
-  var atrasadas = items.filter(function(it){ return it.status === "Atrasado"; });
+  var andamento = items.filter(function(it){ return it.status === "Em andamento"; }).sort(function(a,b){ return a.num-b.num; });
+  var atrasadas = items.filter(function(it){ return it.status === "Atrasado"; }).sort(function(a,b){ return a.num-b.num; });
   var pct = Math.round((concluidas/total)*100);
   document.getElementById("kpi-concluidas").textContent = concluidas + "/" + items.length;
   document.getElementById("kpi-concluidas-sub").textContent = pct + "% do checklist";
@@ -1596,15 +1670,44 @@ function updateKPIs(){
   document.getElementById("kpi-andamento-sub").textContent = andamento.length ? andamento[0].title : "Nenhuma etapa em andamento";
   document.getElementById("kpi-atrasadas").textContent = atrasadas.length;
   document.getElementById("kpi-atrasadas-sub").textContent = atrasadas.length ? atrasadas[0].title : "Nenhuma etapa atrasada";
-  var pendentes = items.filter(function(it){ return it.status === "A definir" || it.status === "A fazer"; }).sort(function(a,b){ return a.num-b.num; });
-  var proxima = andamento[0] || atrasadas[0] || pendentes[0];
+
+  // "Proxima acao" e sempre uma etapa que ja esta pronta para ser iniciada ("A
+  // fazer") - nunca uma que ja esta em andamento ou atrasada, que tem paineis
+  // proprios logo abaixo.
+  var aFazer = items.filter(function(it){ return it.status === "A fazer"; }).sort(function(a,b){ return a.num-b.num; });
+  var proxima = aFazer[0];
   if (proxima){
     document.getElementById("kpi-proxima").textContent = proxima.title;
     document.getElementById("kpi-proxima-sub").textContent = "Responsavel: " + proxima.areaResp;
   } else {
-    document.getElementById("kpi-proxima").textContent = "Todas as etapas concluidas";
+    document.getElementById("kpi-proxima").textContent = "Nenhuma etapa a fazer no momento";
     document.getElementById("kpi-proxima-sub").textContent = "";
   }
+
+  var andamentoAtual = andamento[0];
+  document.getElementById("action-andamento-title").textContent = andamentoAtual ? andamentoAtual.title : "Nenhuma etapa em andamento";
+  document.getElementById("action-andamento-sub").textContent = andamentoAtual
+    ? ("Etapa " + andamentoAtual.num + " · Responsavel: " + andamentoAtual.areaResp) + (andamento.length > 1 ? (" · +" + (andamento.length-1) + " outra(s) em andamento") : "")
+    : "";
+
+  var atrasadaAtual = atrasadas[0];
+  var lateCard = document.getElementById("action-late-card");
+  var lateLabel = document.getElementById("action-late-label");
+  if (atrasadaAtual){
+    lateCard.classList.remove("is-empty");
+    lateLabel.innerHTML = '<span class="action-icon">&#128680;</span>Atencao: etapa atrasada';
+    document.getElementById("action-atrasada-title").textContent = atrasadaAtual.title;
+    var diasAtraso = atrasadaAtual.dataPrevista ? Math.max(0, Math.round((new Date() - new Date(atrasadaAtual.dataPrevista)) / 86400000)) : null;
+    document.getElementById("action-atrasada-sub").textContent = "Etapa " + atrasadaAtual.num + " · Responsavel: " + atrasadaAtual.areaResp +
+      (diasAtraso !== null ? (" · " + diasAtraso + " dia(s) de atraso") : "") +
+      (atrasadas.length > 1 ? (" · +" + (atrasadas.length-1) + " outra(s) atrasada(s)") : "");
+  } else {
+    lateCard.classList.add("is-empty");
+    lateLabel.innerHTML = '<span class="action-icon">&#9989;</span>Nenhuma etapa atrasada';
+    document.getElementById("action-atrasada-title").textContent = "Tudo em dia";
+    document.getElementById("action-atrasada-sub").textContent = "";
+  }
+
   document.getElementById("badgeGeral").textContent = currentClient + " · " + items.length + " etapas no checklist";
   document.getElementById("chartSub").textContent = "Distribuicao de status entre as " + items.length + " etapas de " + currentClient;
   renderPerformanceKPIs(items);
@@ -1864,6 +1967,12 @@ document.getElementById("cardEmail").addEventListener("blur", function(){
   if (!v || isValidEmail(v)) updateCardAvatarPreview(v);
 });
 document.getElementById("meetingScheduledChk").addEventListener("change", onMeetingScheduledChange);
+document.getElementById("hideCompletedChk").checked = HIDE_COMPLETED;
+document.getElementById("hideCompletedChk").addEventListener("change", function(){
+  HIDE_COMPLETED = this.checked;
+  try { localStorage.setItem("hideCompletedCards", HIDE_COMPLETED ? "1" : "0"); } catch (e) {}
+  buildBoard();
+});
 
 // Fecha qualquer modal ao clicar fora dele (no fundo escurecido) ou ao apertar Esc.
 document.querySelectorAll(".modal-overlay").forEach(function(ov){
