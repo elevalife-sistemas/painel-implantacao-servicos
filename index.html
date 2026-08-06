@@ -338,6 +338,15 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <a class="card-link" id="linkBoxHref" href="#" target="_blank" rel="noopener">Abrir formulario de requisicao de pessoal &#8594;</a>
     </div>
 
+    <div class="epi-box hidden" id="statusChecklistBox">
+      <div class="epi-box-head">
+        <span class="epi-box-title">Lista de verificacao</span>
+        <span class="epi-badge" id="statusChecklistBadge"></span>
+      </div>
+      <div id="statusChecklistItemsList"></div>
+      <p style="margin:8px 0 0;font-size:12px;color:var(--text2);">Ao marcar o item indicado, esta etapa e concluida automaticamente.</p>
+    </div>
+
     <div class="epi-box hidden" id="recruitmentBox">
       <div class="epi-box-head">
         <span class="epi-box-title">Evolucao do processo seletivo</span>
@@ -464,7 +473,7 @@ var AREA_COLORS = {
 };
 function areaColor(area){ return AREA_COLORS[area] || {bg:"#F1EFE8", tx:"#444441"}; }
 
-var EPI_STEP_NUM = 18;
+var EPI_STEP_NUM = 17;
 var MEETING_STEPS = [1, 4];
 var LINK_STEPS = { 3: "https://talent-pathway-36.lovable.app/solicitacao-pessoal" };
 var EPI_ITEMS = [
@@ -565,6 +574,35 @@ var RECRUITMENT_ITEMS = [
 
 function isRecruitmentStep(item){ return item && Number(item.num) === RECRUITMENT_STEP_NUM; }
 
+// Checklists genericos onde marcar um item especifico (triggerIndex) conclui o card automaticamente.
+var STATUS_CHECKLISTS = {
+  19: {
+    items: ["Marcar integracao junto ao cliente", "Confirmar com elevalifer data e horario", "Integracao realizada"],
+    triggerIndex: 2
+  },
+  20: {
+    items: ["Apresentacao do roteiro ao ElevaLifer"],
+    triggerIndex: 0
+  }
+};
+
+function statusChecklistConfigFor(item){
+  return item ? STATUS_CHECKLISTS[Number(item.num)] : null;
+}
+
+function isStatusChecklistStep(item){ return !!statusChecklistConfigFor(item); }
+
+function parseStatusChecklist(raw, items){
+  var parsed = [];
+  if (raw){
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = []; }
+  }
+  return items.map(function(name){
+    var found = parsed.filter(function(p){ return p.item === name; })[0];
+    return { item: name, done: found ? !!found.done : false };
+  });
+}
+
 function parseRecruitmentChecklist(raw){
   var parsed = [];
   if (raw){
@@ -655,7 +693,8 @@ async function loadItems(){
       comemoracaoEnviada: !!f.ComemoracaoEnviada,
       dadosAcesso: parseDadosAcesso(f.DadosAcesso),
       dadosAcessoPreenchido: !!f.DadosAcessoPreenchido,
-      recruitmentChecklist: parseRecruitmentChecklist(f.RecrutamentoChecklist)
+      recruitmentChecklist: parseRecruitmentChecklist(f.RecrutamentoChecklist),
+      statusChecklistRaw: f.StatusChecklist || null
     };
   });
   await checkOverdueItems();
@@ -912,6 +951,7 @@ function openCardModal(id){
   renderLinkBox(item);
   renderDadosAcessoBox(item);
   renderRecruitmentBox(item);
+  renderStatusChecklistBox(item);
 }
 
 function renderMeetingBox(item){
@@ -1215,6 +1255,72 @@ async function syncRecruitmentFirstStep(sourceItem){
     renderAll();
   } catch (err){
     showToast("Nao consegui sincronizar o processo seletivo: " + err.message, true);
+  }
+}
+
+function renderStatusChecklistBox(item){
+  var box = document.getElementById("statusChecklistBox");
+  var config = statusChecklistConfigFor(item);
+  if (!config){
+    box.classList.add("hidden");
+    return;
+  }
+  box.classList.remove("hidden");
+  var checklist = parseStatusChecklist(item.statusChecklistRaw, config.items);
+  var badge = document.getElementById("statusChecklistBadge");
+  var triggered = checklist[config.triggerIndex] && checklist[config.triggerIndex].done;
+  badge.className = "epi-badge " + (triggered ? "ok" : "pending");
+  badge.textContent = triggered ? "Concluido" : "Pendente";
+  var list = document.getElementById("statusChecklistItemsList");
+  list.innerHTML = "";
+  checklist.forEach(function(row, idx){
+    var div = document.createElement("div");
+    div.className = "epi-item";
+    var checkboxId = "statusChk" + idx;
+    div.innerHTML = '<input type="checkbox" id="' + checkboxId + '" ' + (row.done ? "checked" : "") + '><label for="' + checkboxId + '">' + row.item + '</label>';
+    list.appendChild(div);
+    div.querySelector('input[type=checkbox]').addEventListener("change", function(){ saveStatusChecklist(idx === config.triggerIndex && this.checked); });
+  });
+}
+
+async function saveStatusChecklist(triggerConclusion){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var config = statusChecklistConfigFor(item);
+  if (!config) return;
+  var list = document.getElementById("statusChecklistItemsList");
+  var rows = list.querySelectorAll(".epi-item");
+  var checklist = [];
+  rows.forEach(function(row, idx){
+    var chk = row.querySelector('input[type=checkbox]');
+    checklist.push({ item: config.items[idx], done: chk.checked });
+  });
+  var previousRaw = item.statusChecklistRaw;
+  var previousStatus = item.status;
+  item.statusChecklistRaw = JSON.stringify(checklist);
+  var fields = { StatusChecklist: item.statusChecklistRaw };
+  if (triggerConclusion && item.status !== "Concluido"){
+    item.status = "Concluido";
+    if (!item.dataReal){
+      var today = new Date().toISOString().slice(0,10);
+      item.dataReal = today;
+      fields.field_11 = today + "T12:00:00Z";
+    }
+    fields.field_12 = "Concluido";
+  }
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify(fields) });
+    if (fields.field_12){
+      document.getElementById("cardStatus").value = "Concluido";
+      showToast("Etapa " + item.num + " concluida automaticamente.");
+    }
+    renderStatusChecklistBox(item);
+    renderAll();
+  } catch (err){
+    item.statusChecklistRaw = previousRaw;
+    item.status = previousStatus;
+    renderStatusChecklistBox(item);
+    showToast("Nao consegui salvar a lista de verificacao: " + err.message, true);
   }
 }
 
@@ -1658,9 +1764,10 @@ function toPrazoIso(date){
 }
 
 // Prazos padrao por etapa, definidos pelo Cristiano em 03/08/2026.
-// Renumerados em 06/08/2026 apos exclusao das etapas "Verificar com coordenacao
-// documentos necessarios..." (antiga 6) e "Entregar comunicacao visual" (antiga 15).
-// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 22.
+// Renumerados em 06/08/2026 apos exclusao da etapa "Realizacao da palestra de
+// implantacao no cliente" (antiga 24). Corrigido tambem o EPI_STEP_NUM (era 18, o
+// item correto e o 17).
+// Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 21.
 function computeAutoPrazos(abertura){
   var d = {};
   d[1] = addDays(abertura, 1);
@@ -1677,27 +1784,26 @@ function computeAutoPrazos(abertura){
   d[12] = addDays(abertura, 16);
   d[13] = addDays(abertura, 16);
   d[14] = addDays(abertura, 16);
-  d[22] = addDays(d[1], 25);
-  d[15] = addDays(d[22], -7);
-  d[16] = addDays(d[22], -5);
-  d[17] = addDays(d[22], -5);
-  d[18] = addDays(d[22], -5);
-  d[19] = addDays(d[22], -5);
-  d[20] = addDays(d[22], -5);
-  d[21] = addDays(d[22], -2);
-  d[23] = addDays(d[22], 7);
-  d[24] = addDays(d[22], 30);
-  d[25] = addDays(d[22], 30);
-  d[26] = addDays(d[22], 30);
+  d[21] = addDays(d[1], 25);
+  d[15] = addDays(d[21], -7);
+  d[16] = addDays(d[21], -5);
+  d[17] = addDays(d[21], -5);
+  d[18] = addDays(d[21], -5);
+  d[19] = addDays(d[21], -5);
+  d[20] = addDays(d[21], -5);
+  d[22] = addDays(d[21], 7);
+  d[23] = addDays(d[21], 30);
+  d[24] = addDays(d[21], 30);
+  d[25] = addDays(d[21], 30);
   return d;
 }
 
-// Etapa 19 nao inclui mais o plant tour (movido para a etapa 22).
+// Etapa 19 nao inclui mais o plant tour (movido para a etapa 21).
 function adjustPlantTourTitle(num, title){
   if (num === 19){
     return title.replace(/\s*e\s*plant tour/i, "").replace(/\s*plant tour/i, "").replace(/\s{2,}/g, " ").trim();
   }
-  if (num === 22 && !/plant tour/i.test(title)){
+  if (num === 21 && !/plant tour/i.test(title)){
     return title.replace(/\s*$/, "") + " e plant tour";
   }
   return title;
