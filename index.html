@@ -57,9 +57,14 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .client-filter-actions button{font-size:12px;font-weight:600;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--grena);cursor:pointer;}
 .client-filter-actions button:hover{background:var(--grena-bg);}
 .client-filter-list{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;}
-.client-filter-item{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:7px;cursor:pointer;font-size:13.5px;margin:0;text-transform:none;font-weight:400;color:var(--text);}
+.client-filter-item{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:7px;font-size:13.5px;margin:0;text-transform:none;font-weight:400;color:var(--text);}
 .client-filter-item:hover{background:var(--gray-bg);}
 .client-filter-item input{width:auto;margin:0;flex-shrink:0;}
+.client-filter-item-label{flex:1;cursor:pointer;margin:0;text-transform:none;font-weight:400;font-size:13.5px;color:var(--text);}
+.client-filter-item-del{margin-left:auto;background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;padding:3px 7px;border-radius:6px;flex-shrink:0;}
+.client-filter-item-del:hover{background:var(--red-bg);color:var(--red-tx);}
+.btn-danger{background:var(--red-tx);color:#fff;border:none;}
+.btn-danger:hover{background:#8f2222;}
 .btn-new{margin-left:auto;background:var(--grena);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-new:hover{background:var(--grena-dark);}
 .panel{display:none;}
@@ -352,6 +357,18 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-confirm" id="confirmNewClientBtn">Criar implantacao</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteClientModalOverlay">
+  <div class="modal">
+    <button type="button" class="modal-close" onclick="closeDeleteClientModal()" aria-label="Fechar">&#10005;</button>
+    <h3>Excluir implantacao</h3>
+    <p id="deleteClientModalText"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteClientModal()">Cancelar</button>
+      <button class="btn-danger" id="confirmDeleteClientBtn">Excluir definitivamente</button>
     </div>
   </div>
 </div>
@@ -697,6 +714,14 @@ var TEMPLATE_CLIENT_LABEL = "Checklist Mestre (modelo)";
 var HIDE_COMPLETED = false;
 try { HIDE_COMPLETED = localStorage.getItem("hideCompletedCards") === "1"; } catch (e) {}
 
+// Apenas estas pessoas podem excluir uma implantacao inteira (usado para testes
+// que precisam ser apagados depois). Definido por pedido do Cristiano em 07/08/2026.
+var AUTHORIZED_DELETE_EMAILS = ["cristiano@elevalife.com.br", "joao@elevalife.com.br", "rafael@elevalife.com.br"];
+var CURRENT_USER_EMAIL = "";
+function canDeleteImplantacoes(){
+  return AUTHORIZED_DELETE_EMAILS.indexOf((CURRENT_USER_EMAIL || "").toLowerCase()) !== -1;
+}
+
 // Quando uma etapa entra em "Em andamento" ou "Atrasado", a proxima etapa (num+1)
 // do mesmo cliente sai de "A definir" e passa para "A fazer" automaticamente,
 // sinalizando que ela ja pode ser iniciada.
@@ -935,17 +960,72 @@ function refreshClientFilter(){
 
   var list = document.getElementById("clientFilterList");
   list.innerHTML = "";
-  clients.forEach(function(c){
-    var row = document.createElement("label");
+  var canDelete = canDeleteImplantacoes();
+  clients.forEach(function(c, idx){
+    var row = document.createElement("div");
     row.className = "client-filter-item";
+    var checkboxId = "clientFilterChk" + idx;
     var checked = selectedClients.indexOf(c) !== -1;
-    row.innerHTML = '<input type="checkbox" ' + (checked ? "checked" : "") + '><span>' + c + '</span>';
+    var showDelete = canDelete && c !== TEMPLATE_CLIENT_LABEL;
+    row.innerHTML = '<input type="checkbox" id="' + checkboxId + '" ' + (checked ? "checked" : "") + '>' +
+      '<label for="' + checkboxId + '" class="client-filter-item-label">' + c + '</label>' +
+      (showDelete ? '<button type="button" class="client-filter-item-del" title="Excluir implantacao" aria-label="Excluir implantacao de ' + c + '">&#128465;</button>' : '');
     row.querySelector("input").addEventListener("change", function(){
       toggleClientSelection(c, this.checked);
     });
+    if (showDelete){
+      row.querySelector(".client-filter-item-del").addEventListener("click", function(e){
+        e.stopPropagation();
+        openDeleteClientModal(c);
+      });
+    }
     list.appendChild(row);
   });
   document.getElementById("clientFilterLabel").textContent = clientFilterLabelText(clients);
+}
+
+var __clientPendingDelete = null;
+
+function openDeleteClientModal(client){
+  if (!canDeleteImplantacoes()) return;
+  __clientPendingDelete = client;
+  var count = itemsForClients([client]).length;
+  document.getElementById("deleteClientModalText").textContent =
+    "Isso vai apagar permanentemente as " + count + " etapas de \"" + client + "\" da lista do SharePoint. Essa acao nao pode ser desfeita.";
+  document.getElementById("deleteClientModalOverlay").classList.add("show");
+}
+
+function closeDeleteClientModal(){
+  document.getElementById("deleteClientModalOverlay").classList.remove("show");
+  __clientPendingDelete = null;
+}
+
+async function confirmDeleteClient(){
+  if (!__clientPendingDelete || !canDeleteImplantacoes()) return;
+  var client = __clientPendingDelete;
+  var toDelete = itemsForClients([client]);
+  closeDeleteClientModal();
+  showToast("Excluindo implantacao \"" + client + "\" (" + toDelete.length + " etapas)...");
+  var errors = 0;
+  for (var i=0;i<toDelete.length;i++){
+    try {
+      await graphFetch(GRAPH_BASE + "/items/" + toDelete[i].id, { method: "DELETE" });
+      var idx = ITEMS.indexOf(toDelete[i]);
+      if (idx !== -1) ITEMS.splice(idx, 1);
+    } catch (err){
+      errors++;
+      console.error("Nao consegui excluir a etapa " + toDelete[i].id + ": " + err.message);
+    }
+  }
+  var selIdx = selectedClients.indexOf(client);
+  if (selIdx !== -1) selectedClients.splice(selIdx, 1);
+  saveSelectedClients();
+  renderAll();
+  if (errors === 0){
+    showToast("Implantacao \"" + client + "\" excluida com sucesso.");
+  } else {
+    showToast(errors + " etapa(s) nao puderam ser excluidas. Verifique suas permissoes na lista do SharePoint.", true);
+  }
 }
 
 function toggleClientSelection(client, checked){
@@ -2044,6 +2124,7 @@ document.querySelectorAll(".tab").forEach(function(t){
   });
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
+document.getElementById("confirmDeleteClientBtn").addEventListener("click", confirmDeleteClient);
 document.getElementById("saveCardBtn").addEventListener("click", saveCardModal);
 document.getElementById("cardEmail").addEventListener("blur", function(){
   var v = this.value.trim();
@@ -2071,6 +2152,7 @@ document.addEventListener("keydown", function(e){
 
 async function afterLogin(){
   var account = msalInstance.getActiveAccount();
+  CURRENT_USER_EMAIL = (account.username || account.preferred_username || "").toLowerCase();
   document.getElementById("gate").classList.add("hidden");
   document.getElementById("mainArea").classList.remove("hidden");
   document.getElementById("loginBtn").classList.add("hidden");
