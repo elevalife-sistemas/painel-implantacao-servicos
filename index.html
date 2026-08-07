@@ -47,6 +47,19 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .clientbar{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:22px;border:1px solid var(--border);}
 .clientbar label{font-size:12.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.02em;}
 .clientbar select{font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);min-width:220px;}
+.client-filter{position:relative;min-width:260px;}
+.client-filter-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);min-width:260px;cursor:pointer;text-align:left;font-family:inherit;}
+.client-filter-btn:hover{border-color:var(--grena);}
+.client-filter-caret{color:var(--text2);font-size:10px;flex-shrink:0;}
+.client-filter-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:40;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);min-width:290px;max-width:380px;padding:10px;}
+.client-filter-panel.hidden{display:none;}
+.client-filter-actions{display:flex;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.client-filter-actions button{font-size:12px;font-weight:600;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--grena);cursor:pointer;}
+.client-filter-actions button:hover{background:var(--grena-bg);}
+.client-filter-list{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;}
+.client-filter-item{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:7px;cursor:pointer;font-size:13.5px;margin:0;text-transform:none;font-weight:400;color:var(--text);}
+.client-filter-item:hover{background:var(--gray-bg);}
+.client-filter-item input{width:auto;margin:0;flex-shrink:0;}
 .btn-new{margin-left:auto;background:var(--grena);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-new:hover{background:var(--grena-dark);}
 .panel{display:none;}
@@ -204,7 +217,19 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
     <div class="clientbar">
       <label>Cliente / Implantacao</label>
-      <select id="clientSelect" onchange="onClientChange()"></select>
+      <div class="client-filter" id="clientFilterWrap">
+        <button type="button" class="client-filter-btn" id="clientFilterBtn" onclick="toggleClientFilter()">
+          <span id="clientFilterLabel">Selecione...</span>
+          <span class="client-filter-caret">&#9660;</span>
+        </button>
+        <div class="client-filter-panel hidden" id="clientFilterPanel">
+          <div class="client-filter-actions">
+            <button type="button" onclick="selectAllClients()">Selecionar todos</button>
+            <button type="button" onclick="clearAllClients()">Limpar</button>
+          </div>
+          <div class="client-filter-list" id="clientFilterList"></div>
+        </div>
+      </div>
       <button class="btn-new" onclick="openModal()">+ Nova implantacao</button>
     </div>
 
@@ -662,7 +687,11 @@ function parseRecruitmentChecklist(raw){
 }
 
 var COLS = ["A definir","A fazer","Em andamento","Atrasado","Concluido"];
-var currentClient = null;
+var selectedClients = [];
+try {
+  var __savedSelectedClients = JSON.parse(localStorage.getItem("selectedClients") || "null");
+  if (Array.isArray(__savedSelectedClients)) selectedClients = __savedSelectedClients;
+} catch (e) {}
 var chartInstance = null;
 var TEMPLATE_CLIENT_LABEL = "Checklist Mestre (modelo)";
 var HIDE_COMPLETED = false;
@@ -678,7 +707,7 @@ async function advanceNextStepToFazer(item){
   next.status = "A fazer";
   try {
     await graphFetch(GRAPH_BASE + "/items/" + next.id + "/fields", { method: "PATCH", body: JSON.stringify({ field_12: "A fazer" }) });
-    if (currentClient === clienteLabel(next.cliente)) renderAll();
+    if (selectedClients.indexOf(clienteLabel(next.cliente)) !== -1) renderAll();
   } catch (err){
     next.status = oldStatus;
     console.error("Nao consegui avancar a etapa " + next.num + " para A fazer: " + err.message);
@@ -865,11 +894,11 @@ async function updateCardAvatarPreview(email){
 
 function clienteLabel(c){ return c ? c : TEMPLATE_CLIENT_LABEL; }
 
-function itemsForClient(client){
-  return ITEMS.filter(function(it){ return clienteLabel(it.cliente) === client; });
+function itemsForClients(clients){
+  return ITEMS.filter(function(it){ return clients.indexOf(clienteLabel(it.cliente)) !== -1; });
 }
 
-function refreshClientSelect(){
+function allClientLabels(){
   var clients = [];
   ITEMS.forEach(function(it){
     var c = clienteLabel(it.cliente);
@@ -880,23 +909,74 @@ function refreshClientSelect(){
     if (b === TEMPLATE_CLIENT_LABEL) return -1;
     return a.localeCompare(b);
   });
-  if (!currentClient || clients.indexOf(currentClient) === -1){
-    currentClient = clients.find(function(c){ return c !== TEMPLATE_CLIENT_LABEL; }) || clients[0];
-  }
-  var sel = document.getElementById("clientSelect");
-  sel.innerHTML = "";
-  clients.forEach(function(c){
-    var opt = document.createElement("option");
-    opt.value = c; opt.textContent = c;
-    if (c === currentClient) opt.selected = true;
-    sel.appendChild(opt);
-  });
+  return clients;
 }
 
-function onClientChange(){
-  currentClient = document.getElementById("clientSelect").value;
+function saveSelectedClients(){
+  try { localStorage.setItem("selectedClients", JSON.stringify(selectedClients)); } catch (e) {}
+}
+
+function clientFilterLabelText(allClients){
+  if (selectedClients.length === 0) return "Nenhum cliente selecionado";
+  if (selectedClients.length === allClients.length) return "Todos os clientes (" + allClients.length + ")";
+  if (selectedClients.length === 1) return selectedClients[0];
+  return selectedClients.length + " clientes selecionados";
+}
+
+function refreshClientFilter(){
+  var clients = allClientLabels();
+  // Remove da selecao clientes que nao existem mais.
+  selectedClients = selectedClients.filter(function(c){ return clients.indexOf(c) !== -1; });
+  if (selectedClients.length === 0 && clients.length){
+    selectedClients = clients.filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; });
+    if (selectedClients.length === 0) selectedClients = [clients[0]];
+  }
+  saveSelectedClients();
+
+  var list = document.getElementById("clientFilterList");
+  list.innerHTML = "";
+  clients.forEach(function(c){
+    var row = document.createElement("label");
+    row.className = "client-filter-item";
+    var checked = selectedClients.indexOf(c) !== -1;
+    row.innerHTML = '<input type="checkbox" ' + (checked ? "checked" : "") + '><span>' + c + '</span>';
+    row.querySelector("input").addEventListener("change", function(){
+      toggleClientSelection(c, this.checked);
+    });
+    list.appendChild(row);
+  });
+  document.getElementById("clientFilterLabel").textContent = clientFilterLabelText(clients);
+}
+
+function toggleClientSelection(client, checked){
+  var idx = selectedClients.indexOf(client);
+  if (checked && idx === -1) selectedClients.push(client);
+  if (!checked && idx !== -1) selectedClients.splice(idx, 1);
+  saveSelectedClients();
   renderAll();
 }
+
+function selectAllClients(){
+  selectedClients = allClientLabels();
+  saveSelectedClients();
+  renderAll();
+}
+
+function clearAllClients(){
+  selectedClients = [];
+  saveSelectedClients();
+  renderAll();
+}
+
+function toggleClientFilter(){
+  document.getElementById("clientFilterPanel").classList.toggle("hidden");
+}
+
+document.addEventListener("click", function(e){
+  var wrap = document.getElementById("clientFilterWrap");
+  var panel = document.getElementById("clientFilterPanel");
+  if (wrap && panel && !wrap.contains(e.target)) panel.classList.add("hidden");
+});
 
 function findItem(id){
   for (var i=0;i<ITEMS.length;i++){ if (String(ITEMS[i].id) === String(id)) return ITEMS[i]; }
@@ -952,7 +1032,7 @@ function buildBoard(){
   board.innerHTML = "";
   var cols = HIDE_COMPLETED ? COLS.filter(function(s){ return s !== "Concluido"; }) : COLS;
   board.style.gridTemplateColumns = "repeat(" + cols.length + ",minmax(0,1fr))";
-  var items = itemsForClient(currentClient);
+  var items = itemsForClients(selectedClients);
   cols.forEach(function(status){
     var colItems = items.filter(function(it){ return it.status === status; });
     var col = document.createElement("div");
@@ -997,7 +1077,8 @@ function buildBoard(){
     });
     board.appendChild(col);
   });
-  document.getElementById("kanbanClientName").textContent = currentClient;
+  var allClientsNow = allClientLabels();
+  document.getElementById("kanbanClientName").textContent = clientFilterLabelText(allClientsNow);
   document.getElementById("badgeKanban").textContent = items.length + " etapas · arraste os cards entre colunas";
   populateCardAvatars(items.filter(function(it){ return it.emailResponsavel; }));
 }
@@ -1657,7 +1738,7 @@ async function saveCardModal(){
 }
 
 function updateKPIs(){
-  var items = itemsForClient(currentClient);
+  var items = itemsForClients(selectedClients);
   var total = items.length || 1;
   var concluidas = items.filter(function(it){ return it.status === "Concluido"; }).length;
   var andamento = items.filter(function(it){ return it.status === "Em andamento"; }).sort(function(a,b){ return a.num-b.num; });
@@ -1708,8 +1789,9 @@ function updateKPIs(){
     document.getElementById("action-atrasada-sub").textContent = "";
   }
 
-  document.getElementById("badgeGeral").textContent = currentClient + " · " + items.length + " etapas no checklist";
-  document.getElementById("chartSub").textContent = "Distribuicao de status entre as " + items.length + " etapas de " + currentClient;
+  var clientLabelTxt = clientFilterLabelText(allClientLabels());
+  document.getElementById("badgeGeral").textContent = clientLabelTxt + " · " + items.length + " etapas no checklist";
+  document.getElementById("chartSub").textContent = "Distribuicao de status entre as " + items.length + " etapas" + (selectedClients.length === 1 ? (" de " + selectedClients[0]) : (" (" + clientLabelTxt.toLowerCase() + ")"));
   renderPerformanceKPIs(items);
 }
 
@@ -1817,7 +1899,7 @@ function renderPerformanceKPIs(items){
 }
 
 function buildChart(){
-  var items = itemsForClient(currentClient);
+  var items = itemsForClients(selectedClients);
   var areas = {};
   items.forEach(function(it){
     var area = it.areaResp, status = it.status;
@@ -1844,7 +1926,7 @@ function buildChart(){
 }
 
 function renderAll(){
-  refreshClientSelect();
+  refreshClientFilter();
   buildBoard();
   updateKPIs();
   buildChart();
@@ -1942,7 +2024,8 @@ async function confirmNewClient(){
       await graphFetch(GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify(body) });
     }
     await loadItems();
-    currentClient = name;
+    selectedClients = [name];
+    saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
   } catch (err){
