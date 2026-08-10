@@ -772,6 +772,37 @@ function remuneracaoInicialPara(cargo, nivel){
   return null;
 }
 
+// E-mail padrao do responsavel por area, usado para preencher automaticamente o campo
+// "E-mail do Responsavel" de cada etapa criada. Continua editavel por etapa (o coordenador
+// pode delegar para outra pessoa a qualquer momento pelo card).
+var AREA_RESPONSAVEL_EMAIL = {
+  "Atividades Fisicas": "dhanilo@elevalife.com.br",
+  "Fisioterapia": "dhanilo@elevalife.com.br",
+  "Ergonomia": "alexandre@elevalife.com.br",
+  "Recursos Humanos": "gisleiny@elevalife.com.br",
+  "Departamento Pessoal": "gabrielepaes@elevalife.com.br",
+  "Enfermagem": "cristiano@elevalife.com.br",
+  "Saude Corporativa": "cristiano@elevalife.com.br",
+  "Medicina": "cristiano@elevalife.com.br",
+  "Massoterapia": "cristiano@elevalife.com.br",
+  "Psicologia": "cristiano@elevalife.com.br",
+  "Nutricao": "cristiano@elevalife.com.br"
+};
+
+// A coluna Area_Responsavel do checklist mestre usa siglas/combos (RH, DP, Coordenador,
+// "RH + Coordenador", "DP / Coordenador", "CS + Coordenador" etc). Etapas de RH e DP tem
+// responsavel fixo (Recursos Humanos / Departamento Pessoal). Etapas de "Coordenador" sao
+// a execucao do servico contratado, entao usam o responsavel da Area de Servico escolhida
+// para aquele cliente (ex: Fisioterapia -> Dhanilo, Ergonomia -> Alexandre). Vendas/Marketing/CS
+// isoladas nao tem responsavel fixo mapeado e ficam em branco (o coordenador preenche manualmente).
+function resolveResponsavelEmailForStep(areaResp, clienteArea){
+  var a = (areaResp || "").toUpperCase();
+  if (a.indexOf("RH") !== -1) return AREA_RESPONSAVEL_EMAIL["Recursos Humanos"] || "";
+  if (a.indexOf("DP") !== -1) return AREA_RESPONSAVEL_EMAIL["Departamento Pessoal"] || "";
+  if (a.indexOf("COORDENADOR") !== -1) return AREA_RESPONSAVEL_EMAIL[clienteArea] || "";
+  return "";
+}
+
 var RECRUITMENT_STEP_NUM = 7;
 var RECRUITMENT_PREV_STEP_NUM = 6;
 var RECRUITMENT_ITEMS = [
@@ -2398,7 +2429,8 @@ async function confirmNewClient(){
         field_4: t.etapaGrupo,
         field_5: t.areaResp,
         field_7: t.ancora,
-        field_12: "A definir"
+        field_12: "A definir",
+        EmailResponsavel: resolveResponsavelEmailForStep(t.areaResp, area)
       };
       Object.keys(extraFields).forEach(function(k){ fields[k] = extraFields[k]; });
       var body = { fields: fields };
