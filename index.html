@@ -106,6 +106,8 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .kanban-client-name{font-size:26px;font-weight:800;color:var(--grena);margin:0;}
 .modal textarea{width:100%;font-size:14px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:16px;font-family:inherit;resize:vertical;min-height:70px;}
 .modal-wide{width:480px;}
+.modal-xl{width:700px;}
+.chip.chip-sm{padding:6px 13px;font-size:12px;}
 .field-row{display:flex;gap:12px;}
 .field-row > div{flex:1;}
 .rank-list{display:flex;flex-direction:column;gap:10px;}
@@ -339,21 +341,107 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
+  <div class="modal modal-xl">
     <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar">&#10005;</button>
     <h3>Nova implantacao</h3>
-    <p>Cria as 29 etapas do checklist mestre para um novo cliente/programa, todas como "A definir", direto na lista do SharePoint.</p>
+    <p>Cria todas as etapas do checklist mestre para um novo cliente/programa, todas como "A definir", direto na lista do SharePoint.</p>
+
+    <div class="da-subhead" style="margin-top:0;padding-top:0;border-top:none;">Dados do cliente</div>
     <label>Nome do cliente / programa</label>
     <input type="text" id="newClientName" placeholder="Ex: Industrias Lumen">
-    <label>Area de servico</label>
-    <select id="newClientArea">
-      <option>Atividades Fisicas</option>
-      <option>Ergonomia</option>
-      <option>Fisioterapia</option>
-      <option>Enfermagem</option>
-      <option>Saude Corporativa</option>
-      <option>Outra</option>
-    </select>
+    <div class="field-row">
+      <div><label>Empresa / Companhia</label><input type="text" id="newEmpresa" list="empresaList" placeholder="Razao social"></div>
+      <div><label>Status do cliente</label>
+        <select id="newStatusCliente">
+          <option>Novo</option>
+          <option>Ja existente</option>
+        </select>
+      </div>
+    </div>
+    <datalist id="empresaList"></datalist>
+    <div class="field-row">
+      <div><label>Unidade (cidade)</label><input type="text" id="newUnidade" placeholder="Ex: Sao Paulo"></div>
+      <div><label>UF da prestacao de servico</label><select id="newUf"></select></div>
+    </div>
+    <div class="field-row">
+      <div><label>CNPJ</label><input type="text" id="newCnpj" placeholder="00.000.000/0000-00"></div>
+      <div><label>CNAE</label><input type="text" id="newCnae" placeholder="Ex: 8630-5/03"></div>
+    </div>
+    <div class="field-row">
+      <div><label>Grau de risco</label>
+        <select id="newGrauRisco"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      </div>
+      <div><label>Area de servico</label>
+        <select id="newClientArea">
+          <option>Atividades Fisicas</option>
+          <option>Ergonomia</option>
+          <option>Fisioterapia</option>
+          <option>Enfermagem</option>
+          <option>Saude Corporativa</option>
+          <option>Medicina</option>
+          <option>Massoterapia</option>
+          <option>Psicologia</option>
+          <option>Nutricao</option>
+          <option>Outra</option>
+        </select>
+      </div>
+    </div>
+    <label>Endereco</label>
+    <input type="text" id="newEndereco" placeholder="Endereco completo da unidade">
+
+    <div class="da-subhead">Vaga / posicao</div>
+    <div class="field-row">
+      <div><label>Cargo</label><input type="text" id="newCargo" list="cargoList" placeholder="Ex: Analista de Recursos Humanos"></div>
+      <div><label>Perfil do profissional (nivel)</label><select id="newPerfil"></select></div>
+    </div>
+    <datalist id="cargoList"></datalist>
+    <div class="field-row">
+      <div><label>Numero de vagas</label><input type="number" id="newVagas" min="1" value="1"></div>
+      <div><label>Confidencial?</label>
+        <select id="newConfidencial"><option>Nao</option><option>Sim</option></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div><label>ADM ou OPER</label>
+        <select id="newAdmOper"><option>OPER</option><option>ADM</option></select>
+      </div>
+      <div><label>Carga horaria semanal</label><input type="number" id="newCargaHoraria" placeholder="Ex: 40"></div>
+    </div>
+    <label>Jornada de trabalho</label>
+    <input type="text" id="newJornada" placeholder="Ex: Seg a Sex, 08h as 17h">
+    <label>Tipo de contratacao</label>
+    <div class="chip-row" id="newTipoContratacaoChips">
+      <button type="button" class="chip chip-sm" data-key="CLT">CLT</button>
+      <button type="button" class="chip chip-sm" data-key="PJ">PJ</button>
+      <button type="button" class="chip chip-sm" data-key="Autonomo">Autonomo</button>
+    </div>
+    <label>Remuneracao inicial (R$)</label>
+    <input type="number" step="0.01" id="newRemuneracaoInicial" placeholder="Preenchido automaticamente pelo cargo/perfil">
+
+    <div class="da-subhead">Prazos</div>
+    <div class="field-row">
+      <div><label>Data da solicitacao</label><input type="date" id="newDataSolicitacao"></div>
+      <div><label>Data de inicio prevista</label>
+        <select id="newPrazoInicioDias">
+          <option value="30">30 dias apos a solicitacao</option>
+          <option value="45">45 dias apos a solicitacao</option>
+          <option value="60">60 dias apos a solicitacao</option>
+        </select>
+      </div>
+    </div>
+    <p id="newDataInicioPrevistoPreview" style="margin:-10px 0 16px;font-size:12px;color:var(--text2);"></p>
+
+    <div class="da-subhead">Contrato</div>
+    <div class="field-row">
+      <div><label>Budget BEN (R$)</label><input type="number" step="0.01" id="newBudgetBen" placeholder="0,00"></div>
+      <div><label>Budget MO (R$)</label><input type="number" step="0.01" id="newBudgetMo" placeholder="0,00"></div>
+    </div>
+    <div class="field-row">
+      <div><label>Budget Custos (R$)</label><input type="number" step="0.01" id="newBudgetCustos" placeholder="0,00"></div>
+      <div><label>Numero do contrato</label><input type="text" id="newNumeroContrato" placeholder="Ex: CT-2026-014"></div>
+    </div>
+    <p id="newBudgetTotalPreview" style="margin:-10px 0 16px;font-size:12px;color:var(--text2);"></p>
+
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-confirm" id="confirmNewClientBtn">Criar implantacao</button>
@@ -444,6 +532,13 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <div class="progress-track" style="margin-bottom:14px;"><div class="progress-fill" id="recruitmentProgressFill" style="width:0%;"></div></div>
       <div id="recruitmentItemsList"></div>
       <p style="margin:8px 0 0;font-size:12px;color:var(--text2);">O item "Divulgacao da vaga" e marcado automaticamente quando a etapa de comunicacao visual for concluida.</p>
+
+      <div class="da-subhead">Remuneracao concretizada</div>
+      <label>Valor combinado com o colaborador (R$)</label>
+      <input type="number" step="0.01" id="recruitRemuneracaoConcretizada" placeholder="Ex: 3200.00">
+      <div class="epi-actions">
+        <button type="button" class="primary" onclick="saveRemuneracaoConcretizada()">Salvar remuneracao</button>
+      </div>
     </div>
 
     <div class="epi-box hidden" id="epiBox">
@@ -651,6 +746,32 @@ function findItemByClienteNum(cliente, num){
   return null;
 }
 
+// Tabela de progressao salarial (planilha "Remuneracao - ElevaLife.xlsx"), usada para
+// preencher automaticamente a Remuneracao Inicial a partir do Cargo + Perfil (nivel) escolhidos
+// no modal de Nova Implantacao.
+var REMUNERACAO_TABLE = [{"setor":"RH","funcao":"Coordenador de Recursos Humanos","nivel":"III","stepI":4587.87,"stepII":4725.51,"stepIII":4867.27,"stepIV":5013.29},{"setor":"RH","funcao":"Coordenador de Recursos Humanos","nivel":"II","stepI":3989.45,"stepII":4109.14,"stepIII":4232.41,"stepIV":4359.38},{"setor":"RH","funcao":"Coordenador de Recursos Humanos","nivel":"I","stepI":3469.09,"stepII":3573.16,"stepIII":3680.36,"stepIV":3790.77},{"setor":"RH","funcao":"Analista de Recursos Humanos","nivel":"III","stepI":3016.6,"stepII":3107.1,"stepIII":3200.31,"stepIV":3296.32},{"setor":"RH","funcao":"Analista de Recursos Humanos","nivel":"II","stepI":2623.13,"stepII":2701.82,"stepIII":2782.88,"stepIV":2866.36},{"setor":"RH","funcao":"Analista de Recursos Humanos","nivel":"I","stepI":2280.98,"stepII":2349.41,"stepIII":2419.89,"stepIV":2492.49},{"setor":"RH","funcao":"Assistente de Recursos Humanos","nivel":"II","stepI":1983.46,"stepII":2042.97,"stepIII":2104.26,"stepIV":2167.38},{"setor":"RH","funcao":"Assistente de Recursos Humanos","nivel":"I","stepI":1724.75,"stepII":1776.49,"stepIII":1829.79,"stepIV":1884.68},{"setor":"RH","funcao":"Estagio de Recursos Humanos","nivel":"I","stepI":1000,"stepII":1030,"stepIII":1060.9,"stepIV":1092.73},{"setor":"MKT","funcao":"Coordenador de Marketing","nivel":"III","stepI":5518.48,"stepII":5684.03,"stepIII":5854.55,"stepIV":6030.19},{"setor":"MKT","funcao":"Coordenador de Marketing","nivel":"II","stepI":4798.68,"stepII":4942.64,"stepIII":5090.92,"stepIV":5243.64},{"setor":"MKT","funcao":"Coordenador de Marketing","nivel":"I","stepI":4172.76,"stepII":4297.94,"stepIII":4426.88,"stepIV":4559.69},{"setor":"MKT","funcao":"Analista de Marketing","nivel":"III","stepI":3628.49,"stepII":3737.34,"stepIII":3849.46,"stepIV":3964.95},{"setor":"MKT","funcao":"Analista de Marketing","nivel":"II","stepI":3155.21,"stepII":3249.86,"stepIII":3347.36,"stepIV":3447.78},{"setor":"MKT","funcao":"Analista de Marketing","nivel":"I","stepI":2743.66,"stepII":2825.97,"stepIII":2910.75,"stepIV":2998.07},{"setor":"MKT","funcao":"Assistente de Marketing","nivel":"III","stepI":2385.79,"stepII":2457.36,"stepIII":2531.08,"stepIV":2607.02},{"setor":"MKT","funcao":"Assistente de Marketing","nivel":"II","stepI":2074.6,"stepII":2136.84,"stepIII":2200.94,"stepIV":2266.97},{"setor":"MKT","funcao":"Assistente de Marketing","nivel":"I","stepI":1804,"stepII":1858.12,"stepIII":1913.86,"stepIV":1971.28},{"setor":"MKT","funcao":"Estagio de Marketing","nivel":"I","stepI":1000,"stepII":1030,"stepIII":1060.9,"stepIV":1092.73},{"setor":"COM","funcao":"Coordenador Comercial","nivel":"III","stepI":5276.05,"stepII":5434.33,"stepIII":5597.36,"stepIV":5765.28},{"setor":"COM","funcao":"Coordenador Comercial","nivel":"II","stepI":4587.87,"stepII":4725.51,"stepIII":4867.27,"stepIV":5013.29},{"setor":"COM","funcao":"Coordenador Comercial","nivel":"I","stepI":3989.45,"stepII":4109.14,"stepIII":4232.41,"stepIV":4359.38},{"setor":"COM","funcao":"Analista Comercial","nivel":"III","stepI":3469.09,"stepII":3573.16,"stepIII":3680.36,"stepIV":3790.77},{"setor":"COM","funcao":"Analista Comercial","nivel":"II","stepI":3016.6,"stepII":3107.1,"stepIII":3200.31,"stepIV":3296.32},{"setor":"COM","funcao":"Analista Comercial","nivel":"I","stepI":2623.13,"stepII":2701.82,"stepIII":2782.88,"stepIV":2866.36},{"setor":"COM","funcao":"Assistente Comercial","nivel":"III","stepI":2280.98,"stepII":2349.41,"stepIII":2419.89,"stepIV":2492.49},{"setor":"COM","funcao":"Assistente Comercial","nivel":"II","stepI":1983.46,"stepII":2042.97,"stepIII":2104.26,"stepIV":2167.38},{"setor":"COM","funcao":"Assistente Comercial","nivel":"I","stepI":1724.75,"stepII":1776.49,"stepIII":1829.79,"stepIV":1884.68},{"setor":"COM","funcao":"Estagio Comercial","nivel":"I","stepI":1000,"stepII":1030,"stepIII":1060.9,"stepIV":1092.73},{"setor":"ERGO","funcao":"Especialista de Ergonomia","nivel":"III","stepI":4948.68,"stepII":5097.14,"stepIII":5250.05,"stepIV":5407.55},{"setor":"ERGO","funcao":"Especialista de Ergonomia","nivel":"II","stepI":4303.2,"stepII":4432.29,"stepIII":4565.26,"stepIV":4702.22},{"setor":"ERGO","funcao":"Especialista de Ergonomia","nivel":"I","stepI":3741.91,"stepII":3854.17,"stepIII":3969.79,"stepIV":4088.89},{"setor":"ERGO","funcao":"Analista em Ergonomia","nivel":"II","stepI":3438.5,"stepII":3541.65,"stepIII":3647.9,"stepIV":3757.34},{"setor":"ERGO","funcao":"Analista em Ergonomia","nivel":"I","stepI":2990,"stepII":3079.7,"stepIII":3172.09,"stepIV":3267.25},{"setor":"ERGO","funcao":"Fisioterapeuta do Trabalho","nivel":"III","stepI":4841.71,"stepII":4986.96,"stepIII":5136.57,"stepIV":5290.67},{"setor":"ERGO","funcao":"Fisioterapeuta do Trabalho","nivel":"II","stepI":4210.18,"stepII":4336.49,"stepIII":4466.58,"stepIV":4600.58},{"setor":"ERGO","funcao":"Fisioterapeuta do Trabalho","nivel":"I","stepI":3661.03,"stepII":3770.86,"stepIII":3883.99,"stepIV":4000.51},{"setor":"ERGO","funcao":"Assistente de ergonomia","nivel":"I","stepI":2460,"stepII":2533.8,"stepIII":2609.81,"stepIV":2688.11},{"setor":"OP","funcao":"Coordenador de Operacoes","nivel":"IV","stepI":6916.05,"stepII":7123.53,"stepIII":7337.24,"stepIV":7557.36},{"setor":"OP","funcao":"Coordenador de Operacoes","nivel":"III","stepI":6013.96,"stepII":6194.38,"stepIII":6380.21,"stepIV":6571.61},{"setor":"OP","funcao":"Coordenador de Operacoes","nivel":"II","stepI":5229.53,"stepII":5386.41,"stepIII":5548.01,"stepIV":5714.45},{"setor":"OP","funcao":"Coordenador de Operacoes","nivel":"I","stepI":4547.42,"stepII":4683.84,"stepIII":4824.35,"stepIV":4969.08},{"setor":"AF","funcao":"Orientador de Atividades Fisicas","nivel":"III","stepI":3954.27,"stepII":4072.9,"stepIII":4195.09,"stepIV":4320.94},{"setor":"AF","funcao":"Orientador de Atividades Fisicas","nivel":"II","stepI":3438.5,"stepII":3541.65,"stepIII":3647.9,"stepIV":3757.34},{"setor":"AF","funcao":"Orientador de Atividades Fisicas","nivel":"I","stepI":2990,"stepII":3079.7,"stepIII":3172.09,"stepIV":3267.25},{"setor":"AF","funcao":"Assistente de Coordenacao de Operacoes","nivel":"I","stepI":2990,"stepII":3079.7,"stepIII":3172.09,"stepIV":3267.25},{"setor":"FISIO","funcao":"Fisoterapeuta","nivel":"III","stepI":4841.71,"stepII":4986.96,"stepIII":5136.57,"stepIV":5290.67},{"setor":"FISIO","funcao":"Fisoterapeuta","nivel":"II","stepI":4210.18,"stepII":4336.49,"stepIII":4466.58,"stepIV":4600.58},{"setor":"FISIO","funcao":"Fisoterapeuta","nivel":"I","stepI":3661.03,"stepII":3770.86,"stepIII":3883.99,"stepIV":4000.51},{"setor":"ENF","funcao":"Enfermeira do Trabalho","nivel":"III","stepI":6281.87,"stepII":6470.33,"stepIII":6664.44,"stepIV":6864.37},{"setor":"ENF","funcao":"Enfermeira do Trabalho","nivel":"II","stepI":5462.5,"stepII":5626.38,"stepIII":5795.17,"stepIV":5969.02},{"setor":"ENF","funcao":"Enfermeira do Trabalho","nivel":"I","stepI":4750,"stepII":4892.5,"stepIII":5039.28,"stepIV":5190.45},{"setor":"ENF","funcao":"Tecnico de Enfermagem do Trabalho","nivel":"III","stepI":4397.31,"stepII":4529.23,"stepIII":4665.11,"stepIV":4805.06},{"setor":"ENF","funcao":"Tecnico de Enfermagem do Trabalho","nivel":"II","stepI":3823.75,"stepII":3938.46,"stepIII":4056.62,"stepIV":4178.31},{"setor":"ENF","funcao":"Tecnico de Enfermagem do Trabalho","nivel":"I","stepI":3325,"stepII":3424.75,"stepIII":3527.49,"stepIV":3633.32},{"setor":"MASSO","funcao":"Massoterapeuta","nivel":"I","stepI":1600,"stepII":1648,"stepIII":1697.44,"stepIV":1748.36},{"setor":"NUTRI","funcao":"Nutricionista","nivel":"I","stepI":1500,"stepII":1545,"stepIII":1591.35,"stepIV":1639.09},{"setor":"FISIO","funcao":"Fisioterapeuta e/ou fisio do Trabalho","nivel":"I","stepI":4882,"stepII":5028.46,"stepIII":5179.31,"stepIV":5334.69}];
+
+var UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+function cargosDisponiveis(){
+  var seen = {}, list = [];
+  REMUNERACAO_TABLE.forEach(function(r){ if (!seen[r.funcao]){ seen[r.funcao] = true; list.push(r.funcao); } });
+  return list.sort(function(a,b){ return a.localeCompare(b, "pt-BR"); });
+}
+function niveisParaCargo(cargo){
+  var ordem = { "I": 1, "II": 2, "III": 3, "IV": 4 };
+  return REMUNERACAO_TABLE.filter(function(r){ return r.funcao === cargo; })
+    .map(function(r){ return r.nivel; })
+    .sort(function(a,b){ return (ordem[a]||99) - (ordem[b]||99); });
+}
+function remuneracaoInicialPara(cargo, nivel){
+  for (var i=0;i<REMUNERACAO_TABLE.length;i++){
+    var r = REMUNERACAO_TABLE[i];
+    if (r.funcao === cargo && r.nivel === nivel) return r.stepI;
+  }
+  return null;
+}
+
 var RECRUITMENT_STEP_NUM = 7;
 var RECRUITMENT_PREV_STEP_NUM = 6;
 var RECRUITMENT_ITEMS = [
@@ -814,7 +935,32 @@ async function loadItems(){
       dadosAcesso: parseDadosAcesso(f.DadosAcesso),
       dadosAcessoPreenchido: !!f.DadosAcessoPreenchido,
       recruitmentChecklist: parseRecruitmentChecklist(f.RecrutamentoChecklist),
-      statusChecklistRaw: f.StatusChecklist || null
+      statusChecklistRaw: f.StatusChecklist || null,
+      empresa: f.Empresa || "",
+      statusCliente: f.StatusCliente || "",
+      unidade: f.Unidade || "",
+      cnpj: f.CNPJ || "",
+      cnae: f.CNAE || "",
+      grauRisco: f.GrauRisco || "",
+      ufPrestacaoServico: f.UFPrestacaoServico || "",
+      endereco: f.Endereco || "",
+      cargo: f.Cargo || "",
+      numeroVagas: f.NumeroVagas || null,
+      confidencial: f.Confidencial || "",
+      admOuOper: f.AdmOuOper || "",
+      cargaHorariaSemanal: f.CargaHorariaSemanal || null,
+      jornadaTrabalho: f.JornadaTrabalho || "",
+      dataSolicitacao: f.DataSolicitacao || null,
+      prazoInicioDias: f.PrazoInicioDias || null,
+      dataInicioPrevisto: f.DataInicioPrevisto || null,
+      perfilProfissional: f.PerfilProfissional || "",
+      tipoContratacao: f.TipoContratacao || "",
+      remuneracaoInicial: (f.RemuneracaoInicial !== undefined && f.RemuneracaoInicial !== null) ? f.RemuneracaoInicial : null,
+      budgetBen: (f.BudgetBen !== undefined && f.BudgetBen !== null) ? f.BudgetBen : null,
+      budgetMo: (f.BudgetMo !== undefined && f.BudgetMo !== null) ? f.BudgetMo : null,
+      budgetCustos: (f.BudgetCustos !== undefined && f.BudgetCustos !== null) ? f.BudgetCustos : null,
+      numeroContrato: f.NumeroContrato || "",
+      remuneracaoConcretizada: (f.RemuneracaoConcretizada !== undefined && f.RemuneracaoConcretizada !== null) ? f.RemuneracaoConcretizada : null
     };
   });
   await checkOverdueItems();
@@ -1444,6 +1590,25 @@ function renderRecruitmentBox(item){
     list.appendChild(div);
     div.querySelector('input[type=checkbox]').addEventListener("change", function(){ saveRecruitmentChecklist(); });
   });
+  document.getElementById("recruitRemuneracaoConcretizada").value = (item.remuneracaoConcretizada !== null && item.remuneracaoConcretizada !== undefined) ? item.remuneracaoConcretizada : "";
+}
+
+async function saveRemuneracaoConcretizada(){
+  if (!currentCardItem) return;
+  var item = currentCardItem;
+  var raw = document.getElementById("recruitRemuneracaoConcretizada").value;
+  var valor = raw === "" ? null : parseFloat(raw);
+  if (raw !== "" && isNaN(valor)){ showToast("Valor invalido.", true); return; }
+  var previous = item.remuneracaoConcretizada;
+  item.remuneracaoConcretizada = valor;
+  try {
+    await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ RemuneracaoConcretizada: valor }) });
+    showToast("Remuneracao concretizada salva.");
+    renderAll();
+  } catch (err){
+    item.remuneracaoConcretizada = previous;
+    showToast("Nao consegui salvar a remuneracao: " + err.message, true);
+  }
 }
 
 function readRecruitmentState(){
@@ -2012,8 +2177,87 @@ function renderAll(){
   buildChart();
 }
 
+function populateUfSelect(){
+  var sel = document.getElementById("newUf");
+  if (sel.options.length) return;
+  UF_LIST.forEach(function(uf){
+    var opt = document.createElement("option");
+    opt.value = uf; opt.textContent = uf;
+    sel.appendChild(opt);
+  });
+}
+function populateCargoDatalist(){
+  var dl = document.getElementById("cargoList");
+  dl.innerHTML = "";
+  cargosDisponiveis().forEach(function(c){
+    var opt = document.createElement("option");
+    opt.value = c;
+    dl.appendChild(opt);
+  });
+}
+function populateEmpresaDatalist(){
+  var dl = document.getElementById("empresaList");
+  dl.innerHTML = "";
+  var seen = {};
+  ITEMS.forEach(function(it){
+    if (it.empresa && !seen[it.empresa]){ seen[it.empresa] = true; var opt = document.createElement("option"); opt.value = it.empresa; dl.appendChild(opt); }
+  });
+}
+function populatePerfilSelect(cargo){
+  var sel = document.getElementById("newPerfil");
+  sel.innerHTML = "";
+  var niveis = cargo ? niveisParaCargo(cargo) : [];
+  if (!niveis.length) niveis = ["I","II","III","IV"];
+  niveis.forEach(function(n){
+    var opt = document.createElement("option");
+    opt.value = n; opt.textContent = "Nivel " + n;
+    sel.appendChild(opt);
+  });
+}
+function updateRemuneracaoInicialAuto(){
+  var cargo = txtVal("newCargo");
+  var nivel = selVal("newPerfil");
+  var valor = remuneracaoInicialPara(cargo, nivel);
+  if (valor !== null) document.getElementById("newRemuneracaoInicial").value = valor.toFixed(2);
+}
+function onCargoInput(){
+  var cargo = txtVal("newCargo");
+  populatePerfilSelect(cargo);
+  updateRemuneracaoInicialAuto();
+}
+function updateDataInicioPrevistoPreview(){
+  var d = dataInicioPrevistoCalc();
+  var el = document.getElementById("newDataInicioPrevistoPreview");
+  el.textContent = d ? ("Data de inicio prevista: " + d.toLocaleDateString("pt-BR")) : "Preencha a data de solicitacao para calcular a data de inicio prevista.";
+}
+function updateBudgetTotalPreview(){
+  var ben = numVal("newBudgetBen") || 0, mo = numVal("newBudgetMo") || 0, custos = numVal("newBudgetCustos") || 0;
+  var total = ben + mo + custos;
+  var el = document.getElementById("newBudgetTotalPreview");
+  el.textContent = "Budget total do contrato: R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+}
+function resetNewClientModalFields(){
+  ["newEmpresa","newUnidade","newCnpj","newCnae","newEndereco","newCargo","newJornada","newNumeroContrato",
+   "newBudgetBen","newBudgetMo","newBudgetCustos","newRemuneracaoInicial","newDataSolicitacao","newCargaHoraria"].forEach(function(id){
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("newVagas").value = "1";
+  document.getElementById("newStatusCliente").value = "Novo";
+  document.getElementById("newGrauRisco").value = "1";
+  document.getElementById("newConfidencial").value = "Nao";
+  document.getElementById("newAdmOper").value = "OPER";
+  document.getElementById("newPrazoInicioDias").value = "30";
+  document.querySelectorAll("#newTipoContratacaoChips .chip").forEach(function(c){ c.classList.remove("active"); });
+  populatePerfilSelect(null);
+  updateDataInicioPrevistoPreview();
+  updateBudgetTotalPreview();
+}
 function openModal(){
   document.getElementById("newClientName").value = "";
+  populateUfSelect();
+  populateCargoDatalist();
+  populateEmpresaDatalist();
+  resetNewClientModalFields();
   document.getElementById("modalOverlay").classList.add("show");
 }
 function closeModal(){ document.getElementById("modalOverlay").classList.remove("show"); }
@@ -2074,11 +2318,69 @@ function adjustPlantTourTitle(num, title){
   return title;
 }
 
+function numVal(id){
+  var v = document.getElementById(id).value;
+  if (v === "" || v === null || v === undefined) return null;
+  var n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+function txtVal(id){ return document.getElementById(id).value.trim(); }
+function selVal(id){ return document.getElementById(id).value; }
+function tipoContratacaoSelecionado(){
+  var ativos = document.querySelectorAll("#newTipoContratacaoChips .chip.active");
+  var out = [];
+  ativos.forEach(function(c){ out.push(c.dataset.key); });
+  return out.join(", ");
+}
+function dataInicioPrevistoCalc(){
+  var dataSolic = txtVal("newDataSolicitacao");
+  var dias = parseInt(selVal("newPrazoInicioDias"), 10);
+  if (!dataSolic) return null;
+  var d = new Date(dataSolic + "T12:00:00Z");
+  return addDays(d, dias);
+}
+
+function gatherNewClientFields(){
+  var f = {};
+  f.Empresa = txtVal("newEmpresa");
+  f.StatusCliente = selVal("newStatusCliente");
+  f.Unidade = txtVal("newUnidade");
+  f.CNPJ = txtVal("newCnpj");
+  f.CNAE = txtVal("newCnae");
+  f.GrauRisco = selVal("newGrauRisco");
+  f.UFPrestacaoServico = selVal("newUf");
+  f.Endereco = txtVal("newEndereco");
+  f.Cargo = txtVal("newCargo");
+  var vagas = numVal("newVagas");
+  if (vagas !== null) f.NumeroVagas = vagas;
+  f.Confidencial = selVal("newConfidencial");
+  f.AdmOuOper = selVal("newAdmOper");
+  var carga = numVal("newCargaHoraria");
+  if (carga !== null) f.CargaHorariaSemanal = carga;
+  f.JornadaTrabalho = txtVal("newJornada");
+  var dataSolic = txtVal("newDataSolicitacao");
+  if (dataSolic) f.DataSolicitacao = dataSolic + "T12:00:00Z";
+  f.PrazoInicioDias = parseInt(selVal("newPrazoInicioDias"), 10);
+  var dataInicio = dataInicioPrevistoCalc();
+  if (dataInicio) f.DataInicioPrevisto = toPrazoIso(dataInicio);
+  f.PerfilProfissional = selVal("newPerfil");
+  f.TipoContratacao = tipoContratacaoSelecionado();
+  var remun = numVal("newRemuneracaoInicial");
+  if (remun !== null) f.RemuneracaoInicial = remun;
+  var ben = numVal("newBudgetBen"), mo = numVal("newBudgetMo"), custos = numVal("newBudgetCustos");
+  if (ben !== null) f.BudgetBen = ben;
+  if (mo !== null) f.BudgetMo = mo;
+  if (custos !== null) f.BudgetCustos = custos;
+  f.NumeroContrato = txtVal("newNumeroContrato");
+  return f;
+}
+
 async function confirmNewClient(){
   var name = document.getElementById("newClientName").value.trim();
   var area = document.getElementById("newClientArea").value;
   if (!name){ showToast("Digite o nome do cliente ou programa.", true); return; }
   if (ITEMS.some(function(it){ return it.cliente === name; })){ showToast("Ja existe uma implantacao com esse nome.", true); return; }
+  var extraFields = gatherNewClientFields();
   var template = ITEMS.filter(function(it){ return !it.cliente; }).sort(function(a,b){ return a.num-b.num; });
   closeModal();
   showToast("Criando " + template.length + " etapas para \"" + name + "\"...");
@@ -2088,18 +2390,18 @@ async function confirmNewClient(){
     for (var i=0;i<template.length;i++){
       var t = template[i];
       var prazo = prazos[t.num];
-      var body = {
-        fields: {
-          Title: adjustPlantTourTitle(t.num, t.title),
-          field_1: name,
-          field_2: area,
-          field_3: t.num,
-          field_4: t.etapaGrupo,
-          field_5: t.areaResp,
-          field_7: t.ancora,
-          field_12: "A definir"
-        }
+      var fields = {
+        Title: adjustPlantTourTitle(t.num, t.title),
+        field_1: name,
+        field_2: area,
+        field_3: t.num,
+        field_4: t.etapaGrupo,
+        field_5: t.areaResp,
+        field_7: t.ancora,
+        field_12: "A definir"
       };
+      Object.keys(extraFields).forEach(function(k){ fields[k] = extraFields[k]; });
+      var body = { fields: fields };
       if (prazo) body.fields.field_10 = toPrazoIso(prazo);
       await graphFetch(GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify(body) });
     }
@@ -2124,6 +2426,16 @@ document.querySelectorAll(".tab").forEach(function(t){
   });
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
+document.getElementById("newCargo").addEventListener("input", onCargoInput);
+document.getElementById("newPerfil").addEventListener("change", updateRemuneracaoInicialAuto);
+document.getElementById("newDataSolicitacao").addEventListener("change", updateDataInicioPrevistoPreview);
+document.getElementById("newPrazoInicioDias").addEventListener("change", updateDataInicioPrevistoPreview);
+["newBudgetBen","newBudgetMo","newBudgetCustos"].forEach(function(id){
+  document.getElementById(id).addEventListener("input", updateBudgetTotalPreview);
+});
+document.querySelectorAll("#newTipoContratacaoChips .chip").forEach(function(btn){
+  btn.addEventListener("click", function(){ this.classList.toggle("active"); });
+});
 document.getElementById("confirmDeleteClientBtn").addEventListener("click", confirmDeleteClient);
 document.getElementById("saveCardBtn").addEventListener("click", saveCardModal);
 document.getElementById("cardEmail").addEventListener("blur", function(){
