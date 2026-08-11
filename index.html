@@ -199,6 +199,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <nav class="tabs">
         <div class="tab active" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
         <div class="tab" data-tab="kanban"><span class="tab-icon">&#128203;</span>Kanban</div>
+        <a class="tab" href="https://elevalife-ats.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;"><span class="tab-icon">&#128101;</span>RecrutaHub</a>
       </nav>
     </div>
   </aside>
@@ -2406,6 +2407,40 @@ function gatherNewClientFields(){
   return f;
 }
 
+var RECRUTAHUB_API_URL = "https://elevalife-ats.vercel.app/api/personnel-requests";
+var RECRUTAHUB_API_SECRET = "sa9BkKqu0KnXJ_fA9w2pBM0bggEaNteVAcCcz7i8fsQ";
+
+async function notifyRecrutaHub(name, area, extraFields){
+  if (!extraFields.Cargo) return; // sem vaga/cargo informado, nada a sinalizar no RecrutaHub
+  var coordinatorEmail = resolveResponsavelEmailForStep("Coordenador", area);
+  if (!coordinatorEmail) return;
+  try {
+    await fetch(RECRUTAHUB_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-painel-secret": RECRUTAHUB_API_SECRET },
+      body: JSON.stringify({
+        cliente: name,
+        area: area,
+        cargo: extraFields.Cargo,
+        perfilProfissional: extraFields.PerfilProfissional,
+        numeroVagas: extraFields.NumeroVagas,
+        coordinatorEmail: coordinatorEmail,
+        coordinatorName: "",
+        tipoContratacao: extraFields.TipoContratacao,
+        cargaHorariaSemanal: extraFields.CargaHorariaSemanal,
+        jornadaTrabalho: extraFields.JornadaTrabalho,
+        dataInicioPrevisto: extraFields.DataInicioPrevisto,
+        unidade: extraFields.Unidade,
+        uf: extraFields.UFPrestacaoServico,
+        observacoes: extraFields.Endereco ? ("Endereco: " + extraFields.Endereco) : ""
+      })
+    });
+  } catch (e){
+    // Best-effort: nao bloqueia a criacao da implantacao se o RecrutaHub estiver indisponivel.
+    console.warn("Falha ao notificar RecrutaHub:", e);
+  }
+}
+
 async function confirmNewClient(){
   var name = document.getElementById("newClientName").value.trim();
   var area = document.getElementById("newClientArea").value;
@@ -2442,6 +2477,7 @@ async function confirmNewClient(){
     saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
+    notifyRecrutaHub(name, area, extraFields);
   } catch (err){
     showToast("Erro ao criar implantacao: " + err.message, true);
     await loadItems();
