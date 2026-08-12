@@ -2411,11 +2411,11 @@ var RECRUTAHUB_API_URL = "https://elevalife-ats.vercel.app/api/personnel-request
 var RECRUTAHUB_API_SECRET = "sa9BkKqu0KnXJ_fA9w2pBM0bggEaNteVAcCcz7i8fsQ";
 
 async function notifyRecrutaHub(name, area, extraFields){
-  if (!extraFields.Cargo) return; // sem vaga/cargo informado, nada a sinalizar no RecrutaHub
+  if (!extraFields.Cargo) return { fired: false };
   var coordinatorEmail = resolveResponsavelEmailForStep("Coordenador", area);
-  if (!coordinatorEmail) return;
+  if (!coordinatorEmail) return { fired: false };
   try {
-    await fetch(RECRUTAHUB_API_URL, {
+    var resp = await fetch(RECRUTAHUB_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-painel-secret": RECRUTAHUB_API_SECRET },
       body: JSON.stringify({
@@ -2435,9 +2435,17 @@ async function notifyRecrutaHub(name, area, extraFields){
         observacoes: extraFields.Endereco ? ("Endereco: " + extraFields.Endereco) : ""
       })
     });
+    if (!resp.ok){
+      var errBody = null;
+      try { errBody = await resp.json(); } catch(e2){}
+      console.warn("RecrutaHub retornou erro:", resp.status, errBody);
+      return { fired: true, ok: false, status: resp.status, coordinatorEmail: coordinatorEmail };
+    }
+    return { fired: true, ok: true };
   } catch (e){
     // Best-effort: nao bloqueia a criacao da implantacao se o RecrutaHub estiver indisponivel.
     console.warn("Falha ao notificar RecrutaHub:", e);
+    return { fired: true, ok: false, status: null };
   }
 }
 
@@ -2477,7 +2485,16 @@ async function confirmNewClient(){
     saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
-    notifyRecrutaHub(name, area, extraFields);
+    var recrutaHubResult = await notifyRecrutaHub(name, area, extraFields);
+    if (recrutaHubResult && recrutaHubResult.fired){
+      if (recrutaHubResult.ok){
+        showToast("Solicitacao de pessoal tambem foi criada no ATS Corporativo (RecrutaHub).");
+      } else if (recrutaHubResult.status === 404){
+        showToast("Implantacao criada, mas a solicitacao NAO foi criada no ATS Corporativo: coordenador (" + recrutaHubResult.coordinatorEmail + ") nao encontrado la.", true);
+      } else {
+        showToast("Implantacao criada, mas houve falha ao sinalizar a solicitacao no ATS Corporativo. Abra o formulario manualmente.", true);
+      }
+    }
   } catch (err){
     showToast("Erro ao criar implantacao: " + err.message, true);
     await loadItems();
