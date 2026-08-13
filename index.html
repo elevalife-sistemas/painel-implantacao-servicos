@@ -345,7 +345,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   <div class="modal modal-xl">
     <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar">&#10005;</button>
     <h3>Nova implantacao</h3>
-    <p>Cria todas as etapas do checklist mestre para um novo cliente/programa, todas como "A definir", direto na lista do SharePoint.</p>
+    <p>Cria todas as etapas do checklist mestre para um novo cliente/programa direto na lista do SharePoint (as etapas de Vendas e Marketing ja nascem como "A fazer" para disparar a notificacao imediatamente; as demais nascem como "A definir").</p>
 
     <div class="da-subhead" style="margin-top:0;padding-top:0;border-top:none;">Dados do cliente</div>
     <label>Nome do cliente / programa</label>
@@ -658,9 +658,9 @@ var AREA_COLORS = {
 };
 function areaColor(area){ return AREA_COLORS[area] || {bg:"#F1EFE8", tx:"#444441"}; }
 
-var EPI_STEP_NUM = 20;
-var MEETING_STEPS = [1, 4];
-var LINK_STEPS = { 3: "https://talent-pathway-36.lovable.app/solicitacao-pessoal" };
+var EPI_STEP_NUM = 16;
+var MEETING_STEPS = [1, 11];
+var LINK_STEPS = { 3: "https://elevalife-ats.vercel.app/solicitacao-pessoal" };
 var EPI_ITEMS = [
   "Capacete com jugular",
   "Oculos de protecao simples",
@@ -694,7 +694,7 @@ function parseEpiChecklist(raw){
   });
 }
 
-var DADOS_ACESSO_STEP_NUM = 5;
+var DADOS_ACESSO_STEP_NUM = 4;
 var DOC_ITEMS = [
   "RG",
   "CPF",
@@ -797,15 +797,26 @@ var AREA_RESPONSAVEL_EMAIL = {
 // para aquele cliente (ex: Fisioterapia -> Dhanilo, Ergonomia -> Alexandre). Vendas/Marketing/CS
 // isoladas nao tem responsavel fixo mapeado e ficam em branco (o coordenador preenche manualmente).
 function resolveResponsavelEmailForStep(areaResp, clienteArea){
-  var a = (areaResp || "").toUpperCase();
+  var aTrim = (areaResp || "").trim().toUpperCase();
+  if (aTrim === "VENDAS") return "leonardo@elevalife.com.br";
+  if (aTrim === "MARKETING") return "clara@elevalife.com.br";
+  var a = aTrim;
   if (a.indexOf("RH") !== -1) return AREA_RESPONSAVEL_EMAIL["Recursos Humanos"] || "";
   if (a.indexOf("DP") !== -1) return AREA_RESPONSAVEL_EMAIL["Departamento Pessoal"] || "";
   if (a.indexOf("COORDENADOR") !== -1) return AREA_RESPONSAVEL_EMAIL[clienteArea] || "";
   return "";
 }
 
-var RECRUITMENT_STEP_NUM = 7;
-var RECRUITMENT_PREV_STEP_NUM = 6;
+// Etapas com responsavel fixo (Vendas/Marketing) ja nascem como "A fazer" em vez de
+// "A definir", pois o prazo dessas etapas e no dia seguinte a abertura, entao o
+// e-mail/Teams de notificacao precisa disparar imediatamente na criacao.
+function isInitialFazerStep(areaResp){
+  var a = (areaResp || "").trim().toUpperCase();
+  return a === "VENDAS" || a === "MARKETING";
+}
+
+var RECRUITMENT_STEP_NUM = 6;
+var RECRUITMENT_PREV_STEP_NUM = 5;
 var RECRUITMENT_ITEMS = [
   "Divulgacao da vaga",
   "Triagem de curriculos",
@@ -818,11 +829,11 @@ function isRecruitmentStep(item){ return item && Number(item.num) === RECRUITMEN
 
 // Checklists genericos onde marcar um item especifico (triggerIndex) conclui o card automaticamente.
 var STATUS_CHECKLISTS = {
-  19: {
+  18: {
     items: ["Marcar integracao junto ao cliente", "Confirmar com elevalifer data e horario", "Integracao realizada"],
     triggerIndex: 2
   },
-  20: {
+  19: {
     items: ["Apresentacao do roteiro ao ElevaLifer"],
     triggerIndex: 0
   }
@@ -2309,42 +2320,45 @@ function toPrazoIso(date){
 // implantacao no cliente" (antiga 24). Corrigido tambem o EPI_STEP_NUM (era 18, o
 // item correto e o 17).
 // Etapas ancoradas na abertura da implantacao, em uma etapa anterior, ou na etapa 21.
+// Numeracao atualizada apos a exclusao da (antiga) etapa 4 "Realizar reuniao de
+// ONBOARDING": as antigas etapas 5-25 viraram as novas etapas 4-24. Os prazos abaixo
+// preservam os mesmos intervalos relativos de antes, apenas sob a nova numeracao
+// (o intervalo que a antiga etapa 4 consumia foi incorporado no calculo da nova etapa 4).
 function computeAutoPrazos(abertura){
   var d = {};
   d[1] = addDays(abertura, 1);
   d[2] = addDays(abertura, 1);
   d[3] = addDays(d[2], 1);
-  d[4] = addDays(d[3], 3);
-  d[5] = addDays(d[4], 1);
-  d[6] = addDays(d[5], 2);
-  d[7] = addDays(abertura, 7);
-  d[8] = addDays(abertura, 15);
+  d[4] = addDays(d[3], 4);
+  d[5] = addDays(d[4], 2);
+  d[6] = addDays(abertura, 7);
+  d[7] = addDays(abertura, 15);
+  d[8] = addDays(abertura, 16);
   d[9] = addDays(abertura, 16);
   d[10] = addDays(abertura, 16);
   d[11] = addDays(abertura, 16);
   d[12] = addDays(abertura, 16);
   d[13] = addDays(abertura, 16);
-  d[14] = addDays(abertura, 16);
-  d[21] = addDays(d[1], 25);
-  d[15] = addDays(d[21], -7);
-  d[16] = addDays(d[21], -5);
-  d[17] = addDays(d[21], -5);
-  d[18] = addDays(d[21], -5);
-  d[19] = addDays(d[21], -5);
-  d[20] = addDays(d[21], -5);
-  d[22] = addDays(d[21], 7);
-  d[23] = addDays(d[21], 30);
-  d[24] = addDays(d[21], 30);
-  d[25] = addDays(d[21], 30);
+  d[20] = addDays(d[1], 25);
+  d[14] = addDays(d[20], -7);
+  d[15] = addDays(d[20], -5);
+  d[16] = addDays(d[20], -5);
+  d[17] = addDays(d[20], -5);
+  d[18] = addDays(d[20], -5);
+  d[19] = addDays(d[20], -5);
+  d[21] = addDays(d[20], 7);
+  d[22] = addDays(d[20], 30);
+  d[23] = addDays(d[20], 30);
+  d[24] = addDays(d[20], 30);
   return d;
 }
 
-// Etapa 19 nao inclui mais o plant tour (movido para a etapa 21).
+// Etapa 18 (antiga 19) nao inclui mais o plant tour (movido para a etapa 20, antiga 21).
 function adjustPlantTourTitle(num, title){
-  if (num === 19){
+  if (num === 18){
     return title.replace(/\s*e\s*plant tour/i, "").replace(/\s*plant tour/i, "").replace(/\s{2,}/g, " ").trim();
   }
-  if (num === 21 && !/plant tour/i.test(title)){
+  if (num === 20 && !/plant tour/i.test(title)){
     return title.replace(/\s*$/, "") + " e plant tour";
   }
   return title;
@@ -2472,7 +2486,7 @@ async function confirmNewClient(){
         field_4: t.etapaGrupo,
         field_5: t.areaResp,
         field_7: t.ancora,
-        field_12: "A definir",
+        field_12: isInitialFazerStep(t.areaResp) ? "A fazer" : "A definir",
         EmailResponsavel: resolveResponsavelEmailForStep(t.areaResp, area)
       };
       Object.keys(extraFields).forEach(function(k){ fields[k] = extraFields[k]; });
