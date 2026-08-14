@@ -2424,6 +2424,19 @@ function gatherNewClientFields(){
 var RECRUTAHUB_API_URL = "https://elevalife-ats.vercel.app/api/personnel-requests";
 var RECRUTAHUB_API_SECRET = "sa9BkKqu0KnXJ_fA9w2pBM0bggEaNteVAcCcz7i8fsQ";
 
+function emailToDisplayName(email){
+  if (!email) return "";
+  var local = String(email).split('@')[0];
+  var parts = local.split(/[._-]+/).filter(Boolean);
+  return parts.map(function(p){ return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join(' ');
+}
+
+function formatCurrencyBRL(value){
+  var n = Number(value);
+  if (!isFinite(n) || n <= 0) return "";
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 async function notifyRecrutaHub(name, area, extraFields){
   if (!extraFields.Cargo) return { fired: false };
   var coordinatorEmail = resolveResponsavelEmailForStep("Coordenador", area);
@@ -2439,7 +2452,8 @@ async function notifyRecrutaHub(name, area, extraFields){
         perfilProfissional: extraFields.PerfilProfissional,
         numeroVagas: extraFields.NumeroVagas,
         coordinatorEmail: coordinatorEmail,
-        coordinatorName: "",
+        coordinatorName: emailToDisplayName(coordinatorEmail),
+        salaryRange: formatCurrencyBRL(extraFields.RemuneracaoInicial),
         tipoContratacao: extraFields.TipoContratacao,
         cargaHorariaSemanal: extraFields.CargaHorariaSemanal,
         jornadaTrabalho: extraFields.JornadaTrabalho,
@@ -2499,7 +2513,13 @@ async function confirmNewClient(){
     saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
-    var recrutaHubResult = await notifyRecrutaHub(name, area, extraFields);
+    var vagasCount = parseInt(extraFields.NumeroVagas, 10) || 1;
+    var recrutaHubResult = null;
+    var recrutaHubOkCount = 0;
+    for (var vIdx = 0; vIdx < vagasCount; vIdx++) {
+      recrutaHubResult = await notifyRecrutaHub(name, area, extraFields);
+      if (recrutaHubResult && recrutaHubResult.fired && recrutaHubResult.ok) recrutaHubOkCount++;
+    }
     if (recrutaHubResult && recrutaHubResult.fired){
       if (recrutaHubResult.ok){
         showToast("Solicitacao de pessoal tambem foi criada no ATS Corporativo (RecrutaHub).");
