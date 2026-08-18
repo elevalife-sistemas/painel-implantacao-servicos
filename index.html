@@ -37,6 +37,15 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .tab-icon{font-size:16.5px;width:20px;text-align:center;flex-shrink:0;}
 .tab-group-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(255,255,255,0.45);margin:6px 0 2px;padding:0 14px;}
 .tab-sub{padding-left:26px;}
+.coberturas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+.prof-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;}
+.prof-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;background:var(--grena);margin-bottom:4px;}
+.prof-name{font-size:15px;font-weight:700;color:var(--text);}
+.prof-meta{font-size:12.5px;color:var(--text2);}
+.prof-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--grena-bg);color:var(--grena);width:fit-content;}
+.btn-cobertura{margin-top:8px;background:var(--grena);color:#fff;border:none;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-cobertura:hover{background:var(--grena-dark);}
+
 .app{flex:1;min-width:0;width:100%;max-width:none;margin:0;padding:20px 28px 36px;}
 .header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:18px 26px;display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:22px;}
 .header-right{text-align:right;display:flex;align-items:center;gap:14px;}
@@ -474,6 +483,22 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   </div>
 </div>
 
+<div class="modal-overlay" id="coberturaModalOverlay">
+  <div class="modal">
+    <button type="button" class="modal-close" onclick="closeCoberturaModal()" aria-label="Fechar">&#10005;</button>
+    <h3>Solicitar cobertura/substituicao</h3>
+    <p id="coberturaModalSub"></p>
+    <label>Cliente</label>
+    <select id="coberturaCliente"></select>
+    <label>Solicitante</label>
+    <input type="text" id="coberturaSolicitante" disabled>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCoberturaModal()">Cancelar</button>
+      <button class="btn-confirm" id="confirmCoberturaBtn">Confirmar solicitacao</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="cardModalOverlay">
   <div class="modal modal-wide">
     <button type="button" class="modal-close" onclick="closeCardModal()" aria-label="Fechar">&#10005;</button>
@@ -637,6 +662,8 @@ var SITE_PATH = "/sites/BUSINESSPROCESSMANAGEMENT";
 var LIST_ID = "4563517e-40d7-4fa4-99ff-bf126b15c95c";
 var GRAPH_SITE_SEGMENT = SITE_HOST + ":" + SITE_PATH + ":";
 var GRAPH_BASE = "https://graph.microsoft.com/v1.0/sites/" + GRAPH_SITE_SEGMENT + "/lists/" + LIST_ID;
+var COBERTURAS_LIST_ID = "10341bc5-f288-4ba5-9eda-728be3d20c2d";
+var COBERTURAS_GRAPH_BASE = "https://graph.microsoft.com/v1.0/sites/" + GRAPH_SITE_SEGMENT + "/lists/" + COBERTURAS_LIST_ID;
 var SP_EDIT_URL = "https://elevalife.sharepoint.com/sites/BUSINESSPROCESSMANAGEMENT/Lists/Implantacao%20de%20Servicos%20%20Kanban/EditForm.aspx?ID=";
 
 var msalConfig = {
@@ -894,6 +921,18 @@ try { HIDE_COMPLETED = localStorage.getItem("hideCompletedCards") === "1"; } cat
 // que precisam ser apagados depois). Definido por pedido do Cristiano em 07/08/2026.
 var AUTHORIZED_DELETE_EMAILS = ["cristiano@elevalife.com.br", "joao@elevalife.com.br", "rafael@elevalife.com.br"];
 var CURRENT_USER_EMAIL = "";
+var CURRENT_USER_NAME = "";
+
+// Dados de exemplo (mock) - substituir por integracao com o RecrutaHub quando o
+// endpoint de portfolio de profissionais estiver disponivel.
+var MOCK_PROFESSIONALS = [
+  { id: "p1", nome: "Ana Beatriz Souza", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente" },
+  { id: "p2", nome: "Carlos Eduardo Lima", area: "Ginastica Laboral", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08" },
+  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem do Trabalho", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente" },
+  { id: "p4", nome: "Juliana Martins Costa", area: "Ergonomia", qualificacao: "Especialista em Ergonomia", disponibilidade: "Disponivel fins de semana" },
+  { id: "p5", nome: "Rafael Henrique Nunes", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente" },
+  { id: "p6", nome: "Patricia Gomes Duarte", area: "Ginastica Laboral", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09" }
+];
 function canDeleteImplantacoes(){
   return AUTHORIZED_DELETE_EMAILS.indexOf((CURRENT_USER_EMAIL || "").toLowerCase()) !== -1;
 }
@@ -2307,6 +2346,74 @@ function resetNewClientModalFields(){
   updateDataInicioPrevistoPreview();
   updateBudgetTotalPreview();
 }
+function initialsOf(name){
+  var parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length-1][0] : "")).toUpperCase();
+}
+
+function renderCoberturas(){
+  var wrap = document.getElementById("coberturasList");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  MOCK_PROFESSIONALS.forEach(function(p){
+    var card = document.createElement("div");
+    card.className = "prof-card";
+    card.innerHTML =
+      '<div class="prof-avatar">' + initialsOf(p.nome) + '</div>' +
+      '<div class="prof-name">' + p.nome + '</div>' +
+      '<span class="prof-tag">' + p.area + '</span>' +
+      '<div class="prof-meta">' + p.qualificacao + '</div>' +
+      '<div class="prof-meta">' + p.disponibilidade + '</div>' +
+      '<button type="button" class="btn-cobertura">Selecionar para Cobertura/Substituicao</button>';
+    card.querySelector(".btn-cobertura").addEventListener("click", function(){ openCoberturaModal(p.id); });
+    wrap.appendChild(card);
+  });
+}
+
+var coberturaSelectedProf = null;
+function openCoberturaModal(profId){
+  var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
+  if (!p) return;
+  coberturaSelectedProf = p;
+  document.getElementById("coberturaModalSub").textContent =
+    p.nome + " - " + p.area + ". Ao confirmar, o RH sera notificado automaticamente por Teams e e-mail.";
+  var sel = document.getElementById("coberturaCliente");
+  sel.innerHTML = "";
+  allClientLabels().filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; }).forEach(function(c){
+    var opt = document.createElement("option");
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  if (selectedClients.length === 1) sel.value = selectedClients[0];
+  document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
+  document.getElementById("coberturaModalOverlay").classList.add("show");
+}
+function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay").classList.remove("show"); }
+
+async function confirmCobertura(){
+  var p = coberturaSelectedProf;
+  var cliente = document.getElementById("coberturaCliente").value;
+  if (!p){ showToast("Selecione um profissional.", true); return; }
+  if (!cliente){ showToast("Selecione o cliente que recebera a cobertura/substituicao.", true); return; }
+  closeCoberturaModal();
+  showToast("Enviando solicitacao de cobertura/substituicao...");
+  try {
+    var fields = {
+      Title: p.nome + " -> " + cliente,
+      Cliente: cliente,
+      Profissional: p.nome,
+      Area: p.area,
+      Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+      Status: "Pendente"
+    };
+    await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+    showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
+  } catch (err){
+    showToast("Erro ao enviar solicitacao: " + err.message, true);
+  }
+}
+
 function openModal(){
   document.getElementById("newClientName").value = "";
   populateUfSelect();
@@ -2557,6 +2664,7 @@ document.querySelectorAll(".tab").forEach(function(t){
   });
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
+document.getElementById("confirmCoberturaBtn").addEventListener("click", confirmCobertura);
 document.getElementById("newCargo").addEventListener("input", onCargoInput);
 document.getElementById("newPerfil").addEventListener("change", updateRemuneracaoInicialAuto);
 document.getElementById("newDataSolicitacao").addEventListener("change", updateDataInicioPrevistoPreview);
@@ -2603,6 +2711,8 @@ async function afterLogin(){
   document.getElementById("refreshBtn").classList.remove("hidden");
   document.getElementById("logoutBtn").classList.remove("hidden");
   document.getElementById("userChip").textContent = account.name || account.username;
+  CURRENT_USER_NAME = account.name || account.username || "";
+  renderCoberturas();
   showToast("Carregando dados da lista SharePoint...");
   try {
     await loadItems();
