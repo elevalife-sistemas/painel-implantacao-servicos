@@ -45,6 +45,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .prof-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--grena-bg);color:var(--grena);width:fit-content;}
 .btn-cobertura{margin-top:8px;background:var(--grena);color:#fff;border:none;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-cobertura:hover{background:var(--grena-dark);}
+.prof-link{background:none;border:none;color:var(--grena);font-size:12.5px;font-weight:600;cursor:pointer;padding:0;text-align:left;text-decoration:underline;margin-top:2px;}
 
 .app{flex:1;min-width:0;width:100%;max-width:none;margin:0;padding:20px 28px 36px;}
 .header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:18px 26px;display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:22px;}
@@ -489,12 +490,29 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <h3>Solicitar cobertura/substituicao</h3>
     <p id="coberturaModalSub"></p>
     <label>Cliente</label>
-    <select id="coberturaCliente"></select>
+    <input type="text" id="coberturaCliente" list="coberturaClienteList" placeholder="Digite o nome do cliente">
+    <datalist id="coberturaClienteList"></datalist>
     <label>Solicitante</label>
     <input type="text" id="coberturaSolicitante" disabled>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeCoberturaModal()">Cancelar</button>
       <button class="btn-confirm" id="confirmCoberturaBtn">Confirmar solicitacao</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="coberturaProfileModalOverlay">
+  <div class="modal modal-wide">
+    <button type="button" class="modal-close" onclick="closeCoberturaProfileModal()" aria-label="Fechar">&#10005;</button>
+    <h3 id="coberturaProfileName"></h3>
+    <p id="coberturaProfileSub"></p>
+    <label>Curriculo</label>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 16px;" id="coberturaProfileCurriculo"></p>
+    <label>Parecer tecnico do RH</label>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 16px;" id="coberturaProfileParecer"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCoberturaProfileModal()">Fechar</button>
+      <button class="btn-confirm" id="coberturaProfileSelectBtn">Selecionar para Cobertura/Substituicao</button>
     </div>
   </div>
 </div>
@@ -926,12 +944,24 @@ var CURRENT_USER_NAME = "";
 // Dados de exemplo (mock) - substituir por integracao com o RecrutaHub quando o
 // endpoint de portfolio de profissionais estiver disponivel.
 var MOCK_PROFESSIONALS = [
-  { id: "p1", nome: "Ana Beatriz Souza", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente" },
-  { id: "p2", nome: "Carlos Eduardo Lima", area: "Ginastica Laboral", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08" },
-  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem do Trabalho", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente" },
-  { id: "p4", nome: "Juliana Martins Costa", area: "Ergonomia", qualificacao: "Especialista em Ergonomia", disponibilidade: "Disponivel fins de semana" },
-  { id: "p5", nome: "Rafael Henrique Nunes", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente" },
-  { id: "p6", nome: "Patricia Gomes Duarte", area: "Ginastica Laboral", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09" }
+  { id: "p1", nome: "Ana Beatriz Souza", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "8 anos de experiencia em fisioterapia do trabalho, atuacao em industria e escritorios, pos-graduacao em ergonomia.",
+    parecerTecnico: "Parecer RH (mock): candidata aprovada em processo seletivo anterior, boa avaliacao tecnica e comportamental, sem restricoes." },
+  { id: "p2", nome: "Carlos Eduardo Lima", area: "Ginastica Laboral", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08",
+    curriculoResumo: "5 anos conduzindo programas de ginastica laboral em clientes de grande porte, experiencia com turnos rotativos.",
+    parecerTecnico: "Parecer RH (mock): bom desempenho em dinamicas de grupo, recomendado para clientes com alto volume de colaboradores." },
+  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem do Trabalho", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "10 anos em enfermagem do trabalho, experiencia com ambulatorios internos e gestao de SESMT.",
+    parecerTecnico: "Parecer RH (mock): perfil senior, forte aderencia a normas regulamentadoras, sem pendencias documentais." },
+  { id: "p4", nome: "Juliana Martins Costa", area: "Ergonomia", qualificacao: "Especialista em Ergonomia", disponibilidade: "Disponivel fins de semana",
+    curriculoResumo: "Especialista em analise ergonomica do trabalho (AET), atuacao em industria e logistica.",
+    parecerTecnico: "Parecer RH (mock): avaliacao tecnica solida, disponibilidade restrita a fins de semana deve ser validada com o cliente." },
+  { id: "p5", nome: "Rafael Henrique Nunes", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "6 anos de experiencia em fisioterapia preventiva e ginastica laboral combinadas.",
+    parecerTecnico: "Parecer RH (mock): candidato com boa comunicacao, ja atuou em substituicoes de curto prazo com feedback positivo." },
+  { id: "p6", nome: "Patricia Gomes Duarte", area: "Ginastica Laboral", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09",
+    curriculoResumo: "4 anos de experiencia em ginastica laboral e pausas ativas em ambiente corporativo.",
+    parecerTecnico: "Parecer RH (mock): aprovada em processo seletivo recente, recomendada para clientes de porte medio." }
 ];
 function canDeleteImplantacoes(){
   return AUTHORIZED_DELETE_EMAILS.indexOf((CURRENT_USER_EMAIL || "").toLowerCase()) !== -1;
@@ -2365,11 +2395,26 @@ function renderCoberturas(){
       '<span class="prof-tag">' + p.area + '</span>' +
       '<div class="prof-meta">' + p.qualificacao + '</div>' +
       '<div class="prof-meta">' + p.disponibilidade + '</div>' +
+      '<button type="button" class="prof-link">Ver curriculo e parecer do RH</button>' +
       '<button type="button" class="btn-cobertura">Selecionar para Cobertura/Substituicao</button>';
+    card.querySelector(".prof-link").addEventListener("click", function(){ openCoberturaProfileModal(p.id); });
     card.querySelector(".btn-cobertura").addEventListener("click", function(){ openCoberturaModal(p.id); });
     wrap.appendChild(card);
   });
 }
+
+var coberturaProfileProf = null;
+function openCoberturaProfileModal(profId){
+  var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
+  if (!p) return;
+  coberturaProfileProf = p;
+  document.getElementById("coberturaProfileName").textContent = p.nome;
+  document.getElementById("coberturaProfileSub").textContent = p.area + " - " + p.qualificacao + " - " + p.disponibilidade;
+  document.getElementById("coberturaProfileCurriculo").textContent = p.curriculoResumo || "Curriculo nao disponivel.";
+  document.getElementById("coberturaProfileParecer").textContent = p.parecerTecnico || "Parecer tecnico nao disponivel.";
+  document.getElementById("coberturaProfileModalOverlay").classList.add("show");
+}
+function closeCoberturaProfileModal(){ document.getElementById("coberturaProfileModalOverlay").classList.remove("show"); }
 
 var coberturaSelectedProf = null;
 function openCoberturaModal(profId){
@@ -2378,14 +2423,14 @@ function openCoberturaModal(profId){
   coberturaSelectedProf = p;
   document.getElementById("coberturaModalSub").textContent =
     p.nome + " - " + p.area + ". Ao confirmar, o RH sera notificado automaticamente por Teams e e-mail.";
-  var sel = document.getElementById("coberturaCliente");
-  sel.innerHTML = "";
+  var dl = document.getElementById("coberturaClienteList");
+  dl.innerHTML = "";
   allClientLabels().filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; }).forEach(function(c){
     var opt = document.createElement("option");
-    opt.value = c; opt.textContent = c;
-    sel.appendChild(opt);
+    opt.value = c;
+    dl.appendChild(opt);
   });
-  if (selectedClients.length === 1) sel.value = selectedClients[0];
+  document.getElementById("coberturaCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
   document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
   document.getElementById("coberturaModalOverlay").classList.add("show");
 }
@@ -2393,9 +2438,9 @@ function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay")
 
 async function confirmCobertura(){
   var p = coberturaSelectedProf;
-  var cliente = document.getElementById("coberturaCliente").value;
+  var cliente = document.getElementById("coberturaCliente").value.trim();
   if (!p){ showToast("Selecione um profissional.", true); return; }
-  if (!cliente){ showToast("Selecione o cliente que recebera a cobertura/substituicao.", true); return; }
+  if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
   closeCoberturaModal();
   showToast("Enviando solicitacao de cobertura/substituicao...");
   try {
@@ -2665,6 +2710,13 @@ document.querySelectorAll(".tab").forEach(function(t){
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
 document.getElementById("confirmCoberturaBtn").addEventListener("click", confirmCobertura);
+document.getElementById("coberturaProfileSelectBtn").addEventListener("click", function(){
+  if (coberturaProfileProf){
+    var profId = coberturaProfileProf.id;
+    closeCoberturaProfileModal();
+    openCoberturaModal(profId);
+  }
+});
 document.getElementById("newCargo").addEventListener("input", onCargoInput);
 document.getElementById("newPerfil").addEventListener("change", updateRemuneracaoInicialAuto);
 document.getElementById("newDataSolicitacao").addEventListener("change", updateDataInicioPrevistoPreview);
