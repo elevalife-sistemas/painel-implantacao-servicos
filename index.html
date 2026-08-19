@@ -351,6 +351,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <div class="kanban-header">
         <h2 class="kanban-client-name">Coberturas e Substituicoes</h2>
         <span class="badge-note">Dados de exemplo (mock) - integracao com o RecrutaHub em andamento</span>
+        <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
       </div>
       <div id="coberturasList" class="coberturas-grid"></div>
     </div>
@@ -492,11 +493,66 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <label>Cliente</label>
     <input type="text" id="coberturaCliente" list="coberturaClienteList" placeholder="Digite o nome do cliente">
     <datalist id="coberturaClienteList"></datalist>
+    <label>Motivo da substituicao</label>
+    <select id="coberturaMotivo">
+      <option value="">Selecione...</option>
+      <option value="Ferias">Ferias</option>
+      <option value="Atestado medico">Atestado medico</option>
+      <option value="Falta">Falta</option>
+      <option value="Definitivo">Definitivo</option>
+    </select>
+    <label>Tipo de contrato</label>
+    <select id="coberturaTipoContrato">
+      <option value="">Selecione...</option>
+      <option value="CLT">CLT</option>
+      <option value="Autonomo">Autonomo</option>
+      <option value="PJ">PJ</option>
+    </select>
+    <div id="coberturaRemuneracaoWrap" style="display:none;">
+      <label>Valor de remuneracao</label>
+      <input type="number" id="coberturaValorRemuneracao" step="0.01" min="0" placeholder="0,00">
+      <label>Liquido ou bruto</label>
+      <select id="coberturaTipoValor">
+        <option value="">Selecione...</option>
+        <option value="Liquido">Liquido</option>
+        <option value="Bruto">Bruto</option>
+      </select>
+    </div>
     <label>Solicitante</label>
     <input type="text" id="coberturaSolicitante" disabled>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeCoberturaModal()">Cancelar</button>
       <button class="btn-confirm" id="confirmCoberturaBtn">Confirmar solicitacao</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="coberturaTipoModalOverlay">
+  <div class="modal">
+    <button type="button" class="modal-close" onclick="closeCoberturaTipoModal()" aria-label="Fechar">&#10005;</button>
+    <h3>Nova solicitacao</h3>
+    <p>Esta cobertura precisa de substituicao de profissional?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="coberturaTipoNaoBtn">Nao, e apenas informativo</button>
+      <button class="btn-confirm" id="coberturaTipoSimBtn">Sim, precisa de substituicao</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="coberturaInformativoModalOverlay">
+  <div class="modal">
+    <button type="button" class="modal-close" onclick="closeCoberturaInformativoModal()" aria-label="Fechar">&#10005;</button>
+    <h3>Comunicado informativo</h3>
+    <p>Sem necessidade de substituicao de profissional. Envie os dados para as pessoas envolvidas.</p>
+    <label>Cliente</label>
+    <input type="text" id="coberturaInformativoCliente" list="coberturaClienteList" placeholder="Digite o nome do cliente">
+    <label>Observacao</label>
+    <textarea id="coberturaInformativoObservacao" placeholder="Detalhe o motivo do comunicado"></textarea>
+    <label>Solicitante</label>
+    <input type="text" id="coberturaInformativoSolicitante" disabled>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCoberturaInformativoModal()">Cancelar</button>
+      <button class="btn-confirm" id="confirmCoberturaInformativoBtn">Enviar informativo</button>
     </div>
   </div>
 </div>
@@ -2431,10 +2487,55 @@ function openCoberturaModal(profId){
     dl.appendChild(opt);
   });
   document.getElementById("coberturaCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
+  document.getElementById("coberturaMotivo").value = "";
+  document.getElementById("coberturaTipoContrato").value = "";
+  document.getElementById("coberturaValorRemuneracao").value = "";
+  document.getElementById("coberturaTipoValor").value = "";
+  document.getElementById("coberturaRemuneracaoWrap").style.display = "none";
   document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
   document.getElementById("coberturaModalOverlay").classList.add("show");
 }
 function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay").classList.remove("show"); }
+
+document.getElementById("coberturaTipoContrato").addEventListener("change", function(){
+  var precisaRemuneracao = this.value === "Autonomo" || this.value === "PJ";
+  document.getElementById("coberturaRemuneracaoWrap").style.display = precisaRemuneracao ? "block" : "none";
+});
+
+function openCoberturaTipoModal(){
+  document.getElementById("coberturaTipoModalOverlay").classList.add("show");
+}
+function closeCoberturaTipoModal(){ document.getElementById("coberturaTipoModalOverlay").classList.remove("show"); }
+
+function openCoberturaInformativoModal(){
+  document.getElementById("coberturaInformativoCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
+  document.getElementById("coberturaInformativoObservacao").value = "";
+  document.getElementById("coberturaInformativoSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
+  document.getElementById("coberturaInformativoModalOverlay").classList.add("show");
+}
+function closeCoberturaInformativoModal(){ document.getElementById("coberturaInformativoModalOverlay").classList.remove("show"); }
+
+async function confirmCoberturaInformativo(){
+  var cliente = document.getElementById("coberturaInformativoCliente").value.trim();
+  var observacao = document.getElementById("coberturaInformativoObservacao").value.trim();
+  if (!cliente){ showToast("Digite o cliente para o comunicado informativo.", true); return; }
+  closeCoberturaInformativoModal();
+  showToast("Enviando comunicado informativo...");
+  try {
+    var fields = {
+      Title: "Informativo -> " + cliente,
+      Cliente: cliente,
+      Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+      Status: "Pendente",
+      PrecisaSubstituicao: "Nao",
+      Observacao: observacao
+    };
+    await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+    showToast("Comunicado informativo enviado.");
+  } catch (err){
+    showToast("Erro ao enviar comunicado: " + err.message, true);
+  }
+}
 
 async function confirmCobertura(){
   var p = coberturaSelectedProf;
@@ -2444,14 +2545,25 @@ async function confirmCobertura(){
   closeCoberturaModal();
   showToast("Enviando solicitacao de cobertura/substituicao...");
   try {
+    var motivo = document.getElementById("coberturaMotivo").value;
+    var tipoContrato = document.getElementById("coberturaTipoContrato").value;
+    var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
+    var tipoValor = document.getElementById("coberturaTipoValor").value;
     var fields = {
       Title: p.nome + " -> " + cliente,
       Cliente: cliente,
       Profissional: p.nome,
       Area: p.area,
       Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-      Status: "Pendente"
+      Status: "Pendente",
+      PrecisaSubstituicao: "Sim",
+      MotivoSubstituicao: motivo || null,
+      TipoContrato: tipoContrato || null
     };
+    if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
+      if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
+      if (tipoValor) fields.TipoValor = tipoValor;
+    }
     await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
     showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
   } catch (err){
@@ -2717,6 +2829,16 @@ document.getElementById("coberturaProfileSelectBtn").addEventListener("click", f
     openCoberturaModal(profId);
   }
 });
+document.getElementById("novaSolicitacaoCoberturaBtn").addEventListener("click", openCoberturaTipoModal);
+document.getElementById("coberturaTipoSimBtn").addEventListener("click", function(){
+  closeCoberturaTipoModal();
+  showToast("Selecione um profissional abaixo para continuar.");
+});
+document.getElementById("coberturaTipoNaoBtn").addEventListener("click", function(){
+  closeCoberturaTipoModal();
+  openCoberturaInformativoModal();
+});
+document.getElementById("confirmCoberturaInformativoBtn").addEventListener("click", confirmCoberturaInformativo);
 document.getElementById("newCargo").addEventListener("input", onCargoInput);
 document.getElementById("newPerfil").addEventListener("change", updateRemuneracaoInicialAuto);
 document.getElementById("newDataSolicitacao").addEventListener("change", updateDataInicioPrevistoPreview);
