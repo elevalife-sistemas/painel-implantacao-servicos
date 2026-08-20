@@ -441,6 +441,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     </div>
     <label>Remuneracao inicial (R$)</label>
     <input type="number" step="0.01" id="newRemuneracaoInicial" placeholder="Preenchido automaticamente pelo cargo/perfil">
+    <small id="remuneracaoLegenda" style="display:block;color:var(--text2);font-size:12px;margin:-10px 0 16px;"></small>
 
     <div class="da-subhead">Prazos</div>
     <div class="field-row">
@@ -2394,11 +2395,37 @@ function populatePerfilSelect(cargo){
     sel.appendChild(opt);
   });
 }
+// Carga horaria semanal "cheia" usada como referencia na tabela de remuneracao,
+// por tipo de cargo. Definido pelo Cristiano em 19/08/2026: Fisioterapeuta 30h,
+// ADM (RH/MKT/COM/Operacoes/Ergonomia/outros) 44h, Tecnico de Enfermagem e
+// Enfermeiro 44h, Educador Fisico (Atividades Fisicas) 44h, Medico 24h.
+function baseHorasParaCargo(cargo){
+  var c = (cargo || "").toLowerCase();
+  if (c.indexOf("fisioterapeut") !== -1 || c.indexOf("fisoterapeut") !== -1) return 30;
+  if (c.indexOf("medic") !== -1 || c.indexOf("médic") !== -1) return 24;
+  return 44;
+}
 function updateRemuneracaoInicialAuto(){
   var cargo = txtVal("newCargo");
   var nivel = selVal("newPerfil");
-  var valor = remuneracaoInicialPara(cargo, nivel);
-  if (valor !== null) document.getElementById("newRemuneracaoInicial").value = valor.toFixed(2);
+  var valorCheio = remuneracaoInicialPara(cargo, nivel);
+  var legenda = document.getElementById("remuneracaoLegenda");
+  if (valorCheio === null){
+    legenda.textContent = "";
+    return;
+  }
+  var baseHoras = baseHorasParaCargo(cargo);
+  var carga = numVal("newCargaHoraria");
+  var valorProporcional = (carga && carga > 0) ? (valorCheio * (carga / baseHoras)) : valorCheio;
+  document.getElementById("newRemuneracaoInicial").value = valorProporcional.toFixed(2);
+  var valorCheioFmt = valorCheio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  if (carga && carga > 0 && carga !== baseHoras){
+    var valorProporcionalFmt = valorProporcional.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    legenda.textContent = "Referencia para carga cheia de " + baseHoras + "h semanais: " + valorCheioFmt +
+      ". Valor exibido (" + valorProporcionalFmt + ") e proporcional a carga de " + carga + "h semanais informada.";
+  } else {
+    legenda.textContent = "Valor de referencia para carga cheia de " + baseHoras + "h semanais: " + valorCheioFmt + ".";
+  }
 }
 function onCargoInput(){
   var cargo = txtVal("newCargo");
@@ -2700,6 +2727,63 @@ function gatherNewClientFields(){
 var RECRUTAHUB_API_URL = "https://elevalife-ats.vercel.app/api/personnel-requests";
 var RECRUTAHUB_API_SECRET = "sa9BkKqu0KnXJ_fA9w2pBM0bggEaNteVAcCcz7i8fsQ";
 
+var GISLEINY_EMAIL = "gisleiny@elevalife.com.br";
+
+function novaImplantacaoResumoHtml(name, area, extraFields){
+  function linha(label, valor){
+    if (valor === null || valor === undefined || valor === "") return "";
+    return "<li><b>" + label + ":</b>&nbsp;" + valor + "</li>";
+  }
+  var remunFmt = formatCurrencyBRL(extraFields.RemuneracaoInicial);
+  var benFmt = formatCurrencyBRL(extraFields.BudgetBen);
+  var moFmt = formatCurrencyBRL(extraFields.BudgetMo);
+  var custosFmt = formatCurrencyBRL(extraFields.BudgetCustos);
+  return "<p><b>Nova implantacao/vaga cadastrada no Painel de Implantacao de Servicos</b></p>" +
+    "<p>Cliente/Programa: <b>" + name + "</b> &mdash; Area: <b>" + area + "</b></p>" +
+    "<p style='color:#b00;'><b>Atencao: esta mensagem contem informacoes sigilosas de remuneracao. Nao encaminhar.</b></p>" +
+    "<ul>" +
+    linha("Cargo", extraFields.Cargo) +
+    linha("Perfil profissional", extraFields.PerfilProfissional) +
+    linha("Numero de vagas", extraFields.NumeroVagas) +
+    linha("Tipo de contratacao", extraFields.TipoContratacao) +
+    linha("Carga horaria semanal", extraFields.CargaHorariaSemanal ? (extraFields.CargaHorariaSemanal + "h") : "") +
+    linha("Jornada de trabalho", extraFields.JornadaTrabalho) +
+    linha("Remuneracao inicial", remunFmt) +
+    linha("Budget beneficios", benFmt) +
+    linha("Budget mao de obra", moFmt) +
+    linha("Budget custos", custosFmt) +
+    linha("Confidencial", extraFields.Confidencial) +
+    linha("Adm ou Operacional", extraFields.AdmOuOper) +
+    linha("Unidade", extraFields.Unidade) +
+    linha("UF prestacao de servico", extraFields.UFPrestacaoServico) +
+    linha("Numero do contrato", extraFields.NumeroContrato) +
+    "</ul>" +
+    "<p><i>Mensagem automatica do Painel de Implantacao de Servicos, enviada apenas ao RH (Gisleiny) por conter dados sigilosos de remuneracao.</i></p>";
+}
+
+async function notifyGisleinyNovaImplantacao(name, area, extraFields){
+  var html = novaImplantacaoResumoHtml(name, area, extraFields);
+  var subject = "[Confidencial] Nova implantacao/vaga: " + name + " (" + area + ")";
+  try {
+    var body = {
+      message: {
+        subject: subject,
+        body: { contentType: "HTML", content: html },
+        toRecipients: [ { emailAddress: { address: GISLEINY_EMAIL } } ]
+      },
+      saveToSentItems: true
+    };
+    await graphFetch("https://graph.microsoft.com/v1.0/me/sendMail", { method: "POST", body: JSON.stringify(body) });
+  } catch (err){
+    console.warn("Falha ao enviar e-mail confidencial para Gisleiny:", err);
+  }
+  try {
+    await sendTeamsMessageToEmail(GISLEINY_EMAIL, html);
+  } catch (err){
+    console.warn("Falha ao enviar Teams confidencial para Gisleiny:", err);
+  }
+}
+
 function emailToDisplayName(email){
   if (!email) return "";
   var local = String(email).split('@')[0];
@@ -2789,6 +2873,11 @@ async function confirmNewClient(){
     saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
+    try {
+      await notifyGisleinyNovaImplantacao(name, area, extraFields);
+    } catch (err){
+      console.warn("Falha ao notificar Gisleiny sobre nova implantacao:", err);
+    }
     var vagasCount = parseInt(extraFields.NumeroVagas, 10) || 1;
     var recrutaHubResult = null;
     var recrutaHubOkCount = 0;
@@ -2841,6 +2930,7 @@ document.getElementById("coberturaTipoNaoBtn").addEventListener("click", functio
 document.getElementById("confirmCoberturaInformativoBtn").addEventListener("click", confirmCoberturaInformativo);
 document.getElementById("newCargo").addEventListener("input", onCargoInput);
 document.getElementById("newPerfil").addEventListener("change", updateRemuneracaoInicialAuto);
+document.getElementById("newCargaHoraria").addEventListener("input", updateRemuneracaoInicialAuto);
 document.getElementById("newDataSolicitacao").addEventListener("change", updateDataInicioPrevistoPreview);
 document.getElementById("newPrazoInicioDias").addEventListener("change", updateDataInicioPrevistoPreview);
 ["newBudgetBen","newBudgetMo","newBudgetCustos"].forEach(function(id){
