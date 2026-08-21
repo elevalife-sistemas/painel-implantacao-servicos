@@ -2660,13 +2660,13 @@ async function confirmCobertura(){
       TipoContrato: tipoContrato || null
     };
     if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
-      if (dataInicio) fields.DataInicioSubstituicao = dataInicio;
-      if (dataFim) fields.DataFimSubstituicao = dataFim;
+      if (dataInicio) fields.DataInicioSubstituicao = dataInicio + "T12:00:00Z";
+      if (dataFim) fields.DataFimSubstituicao = dataFim + "T12:00:00Z";
     }
     if (abrirPsel){
       fields.PrecisaPsel = "Sim";
       fields.NivelProfissional = nivelPsel || null;
-      if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel;
+      if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel + "T12:00:00Z";
     }
     if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
       if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
