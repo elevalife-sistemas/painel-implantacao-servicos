@@ -500,6 +500,18 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <button type="button" class="modal-close" onclick="closeCoberturaModal()" aria-label="Fechar">&#10005;</button>
     <h3>Solicitar cobertura/substituicao</h3>
     <p id="coberturaModalSub"></p>
+    <label class="checkbox-inline"><input type="checkbox" id="coberturaAbrirPsel"> Nenhum candidato adequado no banco de talentos - abrir Psel</label>
+    <div id="coberturaPselWrap" style="display:none;">
+      <label>Nivel do profissional</label>
+      <select id="coberturaNivelPsel">
+        <option value="I">Nivel I</option>
+        <option value="II">Nivel II</option>
+        <option value="III">Nivel III</option>
+        <option value="IV">Nivel IV</option>
+      </select>
+      <label>Data de inicio desejada</label>
+      <input type="date" id="coberturaDataInicioPsel">
+    </div>
     <label>Cliente</label>
     <input type="text" id="coberturaCliente" list="coberturaClienteList" placeholder="Digite o nome do cliente">
     <datalist id="coberturaClienteList"></datalist>
@@ -2555,6 +2567,10 @@ function openCoberturaModal(profId){
     dl.appendChild(opt);
   });
   document.getElementById("coberturaCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
+  document.getElementById("coberturaAbrirPsel").checked = false;
+  document.getElementById("coberturaPselWrap").style.display = "none";
+  document.getElementById("coberturaNivelPsel").value = "I";
+  document.getElementById("coberturaDataInicioPsel").value = "";
   document.getElementById("coberturaMotivo").value = "";
   document.getElementById("coberturaDataInicio").value = "";
   document.getElementById("coberturaDataFim").value = "";
@@ -2571,6 +2587,9 @@ function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay")
 document.getElementById("coberturaMotivo").addEventListener("change", function(){
   var precisaDatas = this.value === "Ferias" || this.value === "Atestado medico" || this.value === "Falta";
   document.getElementById("coberturaDatasWrap").style.display = precisaDatas ? "block" : "none";
+});
+document.getElementById("coberturaAbrirPsel").addEventListener("change", function(){
+  document.getElementById("coberturaPselWrap").style.display = this.checked ? "block" : "none";
 });
 document.getElementById("coberturaTipoContrato").addEventListener("change", function(){
   var precisaRemuneracao = this.value === "Autonomo" || this.value === "PJ";
@@ -2623,6 +2642,9 @@ async function confirmCobertura(){
     var motivo = document.getElementById("coberturaMotivo").value;
     var dataInicio = document.getElementById("coberturaDataInicio").value;
     var dataFim = document.getElementById("coberturaDataFim").value;
+    var abrirPsel = document.getElementById("coberturaAbrirPsel").checked;
+    var nivelPsel = document.getElementById("coberturaNivelPsel").value;
+    var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
     var tipoContrato = document.getElementById("coberturaTipoContrato").value;
     var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
     var tipoValor = document.getElementById("coberturaTipoValor").value;
@@ -2641,11 +2663,29 @@ async function confirmCobertura(){
       if (dataInicio) fields.DataInicioSubstituicao = dataInicio;
       if (dataFim) fields.DataFimSubstituicao = dataFim;
     }
+    if (abrirPsel){
+      fields.PrecisaPsel = "Sim";
+      fields.NivelProfissional = nivelPsel || null;
+      if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel;
+    }
     if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
       if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
       if (tipoValor) fields.TipoValor = tipoValor;
     }
     await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+    if (abrirPsel){
+      try {
+        await notifyRecrutaHub(cliente, p.area, {
+          Cargo: p.area,
+          PerfilProfissional: nivelPsel,
+          NumeroVagas: 1,
+          TipoContratacao: tipoContrato,
+          DataInicioPrevisto: dataInicioPsel
+        });
+      } catch (e){
+        console.warn("Falha ao notificar RecrutaHub (cobertura):", e);
+      }
+    }
     showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
   } catch (err){
     showToast("Erro ao enviar solicitacao: " + err.message, true);
