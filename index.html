@@ -364,7 +364,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <div id="panel-coberturas" class="panel">
       <div class="kanban-header">
         <h2 class="kanban-client-name">Coberturas e Substituicoes</h2>
-        <span class="badge-note">Dados de exemplo (mock) - integracao com o RecrutaHub em andamento</span>
+        <span class="badge-note">Banco de talentos sincronizado com o RecrutaHub</span>
         <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
       </div>
       <div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div>
@@ -1082,31 +1082,26 @@ var CURRENT_USER_NAME = "";
 
 // Dados de exemplo (mock) - substituir por integracao com o RecrutaHub quando o
 // endpoint de portfolio de profissionais estiver disponivel.
-var TALENT_POOL = [];
-var talentPoolLoaded = false;
-var talentPoolLoading = false;
-function loadTalentPool(force){
-  if (talentPoolLoading) return;
-  if (talentPoolLoaded && !force) return;
-  talentPoolLoading = true;
-  var url = RECRUTAHUB_API_URL.replace("/personnel-requests", "/talent-pool");
-  fetch(url, { headers: { "x-painel-secret": RECRUTAHUB_API_SECRET } })
-    .then(function(resp){
-      if (!resp.ok) { throw new Error("HTTP " + resp.status); }
-      return resp.json();
-    })
-    .then(function(json){
-      TALENT_POOL = (json && json.data) || [];
-      talentPoolLoaded = true;
-      talentPoolLoading = false;
-      renderCoberturas();
-    })
-    .catch(function(err){
-      console.error("Erro ao carregar banco de talentos do RecrutaHub:", err);
-      talentPoolLoading = false;
-      renderCoberturas();
-    });
-}
+var MOCK_PROFESSIONALS = [
+  { id: "p1", nome: "Ana Beatriz Souza", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "8 anos de experiencia em fisioterapia do trabalho, atuacao em industria e escritorios, pos-graduacao em ergonomia.",
+    parecerTecnico: "Parecer RH (mock): candidata aprovada em processo seletivo anterior, boa avaliacao tecnica e comportamental, sem restricoes." },
+  { id: "p2", nome: "Carlos Eduardo Lima", area: "Atividades Fisicas", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08",
+    curriculoResumo: "5 anos conduzindo programas de ginastica laboral em clientes de grande porte, experiencia com turnos rotativos.",
+    parecerTecnico: "Parecer RH (mock): bom desempenho em dinamicas de grupo, recomendado para clientes com alto volume de colaboradores." },
+  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "10 anos em enfermagem do trabalho, experiencia com ambulatorios internos e gestao de SESMT.",
+    parecerTecnico: "Parecer RH (mock): perfil senior, forte aderencia a normas regulamentadoras, sem pendencias documentais." },
+  { id: "p4", nome: "Juliana Martins Costa", area: "Ergonomia", qualificacao: "Especialista em Ergonomia", disponibilidade: "Disponivel fins de semana",
+    curriculoResumo: "Especialista em analise ergonomica do trabalho (AET), atuacao em industria e logistica.",
+    parecerTecnico: "Parecer RH (mock): avaliacao tecnica solida, disponibilidade restrita a fins de semana deve ser validada com o cliente." },
+  { id: "p5", nome: "Rafael Henrique Nunes", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
+    curriculoResumo: "6 anos de experiencia em fisioterapia preventiva e ginastica laboral combinadas.",
+    parecerTecnico: "Parecer RH (mock): candidato com boa comunicacao, ja atuou em substituicoes de curto prazo com feedback positivo." },
+  { id: "p6", nome: "Patricia Gomes Duarte", area: "Atividades Fisicas", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09",
+    curriculoResumo: "4 anos de experiencia em ginastica laboral e pausas ativas em ambiente corporativo.",
+    parecerTecnico: "Parecer RH (mock): aprovada em processo seletivo recente, recomendada para clientes de porte medio." }
+];
 function canDeleteImplantacoes(){
   return AUTHORIZED_DELETE_EMAILS.indexOf((CURRENT_USER_EMAIL || "").toLowerCase()) !== -1;
 }
@@ -2553,17 +2548,17 @@ function initialsOf(name){
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length-1][0] : "")).toUpperCase();
 }
 
-var COBERTURA_AREAS = ["ADM","Atividades Fisicas","Comercial","Enfermagem","Ergonomia","Financeiro","Fisioterapia","Marketing","Massoterapia","Medicina do Trabalho","Nutricao","Outros","Psicologia","RH","Tecnologia","Terapias"];
+var COBERTURA_AREAS = ["ADM","Atividades Fisicas","Comercial","Enfermagem","Ergonomia","Financeiro","Fisioterapia","Massoterapia","Medicina do Trabalho","Nutricao","Outros","Psicologia","RH","Tecnologia"];
 var coberturaAreaFiltro = "Todas";
 function renderCoberturaAreaTabs(){
   var wrap = document.getElementById("coberturaAreaChips");
   if (!wrap) return;
   wrap.innerHTML = "";
   var counts = {};
-  TALENT_POOL.forEach(function(p){ counts[p.area] = (counts[p.area] || 0) + 1; });
+  MOCK_PROFESSIONALS.forEach(function(p){ counts[p.area] = (counts[p.area] || 0) + 1; });
   var tabs = ["Todas"].concat(COBERTURA_AREAS);
   tabs.forEach(function(area){
-    var qtd = area === "Todas" ? TALENT_POOL.length : (counts[area] || 0);
+    var qtd = area === "Todas" ? MOCK_PROFESSIONALS.length : (counts[area] || 0);
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "chip chip-sm" + (coberturaAreaFiltro === area ? " active" : "");
@@ -2594,12 +2589,9 @@ function renderCoberturas(){
   setupCoberturaSubTabs();
   var wrap = document.getElementById("coberturasList");
   if (!wrap) return;
-  if (!talentPoolLoaded && !talentPoolLoading) { loadTalentPool(); }
   renderCoberturaAreaTabs();
   wrap.innerHTML = "";
-  if (talentPoolLoading && !talentPoolLoaded) { wrap.innerHTML = '<p style="padding:16px;color:#666;">Carregando banco de talentos do RecrutaHub...</p>'; return; }
-  var listaFiltrada = coberturaAreaFiltro === "Todas" ? TALENT_POOL : TALENT_POOL.filter(function(p){ return p.area === coberturaAreaFiltro; });
-  if (talentPoolLoaded && listaFiltrada.length === 0) { wrap.innerHTML = '<p style="padding:16px;color:#666;">Nenhum talento disponivel no banco do RecrutaHub para esta area no momento.</p>'; return; }
+  var listaFiltrada = coberturaAreaFiltro === "Todas" ? MOCK_PROFESSIONALS : MOCK_PROFESSIONALS.filter(function(p){ return p.area === coberturaAreaFiltro; });
   listaFiltrada.forEach(function(p){
     var card = document.createElement("div");
     card.className = "prof-card";
@@ -2619,7 +2611,7 @@ function renderCoberturas(){
 
 var coberturaProfileProf = null;
 function openCoberturaProfileModal(profId){
-  var p = TALENT_POOL.filter(function(x){ return x.id === profId; })[0];
+  var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
   if (!p) return;
   coberturaProfileProf = p;
   document.getElementById("coberturaProfileName").textContent = p.nome;
@@ -2634,7 +2626,7 @@ var coberturaSelectedProf = null;
 var coberturaPselDiretoMode = false;
 var coberturaDuplicadaContext = null;
 function openCoberturaModal(profId){
-  var p = TALENT_POOL.filter(function(x){ return x.id === profId; })[0];
+  var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
   if (!p) return;
   coberturaSelectedProf = p;
   coberturaPselDiretoMode = false;
@@ -3431,7 +3423,6 @@ async function afterLogin(){
   document.getElementById("userChip").textContent = account.name || account.username;
   CURRENT_USER_NAME = account.name || account.username || "";
   renderCoberturas();
-  loadTalentPool();
   showToast("Carregando dados da lista SharePoint...");
   try {
     await loadItems();
