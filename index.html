@@ -237,7 +237,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
   <div id="mainArea" class="hidden">
 
-    <div class="clientbar">
+    <div class="clientbar" id="clientbarWrap">
       <label>Cliente / Implantacao</label>
       <div class="client-filter" id="clientFilterWrap">
         <button type="button" class="client-filter-btn" id="clientFilterBtn" onclick="toggleClientFilter()">
@@ -353,6 +353,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <span class="badge-note">Dados de exemplo (mock) - integracao com o RecrutaHub em andamento</span>
         <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
       </div>
+      <div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div>
       <div id="coberturasList" class="coberturas-grid"></div>
     </div>
 
@@ -1012,10 +1013,10 @@ var MOCK_PROFESSIONALS = [
   { id: "p1", nome: "Ana Beatriz Souza", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
     curriculoResumo: "8 anos de experiencia em fisioterapia do trabalho, atuacao em industria e escritorios, pos-graduacao em ergonomia.",
     parecerTecnico: "Parecer RH (mock): candidata aprovada em processo seletivo anterior, boa avaliacao tecnica e comportamental, sem restricoes." },
-  { id: "p2", nome: "Carlos Eduardo Lima", area: "Ginastica Laboral", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08",
+  { id: "p2", nome: "Carlos Eduardo Lima", area: "Atividades Fisicas", qualificacao: "Educador Fisico - CREF ativo", disponibilidade: "Disponivel a partir de 25/08",
     curriculoResumo: "5 anos conduzindo programas de ginastica laboral em clientes de grande porte, experiencia com turnos rotativos.",
     parecerTecnico: "Parecer RH (mock): bom desempenho em dinamicas de grupo, recomendado para clientes com alto volume de colaboradores." },
-  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem do Trabalho", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente",
+  { id: "p3", nome: "Fernanda Ribeiro Alves", area: "Enfermagem", qualificacao: "Enfermeira - COREN ativo", disponibilidade: "Disponivel imediatamente",
     curriculoResumo: "10 anos em enfermagem do trabalho, experiencia com ambulatorios internos e gestao de SESMT.",
     parecerTecnico: "Parecer RH (mock): perfil senior, forte aderencia a normas regulamentadoras, sem pendencias documentais." },
   { id: "p4", nome: "Juliana Martins Costa", area: "Ergonomia", qualificacao: "Especialista em Ergonomia", disponibilidade: "Disponivel fins de semana",
@@ -1024,7 +1025,7 @@ var MOCK_PROFESSIONALS = [
   { id: "p5", nome: "Rafael Henrique Nunes", area: "Fisioterapia", qualificacao: "Fisioterapeuta - CREFITO ativo", disponibilidade: "Disponivel imediatamente",
     curriculoResumo: "6 anos de experiencia em fisioterapia preventiva e ginastica laboral combinadas.",
     parecerTecnico: "Parecer RH (mock): candidato com boa comunicacao, ja atuou em substituicoes de curto prazo com feedback positivo." },
-  { id: "p6", nome: "Patricia Gomes Duarte", area: "Ginastica Laboral", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09",
+  { id: "p6", nome: "Patricia Gomes Duarte", area: "Atividades Fisicas", qualificacao: "Educadora Fisica - CREF ativo", disponibilidade: "Disponivel a partir de 01/09",
     curriculoResumo: "4 anos de experiencia em ginastica laboral e pausas ativas em ambiente corporativo.",
     parecerTecnico: "Parecer RH (mock): aprovada em processo seletivo recente, recomendada para clientes de porte medio." }
 ];
@@ -2474,11 +2475,36 @@ function initialsOf(name){
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length-1][0] : "")).toUpperCase();
 }
 
+var COBERTURA_AREAS = ["ADM","Atividades Fisicas","Comercial","Enfermagem","Ergonomia","Financeiro","Fisioterapia","Massoterapia","Medicina do Trabalho","Nutricao","Outros","Psicologia","RH","Tecnologia"];
+var coberturaAreaFiltro = "Todas";
+function renderCoberturaAreaTabs(){
+  var wrap = document.getElementById("coberturaAreaChips");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  var counts = {};
+  MOCK_PROFESSIONALS.forEach(function(p){ counts[p.area] = (counts[p.area] || 0) + 1; });
+  var tabs = ["Todas"].concat(COBERTURA_AREAS);
+  tabs.forEach(function(area){
+    var qtd = area === "Todas" ? MOCK_PROFESSIONALS.length : (counts[area] || 0);
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip chip-sm" + (coberturaAreaFiltro === area ? " active" : "");
+    btn.textContent = area + " (" + qtd + ")";
+    btn.addEventListener("click", function(){
+      coberturaAreaFiltro = area;
+      renderCoberturaAreaTabs();
+      renderCoberturas();
+    });
+    wrap.appendChild(btn);
+  });
+}
 function renderCoberturas(){
   var wrap = document.getElementById("coberturasList");
   if (!wrap) return;
+  renderCoberturaAreaTabs();
   wrap.innerHTML = "";
-  MOCK_PROFESSIONALS.forEach(function(p){
+  var listaFiltrada = coberturaAreaFiltro === "Todas" ? MOCK_PROFESSIONALS : MOCK_PROFESSIONALS.filter(function(p){ return p.area === coberturaAreaFiltro; });
+  listaFiltrada.forEach(function(p){
     var card = document.createElement("div");
     card.className = "prof-card";
     card.innerHTML =
@@ -2929,6 +2955,8 @@ document.querySelectorAll(".tab").forEach(function(t){
     document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); });
     t.classList.add("active");
     document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+    var cbar = document.getElementById("clientbarWrap");
+    if (cbar) cbar.style.display = (t.dataset.tab === "coberturas") ? "none" : "";
   });
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
