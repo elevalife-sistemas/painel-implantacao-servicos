@@ -130,8 +130,8 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .rank-fill{height:100%;border-radius:5px;}
 .rank-value{width:90px;text-align:right;font-size:13px;color:var(--text2);font-weight:600;}
 .badge-note{display:inline-flex;align-items:center;gap:6px;background:var(--grena-bg);color:var(--grena);font-size:13px;font-weight:600;padding:7px 14px;border-radius:9px;margin-bottom:16px;}
-.toast{position:fixed;right:24px;bottom:24px;background:var(--text);color:#fff;border-radius:10px;padding:12px 18px;font-size:13.5px;box-shadow:0 6px 24px rgba(0,0,0,0.2);display:none;z-index:60;max-width:360px;}
-.toast.show{display:block;}
+.toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.96);background:var(--text);color:#fff;border-radius:14px;padding:18px 30px;font-size:15px;font-weight:600;line-height:1.4;box-shadow:0 16px 48px rgba(0,0,0,0.32);display:none;z-index:9999;max-width:480px;min-width:220px;text-align:center;opacity:0;transition:opacity .15s ease,transform .15s ease;}
+.toast.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1);}
 .toast.error{background:var(--red-tx);}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:70;}
 .modal-overlay.show{display:flex;}
@@ -168,6 +168,20 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .chip{padding:7px 15px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .12s;}
 .chip:hover{border-color:var(--grena);color:var(--grena);}
 .chip.active{background:var(--grena);border-color:var(--grena);color:#fff;}
+.hist-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.hist-filters select,.hist-filters input{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:inherit;color:var(--text);background:#fff;}
+.hist-table-wrap{overflow-x:auto;background:var(--card);border-radius:12px;border:1px solid var(--border);}
+.hist-table{width:100%;border-collapse:collapse;font-size:13px;}
+.hist-table th{text-align:left;padding:12px 14px;color:var(--text2);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;border-bottom:2px solid var(--border);white-space:nowrap;}
+.hist-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tr:hover td{background:var(--bg);}
+.hist-empty{padding:40px;text-align:center;color:var(--text2);font-size:13.5px;background:var(--card);border-radius:12px;border:1px solid var(--border);}
+.status-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.status-badge.pendente{background:var(--amber-bg);color:var(--amber-tx);}
+.status-badge.concluido{background:var(--green-bg);color:var(--green-tx);}
+.status-badge.cancelado{background:var(--red-bg);color:var(--red-tx);}
+.status-badge.outro{background:var(--gray-bg);color:var(--gray-tx);}
 .switch-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid #eee;}
 .switch-row:last-child{border-bottom:none;}
 .switch-label{font-size:13px;font-weight:500;color:var(--text);}
@@ -354,7 +368,21 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
       </div>
       <div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div>
+      <div class="chip-row" style="margin-bottom:16px;">
+        <button type="button" class="chip active" id="coberturaSubTabSolicitacoes">Solicitacoes</button>
+        <button type="button" class="chip" id="coberturaSubTabHistorico">Historico</button>
+      </div>
+      <div id="coberturaViewSolicitacoes">
       <div id="coberturasList" class="coberturas-grid"></div>
+      </div>
+      <div id="coberturaViewHistorico" class="hidden">
+        <div class="hist-filters">
+          <select id="histFiltroArea"><option value="">Todas as areas</option></select>
+          <select id="histFiltroStatus"><option value="">Todos os status</option><option value="Pendente">Pendente</option><option value="Concluido">Concluido</option><option value="Cancelado">Cancelado</option></select>
+          <input type="text" id="histFiltroCliente" placeholder="Buscar por cliente..." style="flex:1;min-width:180px;" />
+        </div>
+        <div id="histTableWrap"></div>
+      </div>
 <div style="text-align:center;margin-top:20px;">
 <button type="button" class="btn-new" id="coberturaPselDiretoBtn">Nenhum candidato adequado? Abrir Psel</button>
 </div>
@@ -2543,7 +2571,22 @@ function renderCoberturaAreaTabs(){
     wrap.appendChild(btn);
   });
 }
+function setupCoberturaSubTabs(){
+  if (window.__coberturaSubTabsInit) return;
+  window.__coberturaSubTabsInit = true;
+  var btnSol = document.getElementById("coberturaSubTabSolicitacoes");
+  var btnHist = document.getElementById("coberturaSubTabHistorico");
+  if (btnSol) btnSol.addEventListener("click", function(){ switchCoberturaSubTab("solicitacoes"); });
+  if (btnHist) btnHist.addEventListener("click", function(){ switchCoberturaSubTab("historico"); });
+  var selArea = document.getElementById("histFiltroArea");
+  var selStatus = document.getElementById("histFiltroStatus");
+  var inpCliente = document.getElementById("histFiltroCliente");
+  if (selArea) selArea.addEventListener("change", renderCoberturaHistorico);
+  if (selStatus) selStatus.addEventListener("change", renderCoberturaHistorico);
+  if (inpCliente) inpCliente.addEventListener("input", renderCoberturaHistorico);
+}
 function renderCoberturas(){
+  setupCoberturaSubTabs();
   var wrap = document.getElementById("coberturasList");
   if (!wrap) return;
   renderCoberturaAreaTabs();
@@ -2666,6 +2709,122 @@ showToast("Erro ao enviar comunicado: " + err.message, true);
 }
 }
 
+function escapeHtml(str){
+  if (str === null || str === undefined) return "";
+  return String(str).replace(/[&<>"']/g, function(c){
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c];
+  });
+}
+function statusBadgeClass(status){
+  var st = (status || "").toLowerCase();
+  if (st.indexOf("pend") !== -1) return "pendente";
+  if (st.indexOf("conclu") !== -1) return "concluido";
+  if (st.indexOf("cancel") !== -1) return "cancelado";
+  return "outro";
+}
+function coberturaTipoLabel(item){
+  var precisa = item.PrecisaSubstituicao || "";
+  if (precisa === "Nao") return "Informativo";
+  if (item.TipoContrato) return item.TipoContrato;
+  return "Cobertura/Substituicao";
+}
+function formatDateBR(dateStr){
+  if (!dateStr) return "-";
+  try {
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    var dd = String(d.getUTCDate()).padStart(2, "0");
+    var mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    var yy = d.getUTCFullYear();
+    return dd + "/" + mm + "/" + yy;
+  } catch (e){ return "-"; }
+}
+var coberturaHistoricoData = [];
+var coberturaHistoricoLoaded = false;
+function switchCoberturaSubTab(tab){
+  var btnSol = document.getElementById("coberturaSubTabSolicitacoes");
+  var btnHist = document.getElementById("coberturaSubTabHistorico");
+  var viewSol = document.getElementById("coberturaViewSolicitacoes");
+  var viewHist = document.getElementById("coberturaViewHistorico");
+  if (!btnSol || !btnHist || !viewSol || !viewHist) return;
+  if (tab === "historico"){
+    btnHist.classList.add("active");
+    btnSol.classList.remove("active");
+    viewHist.classList.remove("hidden");
+    viewSol.classList.add("hidden");
+    loadCoberturaHistorico();
+  } else {
+    btnSol.classList.add("active");
+    btnHist.classList.remove("active");
+    viewSol.classList.remove("hidden");
+    viewHist.classList.add("hidden");
+  }
+}
+function populateCoberturaHistFiltros(){
+  var sel = document.getElementById("histFiltroArea");
+  if (!sel || sel.options.length > 1) return;
+  COBERTURA_AREAS.forEach(function(area){
+    var opt = document.createElement("option");
+    opt.value = area;
+    opt.textContent = area;
+    sel.appendChild(opt);
+  });
+}
+async function loadCoberturaHistorico(){
+  populateCoberturaHistFiltros();
+  var wrap = document.getElementById("histTableWrap");
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="hist-empty">Carregando historico...</div>';
+  try {
+    var data = await graphFetch(COBERTURAS_GRAPH_BASE + "/items?expand=fields&$top=999");
+    coberturaHistoricoData = (data.value || []).map(function(it){
+      var f = it.fields || {};
+      f.__created = it.createdDateTime || f.Created;
+      return f;
+    });
+    coberturaHistoricoData.sort(function(a, b){
+      return new Date(b.__created || 0) - new Date(a.__created || 0);
+    });
+    coberturaHistoricoLoaded = true;
+    renderCoberturaHistorico();
+  } catch (err){
+    wrap.innerHTML = '<div class="hist-empty">Erro ao carregar historico: ' + escapeHtml(err.message) + '</div>';
+  }
+}
+function renderCoberturaHistorico(){
+  var wrap = document.getElementById("histTableWrap");
+  if (!wrap) return;
+  var fArea = (document.getElementById("histFiltroArea") || {}).value || "";
+  var fStatus = (document.getElementById("histFiltroStatus") || {}).value || "";
+  var fCliente = ((document.getElementById("histFiltroCliente") || {}).value || "").trim().toLowerCase();
+  var rows = coberturaHistoricoData.filter(function(f){
+    if (fArea && f.Area !== fArea) return false;
+    if (fStatus && f.Status !== fStatus) return false;
+    if (fCliente && (f.Cliente || "").toLowerCase().indexOf(fCliente) === -1) return false;
+    return true;
+  });
+  if (!rows.length){
+    wrap.innerHTML = '<div class="hist-empty">Nenhum registro encontrado.</div>';
+    return;
+  }
+  var html = '<div class="hist-table-wrap"><table class="hist-table"><thead><tr>' +
+    "<th>Cliente</th><th>Area</th><th>Tipo</th><th>Solicitante</th><th>Inicio</th><th>Fim</th><th>Status</th><th>Data solicitacao</th>" +
+    "</tr></thead><tbody>";
+  rows.forEach(function(f){
+    html += "<tr>" +
+      "<td>" + escapeHtml(f.Cliente || "-") + "</td>" +
+      "<td>" + escapeHtml(f.Area || "-") + "</td>" +
+      "<td>" + escapeHtml(coberturaTipoLabel(f)) + "</td>" +
+      "<td>" + escapeHtml(f.Solicitante || "-") + "</td>" +
+      "<td>" + formatDateBR(f.DataInicio) + "</td>" +
+      "<td>" + formatDateBR(f.DataFim) + "</td>" +
+      "<td><span class=\"status-badge " + statusBadgeClass(f.Status) + "\">" + escapeHtml(f.Status || "-") + "</span></td>" +
+      "<td>" + formatDateBR(f.__created) + "</td>" +
+      "</tr>";
+  });
+  html += "</tbody></table></div>";
+  wrap.innerHTML = html;
+}
 async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
