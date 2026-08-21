@@ -511,6 +511,12 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <option value="Falta">Falta</option>
       <option value="Definitivo">Definitivo</option>
     </select>
+    <div id="coberturaDatasWrap" style="display:none;">
+      <label>Data de inicio</label>
+      <input type="date" id="coberturaDataInicio">
+      <label>Data prevista de fim</label>
+      <input type="date" id="coberturaDataFim">
+    </div>
     <label>Tipo de contrato</label>
     <select id="coberturaTipoContrato">
       <option value="">Selecione...</option>
@@ -2550,6 +2556,9 @@ function openCoberturaModal(profId){
   });
   document.getElementById("coberturaCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
   document.getElementById("coberturaMotivo").value = "";
+  document.getElementById("coberturaDataInicio").value = "";
+  document.getElementById("coberturaDataFim").value = "";
+  document.getElementById("coberturaDatasWrap").style.display = "none";
   document.getElementById("coberturaTipoContrato").value = "";
   document.getElementById("coberturaValorRemuneracao").value = "";
   document.getElementById("coberturaTipoValor").value = "";
@@ -2559,6 +2568,10 @@ function openCoberturaModal(profId){
 }
 function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay").classList.remove("show"); }
 
+document.getElementById("coberturaMotivo").addEventListener("change", function(){
+  var precisaDatas = this.value === "Ferias" || this.value === "Atestado medico" || this.value === "Falta";
+  document.getElementById("coberturaDatasWrap").style.display = precisaDatas ? "block" : "none";
+});
 document.getElementById("coberturaTipoContrato").addEventListener("change", function(){
   var precisaRemuneracao = this.value === "Autonomo" || this.value === "PJ";
   document.getElementById("coberturaRemuneracaoWrap").style.display = precisaRemuneracao ? "block" : "none";
@@ -2608,6 +2621,8 @@ async function confirmCobertura(){
   showToast("Enviando solicitacao de cobertura/substituicao...");
   try {
     var motivo = document.getElementById("coberturaMotivo").value;
+    var dataInicio = document.getElementById("coberturaDataInicio").value;
+    var dataFim = document.getElementById("coberturaDataFim").value;
     var tipoContrato = document.getElementById("coberturaTipoContrato").value;
     var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
     var tipoValor = document.getElementById("coberturaTipoValor").value;
@@ -2622,6 +2637,10 @@ async function confirmCobertura(){
       MotivoSubstituicao: motivo || null,
       TipoContrato: tipoContrato || null
     };
+    if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
+      if (dataInicio) fields.DataInicioSubstituicao = dataInicio;
+      if (dataFim) fields.DataFimSubstituicao = dataFim;
+    }
     if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
       if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
       if (tipoValor) fields.TipoValor = tipoValor;
