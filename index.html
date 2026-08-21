@@ -2644,6 +2644,28 @@ function openCoberturaInformativoModal(){
 }
 function closeCoberturaInformativoModal(){ document.getElementById("coberturaInformativoModalOverlay").classList.remove("show"); }
 
+async function confirmCoberturaInformativo(){
+var cliente = document.getElementById("coberturaInformativoCliente").value.trim();
+var observacao = document.getElementById("coberturaInformativoObservacao").value.trim();
+if (!cliente){ showToast("Digite o cliente para o comunicado informativo.", true); return; }
+closeCoberturaInformativoModal();
+showToast("Enviando comunicado informativo...");
+try {
+var fields = {
+Title: "Informativo -> " + cliente,
+Cliente: cliente,
+Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+Status: "Pendente",
+PrecisaSubstituicao: "Nao",
+Observacao: observacao
+};
+await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+showToast("Comunicado informativo enviado.");
+} catch (err){
+showToast("Erro ao enviar comunicado: " + err.message, true);
+}
+}
+
 async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
