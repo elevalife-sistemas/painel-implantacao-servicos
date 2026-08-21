@@ -439,6 +439,14 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <button type="button" class="chip chip-sm" data-key="PJ">PJ</button>
       <button type="button" class="chip chip-sm" data-key="Autonomo">Autonomo</button>
     </div>
+    <div id="newTipoValorWrap" style="display:none;">
+      <label>Liquido ou bruto</label>
+      <select id="newTipoValor">
+        <option value="">Selecione...</option>
+        <option value="Liquido">Liquido</option>
+        <option value="Bruto">Bruto</option>
+      </select>
+    </div>
     <label>Remuneracao inicial (R$)</label>
     <input type="number" step="0.01" id="newRemuneracaoInicial" placeholder="Preenchido automaticamente pelo cargo/perfil">
     <small id="remuneracaoLegenda" style="display:block;color:var(--text2);font-size:12px;margin:-10px 0 16px;"></small>
@@ -2455,6 +2463,7 @@ function resetNewClientModalFields(){
   document.getElementById("newAdmOper").value = "OPER";
   document.getElementById("newPrazoInicioDias").value = "30";
   document.querySelectorAll("#newTipoContratacaoChips .chip").forEach(function(c){ c.classList.remove("active"); });
+  updateTipoValorWrapVisibility();
   populatePerfilSelect(null);
   updateDataInicioPrevistoPreview();
   updateBudgetTotalPreview();
@@ -2681,6 +2690,17 @@ function tipoContratacaoSelecionado(){
   ativos.forEach(function(c){ out.push(c.dataset.key); });
   return out.join(", ");
 }
+function precisaTipoValor(){
+  var ativos = document.querySelectorAll("#newTipoContratacaoChips .chip.active");
+  var precisa = false;
+  ativos.forEach(function(c){ if (c.dataset.key === "PJ" || c.dataset.key === "Autonomo") precisa = true; });
+  return precisa;
+}
+function updateTipoValorWrapVisibility(){
+  var precisa = precisaTipoValor();
+  document.getElementById("newTipoValorWrap").style.display = precisa ? "block" : "none";
+  if (!precisa) document.getElementById("newTipoValor").value = "";
+}
 function dataInicioPrevistoCalc(){
   var dataSolic = txtVal("newDataSolicitacao");
   var dias = parseInt(selVal("newPrazoInicioDias"), 10);
@@ -2714,6 +2734,7 @@ function gatherNewClientFields(){
   if (dataInicio) f.DataInicioPrevisto = toPrazoIso(dataInicio);
   f.PerfilProfissional = selVal("newPerfil");
   f.TipoContratacao = tipoContratacaoSelecionado();
+  if (precisaTipoValor()) f.TipoValor = selVal("newTipoValor");
   var remun = numVal("newRemuneracaoInicial");
   if (remun !== null) f.RemuneracaoInicial = remun;
   var ben = numVal("newBudgetBen"), mo = numVal("newBudgetMo"), custos = numVal("newBudgetCustos");
@@ -2749,6 +2770,7 @@ function novaImplantacaoResumoHtml(name, area, extraFields){
     linha("Carga horaria semanal", extraFields.CargaHorariaSemanal ? (extraFields.CargaHorariaSemanal + "h") : "") +
     linha("Jornada de trabalho", extraFields.JornadaTrabalho) +
     linha("Remuneracao inicial", remunFmt) +
+    linha("Liquido ou bruto", extraFields.TipoValor) +
     linha("Budget beneficios", benFmt) +
     linha("Budget mao de obra", moFmt) +
     linha("Budget custos", custosFmt) +
@@ -2937,7 +2959,7 @@ document.getElementById("newPrazoInicioDias").addEventListener("change", updateD
   document.getElementById(id).addEventListener("input", updateBudgetTotalPreview);
 });
 document.querySelectorAll("#newTipoContratacaoChips .chip").forEach(function(btn){
-  btn.addEventListener("click", function(){ this.classList.toggle("active"); });
+  btn.addEventListener("click", function(){ this.classList.toggle("active"); updateTipoValorWrapVisibility(); });
 });
 document.getElementById("confirmDeleteClientBtn").addEventListener("click", confirmDeleteClient);
 document.getElementById("saveCardBtn").addEventListener("click", saveCardModal);
