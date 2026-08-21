@@ -355,6 +355,9 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       </div>
       <div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div>
       <div id="coberturasList" class="coberturas-grid"></div>
+<div style="text-align:center;margin-top:20px;">
+<button type="button" class="btn-cancel" id="coberturaPselDiretoBtn" style="border-style:dashed;">Nenhum candidato adequado? Abrir Psel</button>
+</div>
     </div>
 
   </div>
@@ -498,9 +501,15 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 <div class="modal-overlay" id="coberturaModalOverlay">
   <div class="modal">
     <button type="button" class="modal-close" onclick="closeCoberturaModal()" aria-label="Fechar">&#10005;</button>
-    <h3>Solicitar cobertura/substituicao</h3>
+    <h3 id="coberturaModalMainTitle">Solicitar cobertura/substituicao</h3>
     <p id="coberturaModalSub"></p>
-    <label class="checkbox-inline"><input type="checkbox" id="coberturaAbrirPsel"> Nenhum candidato adequado no banco de talentos - abrir Psel</label>
+    <div id="coberturaPselDiretoAreaWrap" style="display:none;">
+ <label>Area de servico</label>
+ <select id="coberturaPselDiretoArea"></select>
+ </div>
+ <div id="coberturaAbrirPselWrap">
+ <label class="checkbox-inline"><input type="checkbox" id="coberturaAbrirPsel"> Nenhum candidato adequado no banco de talentos - abrir Psel</label>
+ </div>
     <div id="coberturaPselWrap" style="display:none;">
       <label>Nivel do profissional</label>
       <select id="coberturaNivelPsel">
@@ -515,7 +524,12 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <label>Cliente</label>
     <input type="text" id="coberturaCliente" list="coberturaClienteList" placeholder="Digite o nome do cliente">
     <datalist id="coberturaClienteList"></datalist>
-    <label>Motivo da substituicao</label>
+ <div id="coberturaPselDiretoProfWrap" style="display:none;">
+ <label>Profissional/observacao (opcional)</label>
+ <input type="text" id="coberturaPselDiretoProf" placeholder="Ex: nome de candidato considerado, ou deixe em branco">
+ </div>
+    <div id="coberturaMotivoWrap">
+ <label>Motivo da substituicao</label>
     <select id="coberturaMotivo">
       <option value="">Selecione...</option>
       <option value="Ferias">Ferias</option>
@@ -529,7 +543,8 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <label>Data prevista de fim</label>
       <input type="date" id="coberturaDataFim">
     </div>
-    <label>Tipo de contrato</label>
+    </div>
+ <label>Tipo de contrato</label>
     <select id="coberturaTipoContrato">
       <option value="">Selecione...</option>
       <option value="CLT">CLT</option>
@@ -2553,10 +2568,17 @@ function openCoberturaProfileModal(profId){
 function closeCoberturaProfileModal(){ document.getElementById("coberturaProfileModalOverlay").classList.remove("show"); }
 
 var coberturaSelectedProf = null;
+var coberturaPselDiretoMode = false;
 function openCoberturaModal(profId){
   var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
   if (!p) return;
   coberturaSelectedProf = p;
+  coberturaPselDiretoMode = false;
+  document.getElementById("coberturaPselDiretoAreaWrap").style.display = "none";
+  document.getElementById("coberturaPselDiretoProfWrap").style.display = "none";
+  document.getElementById("coberturaAbrirPselWrap").style.display = "";
+  document.getElementById("coberturaMotivoWrap").style.display = "";
+  document.getElementById("coberturaModalMainTitle").textContent = "Solicitar cobertura/substituicao";
   document.getElementById("coberturaModalSub").textContent =
     p.nome + " - " + p.area + ". Ao confirmar, o RH sera notificado automaticamente por Teams e e-mail.";
   var dl = document.getElementById("coberturaClienteList");
@@ -2632,66 +2654,133 @@ async function confirmCoberturaInformativo(){
 }
 
 async function confirmCobertura(){
-  var p = coberturaSelectedProf;
-  var cliente = document.getElementById("coberturaCliente").value.trim();
-  if (!p){ showToast("Selecione um profissional.", true); return; }
-  if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
-  closeCoberturaModal();
-  showToast("Enviando solicitacao de cobertura/substituicao...");
-  try {
-    var motivo = document.getElementById("coberturaMotivo").value;
-    var dataInicio = document.getElementById("coberturaDataInicio").value;
-    var dataFim = document.getElementById("coberturaDataFim").value;
-    var abrirPsel = document.getElementById("coberturaAbrirPsel").checked;
-    var nivelPsel = document.getElementById("coberturaNivelPsel").value;
-    var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
-    var tipoContrato = document.getElementById("coberturaTipoContrato").value;
-    var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
-    var tipoValor = document.getElementById("coberturaTipoValor").value;
-    var fields = {
-      Title: p.nome + " -> " + cliente,
-      Cliente: cliente,
-      Profissional: p.nome,
-      Area: p.area,
-      Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-      Status: "Pendente",
-      PrecisaSubstituicao: "Sim",
-      MotivoSubstituicao: motivo || null,
-      TipoContrato: tipoContrato || null
-    };
-    if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
-      if (dataInicio) fields.DataInicioSubstituicao = dataInicio + "T12:00:00Z";
-      if (dataFim) fields.DataFimSubstituicao = dataFim + "T12:00:00Z";
-    }
-    if (abrirPsel){
-      fields.PrecisaPsel = "Sim";
-      fields.NivelProfissional = nivelPsel || null;
-      if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel + "T12:00:00Z";
-    }
-    if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
-      if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
-      if (tipoValor) fields.TipoValor = tipoValor;
-    }
-    await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
-    if (abrirPsel){
-      try {
-        await notifyRecrutaHub(cliente, p.area, {
-          Cargo: p.area,
-          PerfilProfissional: nivelPsel,
-          NumeroVagas: 1,
-          TipoContratacao: tipoContrato,
-          DataInicioPrevisto: dataInicioPsel
-        });
-      } catch (e){
-        console.warn("Falha ao notificar RecrutaHub (cobertura):", e);
-      }
-    }
-    showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
-  } catch (err){
-    showToast("Erro ao enviar solicitacao: " + err.message, true);
+ var p = coberturaSelectedProf;
+ var pselDireto = !!coberturaPselDiretoMode;
+ var cliente = document.getElementById("coberturaCliente").value.trim();
+ var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
+ if (!pselDireto && !p){ showToast("Selecione um profissional.", true); return; }
+ if (pselDireto && !areaDireto){ showToast("Selecione a area de servico.", true); return; }
+ if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
+ var area = pselDireto ? areaDireto : p.area;
+ var nivelPsel = document.getElementById("coberturaNivelPsel").value;
+ var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
+ var tipoContrato = document.getElementById("coberturaTipoContrato").value;
+ var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
+ var tipoValor = document.getElementById("coberturaTipoValor").value;
+ if (pselDireto && !dataInicioPsel){ showToast("Informe a data de inicio desejada.", true); return; }
+ closeCoberturaModal();
+ showToast(pselDireto ? "Enviando solicitacao de abertura de Psel..." : "Enviando solicitacao de cobertura/substituicao...");
+ try {
+  var fields;
+  if (pselDireto){
+   var profDireto = document.getElementById("coberturaPselDiretoProf").value.trim();
+   fields = {
+    Title: "Psel -> " + cliente,
+    Cliente: cliente,
+    Profissional: profDireto || null,
+    Area: area,
+    Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+    Status: "Pendente",
+    PrecisaSubstituicao: "Sim",
+    TipoContrato: tipoContrato || null,
+    PrecisaPsel: "Sim",
+    NivelProfissional: nivelPsel || null,
+    DataInicioTrabalho: dataInicioPsel ? (dataInicioPsel + "T12:00:00Z") : null
+   };
+   if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
+    if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
+    if (tipoValor) fields.TipoValor = tipoValor;
+   }
+   await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+   try {
+    await notifyRecrutaHub(cliente, area, {
+     Cargo: area,
+     PerfilProfissional: nivelPsel,
+     NumeroVagas: 1,
+     TipoContratacao: tipoContrato,
+     DataInicioPrevisto: dataInicioPsel
+    });
+   } catch (e){ console.warn("Falha ao notificar RecrutaHub (Psel direto):", e); }
+   showToast("Solicitacao de Psel enviada. O RH foi notificado por Teams e e-mail.");
+  } else {
+   var motivo = document.getElementById("coberturaMotivo").value;
+   var dataInicio = document.getElementById("coberturaDataInicio").value;
+   var dataFim = document.getElementById("coberturaDataFim").value;
+   var abrirPsel = document.getElementById("coberturaAbrirPsel").checked;
+   fields = {
+    Title: p.nome + " -> " + cliente,
+    Cliente: cliente,
+    Profissional: p.nome,
+    Area: p.area,
+    Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+    Status: "Pendente",
+    PrecisaSubstituicao: "Sim",
+    MotivoSubstituicao: motivo || null,
+    TipoContrato: tipoContrato || null
+   };
+   if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
+    if (dataInicio) fields.DataInicioSubstituicao = dataInicio + "T12:00:00Z";
+    if (dataFim) fields.DataFimSubstituicao = dataFim + "T12:00:00Z";
+   }
+   if (abrirPsel){
+    fields.PrecisaPsel = "Sim";
+    fields.NivelProfissional = nivelPsel || null;
+    if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel + "T12:00:00Z";
+   }
+   if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
+    if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
+    if (tipoValor) fields.TipoValor = tipoValor;
+   }
+   await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+   if (abrirPsel){
+    try {
+     await notifyRecrutaHub(cliente, p.area, {
+      Cargo: p.area,
+      PerfilProfissional: nivelPsel,
+      NumeroVagas: 1,
+      TipoContratacao: tipoContrato,
+      DataInicioPrevisto: dataInicioPsel
+     });
+    } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
+   }
+   showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
   }
+ } catch (err){
+  showToast("Erro ao enviar solicitacao: " + err.message, true);
+ }
 }
-
+function openCoberturaPselDiretoModal(){
+ coberturaSelectedProf = null;
+ coberturaPselDiretoMode = true;
+ document.getElementById("coberturaModalMainTitle").textContent = "Abrir processo seletivo (Psel)";
+ document.getElementById("coberturaModalSub").textContent = "Nenhum candidato adequado no banco de talentos. Informe os dados abaixo para o RH abrir o processo seletivo.";
+ var dl = document.getElementById("coberturaClienteList");
+ dl.innerHTML = "";
+ allClientLabels().filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; }).forEach(function(c){ var opt = document.createElement("option"); opt.value = c; dl.appendChild(opt); });
+ document.getElementById("coberturaCliente").value = selectedClients.length === 1 ? selectedClients[0] : "";
+ document.getElementById("coberturaAbrirPselWrap").style.display = "none";
+ document.getElementById("coberturaPselWrap").style.display = "block";
+ document.getElementById("coberturaNivelPsel").value = "I";
+ document.getElementById("coberturaDataInicioPsel").value = "";
+ document.getElementById("coberturaMotivoWrap").style.display = "none";
+ document.getElementById("coberturaMotivo").value = "";
+ document.getElementById("coberturaDataInicio").value = "";
+ document.getElementById("coberturaDataFim").value = "";
+ var areaSel = document.getElementById("coberturaPselDiretoArea");
+ areaSel.innerHTML = "";
+ COBERTURA_AREAS.forEach(function(a){ var opt = document.createElement("option"); opt.value = a; opt.textContent = a; areaSel.appendChild(opt); });
+ if (coberturaAreaFiltro !== "Todas") areaSel.value = coberturaAreaFiltro;
+ document.getElementById("coberturaPselDiretoAreaWrap").style.display = "block";
+ document.getElementById("coberturaPselDiretoProfWrap").style.display = "block";
+ document.getElementById("coberturaPselDiretoProf").value = "";
+ document.getElementById("coberturaTipoContrato").value = "";
+ document.getElementById("coberturaValorRemuneracao").value = "";
+ document.getElementById("coberturaTipoValor").value = "";
+ document.getElementById("coberturaRemuneracaoWrap").style.display = "none";
+ document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
+ document.getElementById("coberturaModalOverlay").classList.add("show");
+}
+document.getElementById("coberturaPselDiretoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); });
 function openModal(){
   document.getElementById("newClientName").value = "";
   populateUfSelect();
