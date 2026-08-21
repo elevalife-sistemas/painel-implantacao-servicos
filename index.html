@@ -570,6 +570,18 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   </div>
 </div>
 
+<div class="modal-overlay" id="coberturaDuplicadaModalOverlay">
+<div class="modal">
+<button type="button" class="modal-close" onclick="closeCoberturaDuplicadaModal()" aria-label="Fechar">✕</button>
+<h3>Solicitacao ja existe</h3>
+<p id="coberturaDuplicadaMsg"></p>
+<div class="modal-actions">
+<button class="btn-cancel" id="coberturaDuplicadaCancelarBtn">Cancelar</button>
+<button class="btn-confirm" id="coberturaDuplicadaConfirmarBtn">Continuar mesmo assim</button>
+</div>
+</div>
+</div>
+
 <div class="modal-overlay" id="coberturaTipoModalOverlay">
   <div class="modal">
     <button type="button" class="modal-close" onclick="closeCoberturaTipoModal()" aria-label="Fechar">&#10005;</button>
@@ -2569,6 +2581,7 @@ function closeCoberturaProfileModal(){ document.getElementById("coberturaProfile
 
 var coberturaSelectedProf = null;
 var coberturaPselDiretoMode = false;
+var coberturaDuplicadaContext = null;
 function openCoberturaModal(profId){
   var p = MOCK_PROFESSIONALS.filter(function(x){ return x.id === profId; })[0];
   if (!p) return;
@@ -2631,123 +2644,144 @@ function openCoberturaInformativoModal(){
 }
 function closeCoberturaInformativoModal(){ document.getElementById("coberturaInformativoModalOverlay").classList.remove("show"); }
 
-async function confirmCoberturaInformativo(){
-  var cliente = document.getElementById("coberturaInformativoCliente").value.trim();
-  var observacao = document.getElementById("coberturaInformativoObservacao").value.trim();
-  if (!cliente){ showToast("Digite o cliente para o comunicado informativo.", true); return; }
-  closeCoberturaInformativoModal();
-  showToast("Enviando comunicado informativo...");
-  try {
-    var fields = {
-      Title: "Informativo -> " + cliente,
-      Cliente: cliente,
-      Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-      Status: "Pendente",
-      PrecisaSubstituicao: "Nao",
-      Observacao: observacao
-    };
-    await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
-    showToast("Comunicado informativo enviado.");
-  } catch (err){
-    showToast("Erro ao enviar comunicado: " + err.message, true);
-  }
+async function confirmCobertura(){
+var p = coberturaSelectedProf;
+var pselDireto = !!coberturaPselDiretoMode;
+var cliente = document.getElementById("coberturaCliente").value.trim();
+var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
+if (!pselDireto && !p){ showToast("Selecione um profissional.", true); return; }
+if (pselDireto && !areaDireto){ showToast("Selecione a area de servico.", true); return; }
+if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
+var area = pselDireto ? areaDireto : p.area;
+var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
+if (pselDireto && !dataInicioPsel){ showToast("Informe a data de inicio desejada.", true); return; }
+var dupQtd = 0;
+try { dupQtd = await checkCoberturaDuplicada(cliente, area); } catch (e){ console.warn("Falha ao checar duplicidade:", e); }
+if (dupQtd > 0){
+openCoberturaDuplicadaModal(cliente, area, dupQtd);
+return;
+}
+await doSubmitCobertura();
 }
 
-async function confirmCobertura(){
- var p = coberturaSelectedProf;
- var pselDireto = !!coberturaPselDiretoMode;
- var cliente = document.getElementById("coberturaCliente").value.trim();
- var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
- if (!pselDireto && !p){ showToast("Selecione um profissional.", true); return; }
- if (pselDireto && !areaDireto){ showToast("Selecione a area de servico.", true); return; }
- if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
- var area = pselDireto ? areaDireto : p.area;
- var nivelPsel = document.getElementById("coberturaNivelPsel").value;
- var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
- var tipoContrato = document.getElementById("coberturaTipoContrato").value;
- var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
- var tipoValor = document.getElementById("coberturaTipoValor").value;
- if (pselDireto && !dataInicioPsel){ showToast("Informe a data de inicio desejada.", true); return; }
- closeCoberturaModal();
- showToast(pselDireto ? "Enviando solicitacao de abertura de Psel..." : "Enviando solicitacao de cobertura/substituicao...");
- try {
-  var fields;
-  if (pselDireto){
-   var profDireto = document.getElementById("coberturaPselDiretoProf").value.trim();
-   fields = {
-    Title: "Psel -> " + cliente,
-    Cliente: cliente,
-    Profissional: profDireto || null,
-    Area: area,
-    Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-    Status: "Pendente",
-    PrecisaSubstituicao: "Sim",
-    TipoContrato: tipoContrato || null,
-    PrecisaPsel: "Sim",
-    NivelProfissional: nivelPsel || null,
-    DataInicioTrabalho: dataInicioPsel ? (dataInicioPsel + "T12:00:00Z") : null
-   };
-   if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
-    if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
-    if (tipoValor) fields.TipoValor = tipoValor;
-   }
-   await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
-   try {
-    await notifyRecrutaHub(cliente, area, {
-     Cargo: area,
-     PerfilProfissional: nivelPsel,
-     NumeroVagas: 1,
-     TipoContratacao: tipoContrato,
-     DataInicioPrevisto: dataInicioPsel
-    });
-   } catch (e){ console.warn("Falha ao notificar RecrutaHub (Psel direto):", e); }
-   showToast("Solicitacao de Psel enviada. O RH foi notificado por Teams e e-mail.");
-  } else {
-   var motivo = document.getElementById("coberturaMotivo").value;
-   var dataInicio = document.getElementById("coberturaDataInicio").value;
-   var dataFim = document.getElementById("coberturaDataFim").value;
-   var abrirPsel = document.getElementById("coberturaAbrirPsel").checked;
-   fields = {
-    Title: p.nome + " -> " + cliente,
-    Cliente: cliente,
-    Profissional: p.nome,
-    Area: p.area,
-    Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-    Status: "Pendente",
-    PrecisaSubstituicao: "Sim",
-    MotivoSubstituicao: motivo || null,
-    TipoContrato: tipoContrato || null
-   };
-   if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
-    if (dataInicio) fields.DataInicioSubstituicao = dataInicio + "T12:00:00Z";
-    if (dataFim) fields.DataFimSubstituicao = dataFim + "T12:00:00Z";
-   }
-   if (abrirPsel){
-    fields.PrecisaPsel = "Sim";
-    fields.NivelProfissional = nivelPsel || null;
-    if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel + "T12:00:00Z";
-   }
-   if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
-    if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
-    if (tipoValor) fields.TipoValor = tipoValor;
-   }
-   await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
-   if (abrirPsel){
-    try {
-     await notifyRecrutaHub(cliente, p.area, {
-      Cargo: p.area,
-      PerfilProfissional: nivelPsel,
-      NumeroVagas: 1,
-      TipoContratacao: tipoContrato,
-      DataInicioPrevisto: dataInicioPsel
-     });
-    } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
-   }
-   showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
-  }
- } catch (err){
-  showToast("Erro ao enviar solicitacao: " + err.message, true);
- }
+async function doSubmitCobertura(){
+var p = coberturaSelectedProf;
+var pselDireto = !!coberturaPselDiretoMode;
+var cliente = document.getElementById("coberturaCliente").value.trim();
+var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
+var area = pselDireto ? areaDireto : p.area;
+var nivelPsel = document.getElementById("coberturaNivelPsel").value;
+var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
+var tipoContrato = document.getElementById("coberturaTipoContrato").value;
+var valorRemuneracao = document.getElementById("coberturaValorRemuneracao").value;
+var tipoValor = document.getElementById("coberturaTipoValor").value;
+closeCoberturaModal();
+showToast(pselDireto ? "Enviando solicitacao de abertura de Psel..." : "Enviando solicitacao de cobertura/substituicao...");
+try {
+var fields;
+if (pselDireto){
+var profDireto = document.getElementById("coberturaPselDiretoProf").value.trim();
+fields = {
+Title: "Psel -> " + cliente,
+Cliente: cliente,
+Profissional: profDireto || null,
+Area: area,
+Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+Status: "Pendente",
+PrecisaSubstituicao: "Sim",
+TipoContrato: tipoContrato || null,
+PrecisaPsel: "Sim",
+NivelProfissional: nivelPsel || null,
+DataInicioTrabalho: dataInicioPsel ? (dataInicioPsel + "T12:00:00Z") : null
+};
+if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
+if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
+if (tipoValor) fields.TipoValor = tipoValor;
+}
+await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+try {
+await notifyRecrutaHub(cliente, area, {
+Cargo: area,
+PerfilProfissional: nivelPsel,
+NumeroVagas: 1,
+TipoContratacao: tipoContrato,
+DataInicioPrevisto: dataInicioPsel
+});
+} catch (e){ console.warn("Falha ao notificar RecrutaHub (Psel direto):", e); }
+showToast("Solicitacao de Psel enviada. O RH foi notificado por Teams e e-mail.");
+} else {
+var motivo = document.getElementById("coberturaMotivo").value;
+var dataInicio = document.getElementById("coberturaDataInicio").value;
+var dataFim = document.getElementById("coberturaDataFim").value;
+var abrirPsel = document.getElementById("coberturaAbrirPsel").checked;
+fields = {
+Title: p.nome + " -> " + cliente,
+Cliente: cliente,
+Profissional: p.nome,
+Area: p.area,
+Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+Status: "Pendente",
+PrecisaSubstituicao: "Sim",
+MotivoSubstituicao: motivo || null,
+TipoContrato: tipoContrato || null
+};
+if (motivo === "Ferias" || motivo === "Atestado medico" || motivo === "Falta"){
+if (dataInicio) fields.DataInicioSubstituicao = dataInicio + "T12:00:00Z";
+if (dataFim) fields.DataFimSubstituicao = dataFim + "T12:00:00Z";
+}
+if (abrirPsel){
+fields.PrecisaPsel = "Sim";
+fields.NivelProfissional = nivelPsel || null;
+if (dataInicioPsel) fields.DataInicioTrabalho = dataInicioPsel + "T12:00:00Z";
+}
+if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
+if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
+if (tipoValor) fields.TipoValor = tipoValor;
+}
+await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+if (abrirPsel){
+try {
+await notifyRecrutaHub(cliente, p.area, {
+Cargo: p.area,
+PerfilProfissional: nivelPsel,
+NumeroVagas: 1,
+TipoContratacao: tipoContrato,
+DataInicioPrevisto: dataInicioPsel
+});
+} catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
+}
+showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
+}
+} catch (err){
+showToast("Erro ao enviar solicitacao: " + err.message, true);
+}
+}
+
+async function checkCoberturaDuplicada(cliente, area){
+try {
+var res = await graphFetch(COBERTURAS_GRAPH_BASE + "/items?expand=fields&$top=999");
+var items = (res && res.value) || [];
+var clienteNorm = cliente.trim().toLowerCase();
+var qtd = items.filter(function(it){
+var f = it.fields || {};
+return f.Cliente && f.Cliente.trim().toLowerCase() === clienteNorm && f.Area === area && f.Status === "Pendente";
+}).length;
+return qtd;
+} catch (e){
+console.warn("Falha ao checar duplicidade de cobertura:", e);
+return 0;
+}
+}
+
+function openCoberturaDuplicadaModal(cliente, area, qtd){
+coberturaDuplicadaContext = { cliente: cliente, area: area };
+var msgEl = document.getElementById("coberturaDuplicadaMsg");
+if (msgEl) msgEl.textContent = "Ja existe " + qtd + " solicitacao(oes) pendente(s) para " + cliente + " (" + area + "). Deseja continuar mesmo assim?";
+document.getElementById("coberturaDuplicadaModalOverlay").classList.add("show");
+}
+
+function closeCoberturaDuplicadaModal(){
+document.getElementById("coberturaDuplicadaModalOverlay").classList.remove("show");
 }
 function openCoberturaPselDiretoModal(){
  coberturaSelectedProf = null;
@@ -2781,6 +2815,8 @@ function openCoberturaPselDiretoModal(){
  document.getElementById("coberturaModalOverlay").classList.add("show");
 }
 document.getElementById("coberturaPselDiretoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); });
+document.getElementById("coberturaDuplicadaCancelarBtn").addEventListener("click", function(){ closeCoberturaDuplicadaModal(); });
+document.getElementById("coberturaDuplicadaConfirmarBtn").addEventListener("click", async function(){ closeCoberturaDuplicadaModal(); await doSubmitCobertura(); });
 function openModal(){
   document.getElementById("newClientName").value = "";
   populateUfSelect();
@@ -2993,9 +3029,10 @@ function formatCurrencyBRL(value){
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+var RECRUTAHUB_AREA_ALIAS = {"RH":"Recursos Humanos","Medicina do Trabalho":"Medicina"};
 async function notifyRecrutaHub(name, area, extraFields){
   if (!extraFields.Cargo) return { fired: false };
-  var coordinatorEmail = resolveResponsavelEmailForStep("Coordenador", area);
+  var coordinatorEmail = resolveResponsavelEmailForStep("Coordenador", (RECRUTAHUB_AREA_ALIAS[area] || area));
   if (!coordinatorEmail) return { fired: false };
   try {
     var resp = await fetch(RECRUTAHUB_API_URL, {
