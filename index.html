@@ -181,6 +181,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .status-badge.pendente{background:var(--amber-bg);color:var(--amber-tx);}
 .status-badge.concluido{background:var(--green-bg);color:var(--green-tx);}
 .status-badge.cancelado{background:var(--red-bg);color:var(--red-tx);}
+.status-badge.andamento{background:var(--blue-bg);color:var(--blue-tx);}
 .status-badge.outro{background:var(--gray-bg);color:var(--gray-tx);}
 .switch-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid #eee;}
 .switch-row:last-child{border-bottom:none;}
@@ -378,7 +379,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <div id="coberturaViewHistorico" class="hidden">
         <div class="hist-filters">
           <select id="histFiltroArea"><option value="">Todas as areas</option></select>
-          <select id="histFiltroStatus"><option value="">Todos os status</option><option value="Pendente">Pendente</option><option value="Concluido">Concluido</option><option value="Cancelado">Cancelado</option></select>
+          <select id="histFiltroStatus"><option value="">Todos os status</option><option value="Pendente">Pendente</option><option value="Concluido">Concluido</option><option value="Cancelado">Cancelado</option><option value="Em andamento">Em andamento</option></select>
           <input type="text" id="histFiltroCliente" placeholder="Buscar por cliente..." style="flex:1;min-width:180px;" />
         </div>
         <div id="histTableWrap"></div>
@@ -2728,6 +2729,7 @@ function statusBadgeClass(status){
   if (st.indexOf("pend") !== -1) return "pendente";
   if (st.indexOf("conclu") !== -1) return "concluido";
   if (st.indexOf("cancel") !== -1) return "cancelado";
+  if (st.indexOf("andamento") !== -1) return "andamento";
   return "outro";
 }
 function coberturaTipoLabel(item){
@@ -2857,7 +2859,38 @@ async function checkRecrutaHubStatus(btn){
   }
   btn.remove();
 }
-async function confirmCobertura(){
+var COBERTURAS_RH_STATUS_MAP = { "rascunho":"Pendente", "enviada":"Pendente", "em analise":"Pendente", "em análise":"Pendente", "devolvida":"Pendente", "aprovada":"Em andamento", "reprovada":"Cancelado" };
+  function mapRecrutaHubStatus(raw){
+      var k = (raw || "").trim().toLowerCase();
+      return COBERTURAS_RH_STATUS_MAP[k] || null;
+  }
+  async function syncRecrutaHubStatuses(){
+      try { await loadCoberturaHistorico(); } catch (e){ return; }
+      var pending = (coberturaHistoricoData || []).filter(function(f){
+      return f.RecrutaHubRequestId && f.Status !== "Concluido" && f.Status !== "Cancelado";
+    });
+    if (!pending.length) return;
+    var changed = false;
+    for (var i = 0; i < pending.length; i++){
+      var f = pending[i];
+      try {
+        var resp = await fetch(RECRUTAHUB_API_URL + "?id=" + encodeURIComponent(f.RecrutaHubRequestId), {
+          method: "GET",
+          headers: { "x-painel-secret": RECRUTAHUB_API_SECRET }
+        });
+        if (!resp.ok) continue;
+        var body = await resp.json();
+        if (!body || !body.data || !body.data.length) continue;
+        var mapped = mapRecrutaHubStatus(body.data[0].status);
+        if (!mapped || mapped === f.Status) continue;
+        await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + f.id + "/fields", { method: "PATCH", body: JSON.stringify({ Status: mapped }) });
+        f.Status = mapped;
+        changed = true;
+      } catch (e){}
+    }
+    if (changed) renderCoberturaHistorico();
+  }
+  async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
@@ -3448,6 +3481,7 @@ async function afterLogin(){
   } catch (err){
     showToast("Erro ao carregar a lista: " + err.message, true);
   }
+  syncRecrutaHubStatuses();
 }
 
 async function login(){
@@ -3469,7 +3503,7 @@ document.getElementById("gateLoginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", async function(){
   showToast("Atualizando...");
-  try { await loadItems(); renderAll(); loadTalentPool(true); showToast("Atualizado."); }
+  try { await loadItems(); renderAll(); loadTalentPool(true); await syncRecrutaHubStatuses(); showToast("Atualizado."); }
   catch (err){ showToast("Erro ao atualizar: " + err.message, true); }
 });
 
