@@ -1573,7 +1573,7 @@ function buildBoard(){
   });
   var allClientsNow = allClientLabels();
   document.getElementById("kanbanClientName").textContent = clientFilterLabelText(allClientsNow);
-  document.getElementById("badgeKanban").textContent = items.length + " etapas ÃÂÃÂ· arraste os cards entre colunas";
+  document.getElementById("badgeKanban").textContent = items.length + " etapas · arraste os cards entre colunas";
   populateCardAvatars(items.filter(function(it){ return it.emailResponsavel; }));
 }
 
@@ -1584,7 +1584,7 @@ function openCardModal(id){
   if (!item) return;
   currentCardItem = item;
   document.getElementById("cardModalTitle").textContent = "Etapa " + item.num + " - " + item.title;
-  document.getElementById("cardModalSub").textContent = clienteLabel(item.cliente) + " ÃÂÃÂ· Area responsavel: " + item.areaResp;
+  document.getElementById("cardModalSub").textContent = clienteLabel(item.cliente) + " · Area responsavel: " + item.areaResp;
   document.getElementById("cardStatus").value = item.status;
   document.getElementById("cardDataPrevista").value = item.dataPrevista ? String(item.dataPrevista).slice(0,10) : "";
   document.getElementById("cardEmail").value = item.emailResponsavel || "";
@@ -2281,7 +2281,7 @@ function updateKPIs(){
   var andamentoAtual = andamento[0];
   document.getElementById("action-andamento-title").textContent = andamentoAtual ? andamentoAtual.title : "Nenhuma etapa em andamento";
   document.getElementById("action-andamento-sub").textContent = andamentoAtual
-    ? ("Etapa " + andamentoAtual.num + " ÃÂÃÂ· Responsavel: " + andamentoAtual.areaResp) + (andamento.length > 1 ? (" ÃÂÃÂ· +" + (andamento.length-1) + " outra(s) em andamento") : "")
+    ? ("Etapa " + andamentoAtual.num + " · Responsavel: " + andamentoAtual.areaResp) + (andamento.length > 1 ? (" · +" + (andamento.length-1) + " outra(s) em andamento") : "")
     : "";
 
   var atrasadaAtual = atrasadas[0];
@@ -2292,9 +2292,9 @@ function updateKPIs(){
     lateLabel.innerHTML = '<span class="action-icon">&#128680;</span>Atencao: etapa atrasada';
     document.getElementById("action-atrasada-title").textContent = atrasadaAtual.title;
     var diasAtraso = atrasadaAtual.dataPrevista ? Math.max(0, Math.round((new Date() - new Date(atrasadaAtual.dataPrevista)) / 86400000)) : null;
-    document.getElementById("action-atrasada-sub").textContent = "Etapa " + atrasadaAtual.num + " ÃÂÃÂ· Responsavel: " + atrasadaAtual.areaResp +
-      (diasAtraso !== null ? (" ÃÂÃÂ· " + diasAtraso + " dia(s) de atraso") : "") +
-      (atrasadas.length > 1 ? (" ÃÂÃÂ· +" + (atrasadas.length-1) + " outra(s) atrasada(s)") : "");
+    document.getElementById("action-atrasada-sub").textContent = "Etapa " + atrasadaAtual.num + " · Responsavel: " + atrasadaAtual.areaResp +
+      (diasAtraso !== null ? (" · " + diasAtraso + " dia(s) de atraso") : "") +
+      (atrasadas.length > 1 ? (" · +" + (atrasadas.length-1) + " outra(s) atrasada(s)") : "");
   } else {
     lateCard.classList.add("is-empty");
     lateLabel.innerHTML = '<span class="action-icon">&#9989;</span>Nenhuma etapa atrasada';
@@ -2303,7 +2303,7 @@ function updateKPIs(){
   }
 
   var clientLabelTxt = clientFilterLabelText(allClientLabels());
-  document.getElementById("badgeGeral").textContent = clientLabelTxt + " ÃÂÃÂ· " + items.length + " etapas no checklist";
+  document.getElementById("badgeGeral").textContent = clientLabelTxt + " · " + items.length + " etapas no checklist";
   document.getElementById("chartSub").textContent = "Distribuicao de status entre as " + items.length + " etapas" + (selectedClients.length === 1 ? (" de " + selectedClients[0]) : (" (" + clientLabelTxt.toLowerCase() + ")"));
   renderPerformanceKPIs(items);
 }
