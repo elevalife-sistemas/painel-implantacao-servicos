@@ -600,7 +600,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
 <div class="modal-overlay" id="coberturaDuplicadaModalOverlay">
 <div class="modal">
-<button type="button" class="modal-close" onclick="closeCoberturaDuplicadaModal()" aria-label="Fechar">â</button>
+<button type="button" class="modal-close" onclick="closeCoberturaDuplicadaModal()" aria-label="Fechar">Ã¢ÂÂ</button>
 <h3>Solicitacao ja existe</h3>
 <p id="coberturaDuplicadaMsg"></p>
 <div class="modal-actions">
@@ -1573,7 +1573,7 @@ function buildBoard(){
   });
   var allClientsNow = allClientLabels();
   document.getElementById("kanbanClientName").textContent = clientFilterLabelText(allClientsNow);
-  document.getElementById("badgeKanban").textContent = items.length + " etapas Â· arraste os cards entre colunas";
+  document.getElementById("badgeKanban").textContent = items.length + " etapas ÃÂ· arraste os cards entre colunas";
   populateCardAvatars(items.filter(function(it){ return it.emailResponsavel; }));
 }
 
@@ -1584,7 +1584,7 @@ function openCardModal(id){
   if (!item) return;
   currentCardItem = item;
   document.getElementById("cardModalTitle").textContent = "Etapa " + item.num + " - " + item.title;
-  document.getElementById("cardModalSub").textContent = clienteLabel(item.cliente) + " Â· Area responsavel: " + item.areaResp;
+  document.getElementById("cardModalSub").textContent = clienteLabel(item.cliente) + " ÃÂ· Area responsavel: " + item.areaResp;
   document.getElementById("cardStatus").value = item.status;
   document.getElementById("cardDataPrevista").value = item.dataPrevista ? String(item.dataPrevista).slice(0,10) : "";
   document.getElementById("cardEmail").value = item.emailResponsavel || "";
@@ -2281,7 +2281,7 @@ function updateKPIs(){
   var andamentoAtual = andamento[0];
   document.getElementById("action-andamento-title").textContent = andamentoAtual ? andamentoAtual.title : "Nenhuma etapa em andamento";
   document.getElementById("action-andamento-sub").textContent = andamentoAtual
-    ? ("Etapa " + andamentoAtual.num + " Â· Responsavel: " + andamentoAtual.areaResp) + (andamento.length > 1 ? (" Â· +" + (andamento.length-1) + " outra(s) em andamento") : "")
+    ? ("Etapa " + andamentoAtual.num + " ÃÂ· Responsavel: " + andamentoAtual.areaResp) + (andamento.length > 1 ? (" ÃÂ· +" + (andamento.length-1) + " outra(s) em andamento") : "")
     : "";
 
   var atrasadaAtual = atrasadas[0];
@@ -2292,9 +2292,9 @@ function updateKPIs(){
     lateLabel.innerHTML = '<span class="action-icon">&#128680;</span>Atencao: etapa atrasada';
     document.getElementById("action-atrasada-title").textContent = atrasadaAtual.title;
     var diasAtraso = atrasadaAtual.dataPrevista ? Math.max(0, Math.round((new Date() - new Date(atrasadaAtual.dataPrevista)) / 86400000)) : null;
-    document.getElementById("action-atrasada-sub").textContent = "Etapa " + atrasadaAtual.num + " Â· Responsavel: " + atrasadaAtual.areaResp +
-      (diasAtraso !== null ? (" Â· " + diasAtraso + " dia(s) de atraso") : "") +
-      (atrasadas.length > 1 ? (" Â· +" + (atrasadas.length-1) + " outra(s) atrasada(s)") : "");
+    document.getElementById("action-atrasada-sub").textContent = "Etapa " + atrasadaAtual.num + " ÃÂ· Responsavel: " + atrasadaAtual.areaResp +
+      (diasAtraso !== null ? (" ÃÂ· " + diasAtraso + " dia(s) de atraso") : "") +
+      (atrasadas.length > 1 ? (" ÃÂ· +" + (atrasadas.length-1) + " outra(s) atrasada(s)") : "");
   } else {
     lateCard.classList.add("is-empty");
     lateLabel.innerHTML = '<span class="action-icon">&#9989;</span>Nenhuma etapa atrasada';
@@ -2303,7 +2303,7 @@ function updateKPIs(){
   }
 
   var clientLabelTxt = clientFilterLabelText(allClientLabels());
-  document.getElementById("badgeGeral").textContent = clientLabelTxt + " Â· " + items.length + " etapas no checklist";
+  document.getElementById("badgeGeral").textContent = clientLabelTxt + " ÃÂ· " + items.length + " etapas no checklist";
   document.getElementById("chartSub").textContent = "Distribuicao de status entre as " + items.length + " etapas" + (selectedClients.length === 1 ? (" de " + selectedClients[0]) : (" (" + clientLabelTxt.toLowerCase() + ")"));
   renderPerformanceKPIs(items);
 }
@@ -2489,7 +2489,7 @@ function populatePerfilSelect(cargo){
 function baseHorasParaCargo(cargo){
   var c = (cargo || "").toLowerCase();
   if (c.indexOf("fisioterapeut") !== -1 || c.indexOf("fisoterapeut") !== -1) return 30;
-  if (c.indexOf("medic") !== -1 || c.indexOf("mÃ©dic") !== -1) return 24;
+  if (c.indexOf("medic") !== -1 || c.indexOf("mÃÂ©dic") !== -1) return 24;
   return 44;
 }
 function updateRemuneracaoInicialAuto(){
@@ -3461,7 +3461,7 @@ document.getElementById("gateLoginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", async function(){
   showToast("Atualizando...");
-  try { await loadItems(); renderAll(); showToast("Atualizado."); }
+  try { await loadItems(); renderAll(); loadTalentPool(true); showToast("Atualizado."); }
   catch (err){ showToast("Erro ao atualizar: " + err.message, true); }
 });
 
