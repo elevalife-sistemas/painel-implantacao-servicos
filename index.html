@@ -390,6 +390,11 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <button type="button" class="chip" id="coberturaSubTabHistorico">Historico</button>
       </div>
       <div id="coberturaViewSolicitacoes">
+      <div id="coberturasBoardWrap" style="margin-bottom:26px;">
+        <h3 style="font-size:15px;font-weight:600;margin:0 0 12px;color:var(--text);">Solicitações em andamento</h3>
+        <div id="coberturasBoard" class="board" style="grid-template-columns:repeat(6,minmax(0,1fr));"></div>
+      </div>
+      <p style="font-size:12.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin:28px 0 12px;">Solicitar nova cobertura</p>
       <div id="coberturasList" class="coberturas-grid"></div>
       </div>
       <div id="coberturaViewHistorico" class="hidden">
@@ -2691,6 +2696,7 @@ function renderCoberturaAreaTabs(){
     btn.addEventListener("click", function(){
       coberturaAreaFiltro = area;
       renderCoberturaAreaTabs();
+  loadCoberturaHistorico().then(buildCoberturasBoard);
       renderCoberturas();
     });
     wrap.appendChild(btn);
@@ -2701,7 +2707,7 @@ function setupCoberturaSubTabs(){
   window.__coberturaSubTabsInit = true;
   var btnSol = document.getElementById("coberturaSubTabSolicitacoes");
   var btnHist = document.getElementById("coberturaSubTabHistorico");
-  if (btnSol) btnSol.addEventListener("click", function(){ switchCoberturaSubTab("solicitacoes"); });
+  if (btnSol) btnSol.addEventListener("click", function(){ switchCoberturaSubTab("solicitacoes"); buildCoberturasBoard(); });
   if (btnHist) btnHist.addEventListener("click", function(){ switchCoberturaSubTab("historico"); });
   var selArea = document.getElementById("histFiltroArea");
   var selStatus = document.getElementById("histFiltroStatus");
@@ -2908,6 +2914,7 @@ async function loadCoberturaHistorico(){
     var data = await graphFetch(COBERTURAS_GRAPH_BASE + "/items?expand=fields&$top=999");
     coberturaHistoricoData = (data.value || []).map(function(it){
       var f = it.fields || {};
+      f.__id = it.id;
       f.__created = it.createdDateTime || f.Created;
       return f;
     });
@@ -2919,6 +2926,96 @@ async function loadCoberturaHistorico(){
   } catch (err){
     wrap.innerHTML = '<div class="hist-empty">Erro ao carregar historico: ' + escapeHtml(err.message) + '</div>';
   }
+}
+var COB_STATUS_COLS = ["Registrada","Em Triagem","Psel Aberto","Contratação","Concluída","Atrasado"];
+function buildCoberturasBoard(){
+  var board = document.getElementById("coberturasBoard");
+  if (!board) return;
+  var items = coberturaHistoricoData || [];
+  board.innerHTML = "";
+  COB_STATUS_COLS.forEach(function(status){
+    var colItems = items.filter(function(f){ return (f.StatusSolicitacao || "Registrada") === status; });
+    var col = document.createElement("div");
+    col.className = "col";
+    col.dataset.status = status;
+    col.addEventListener("dragover", function(e){ e.preventDefault(); col.classList.add("drag-over"); });
+    col.addEventListener("dragleave", function(){ col.classList.remove("drag-over"); });
+    col.addEventListener("drop", onCobColDrop);
+    var head = document.createElement("div");
+    head.className = "col-head";
+    head.innerHTML = '<span class="col-title">' + escapeHtml(status) + '</span><span class="col-count">' + colItems.length + '</span>';
+    col.appendChild(head);
+    colItems.forEach(function(f){
+      var cid = f.__id;
+      var c = document.createElement("div");
+      c.className = "card";
+      c.draggable = true;
+      c.dataset.id = cid;
+      c.addEventListener("dragstart", onCobCardDragStart);
+      c.addEventListener("dragend", onCobCardDragEnd);
+      var prazoTxt = f.PrazoConclusao ? new Date(f.PrazoConclusao).toLocaleDateString("pt-BR") : "Sem prazo definido";
+      var avatarId = "cobavatar-" + cid;
+      var optsHtml = COB_STATUS_COLS.map(function(s){ return '<option value="' + s + '"' + (s===status?' selected':'') + '>' + s + '</option>'; }).join("");
+      c.innerHTML =
+        '<div class="card-client">' + escapeHtml(f.Cliente || f.Area || "") + '</div>' +
+        '<div class="card-title">' + escapeHtml(f.MotivoSubstituicao || f.Title || "Solicitação de cobertura") + '</div>' +
+        '<div class="card-meta">Prazo: ' + prazoTxt + '</div>' +
+        (f.EmailResponsavel ? '<div class="modal-avatar-row" id="' + avatarId + '" style="margin:6px 0;"></div>' : "") +
+        '<select class="cob-status-select" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--border);margin-top:6px;">' + optsHtml + '</select>';
+      col.appendChild(c);
+      var sel = c.querySelector(".cob-status-select");
+      sel.addEventListener("click", function(e){ e.stopPropagation(); });
+      sel.addEventListener("mousedown", function(e){ e.stopPropagation(); });
+      sel.addEventListener("change", function(){ patchCoberturaStatus(f, sel.value); });
+    });
+    board.appendChild(col);
+  });
+  populateCoberturaBoardAvatars(items);
+}
+function onCobCardDragStart(e){
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.setData("text/plain", e.currentTarget.dataset.id);
+}
+function onCobCardDragEnd(e){
+  e.currentTarget.classList.remove("dragging");
+}
+function onCobColDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  var id = e.dataTransfer.getData("text/plain");
+  var newStatus = e.currentTarget.dataset.status;
+  var f = (coberturaHistoricoData || []).find(function(it){ return it.__id === id; });
+  if (!f) return;
+  if (f.StatusSolicitacao === newStatus) return;
+  patchCoberturaStatus(f, newStatus);
+}
+async function patchCoberturaStatus(f, newStatus){
+  var oldStatus = f.StatusSolicitacao;
+  f.StatusSolicitacao = newStatus;
+  f.AvisoProximaEtapaEnviado = false;
+  buildCoberturasBoard();
+  try {
+    await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + f.__id + "/fields", { method: "PATCH", body: JSON.stringify({ StatusSolicitacao: newStatus, AvisoProximaEtapaEnviado: false }) });
+    showToast("Status atualizado: " + newStatus);
+  } catch (err){
+    f.StatusSolicitacao = oldStatus;
+    buildCoberturasBoard();
+    showToast("Erro ao atualizar status: " + err.message, true);
+  }
+}
+function populateCoberturaBoardAvatars(items){
+  items.forEach(function(f){
+    if (!f.EmailResponsavel) return;
+    getUserPhotoUrl(f.EmailResponsavel).then(function(url){
+      var box = document.getElementById("cobavatar-" + f.__id);
+      if (!box) return;
+      if (url){
+        box.innerHTML = '<img class="modal-avatar" src="' + url + '"><span style="font-size:12px;color:var(--text2);">' + escapeHtml(f.EmailResponsavel) + '</span>';
+      } else {
+        box.innerHTML = '<span class="modal-avatar-initials">' + initialsOf(f.EmailResponsavel) + '</span><span style="font-size:12px;color:var(--text2);">' + escapeHtml(f.EmailResponsavel) + '</span>';
+      }
+    });
+  });
 }
 function renderCoberturaHistorico(){
   var wrap = document.getElementById("histTableWrap");
