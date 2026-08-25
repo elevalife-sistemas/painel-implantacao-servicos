@@ -227,7 +227,10 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <p class="tab-group-label">Implantacao de Servicos</p>
         <div class="tab active tab-sub" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
         <div class="tab tab-sub" data-tab="kanban"><span class="tab-icon">&#128203;</span>Kanban</div>
-        <div class="tab" data-tab="coberturas"><span class="tab-icon">&#128260;</span>Coberturas e Substituicoes</div>
+        <p class="tab-group-label">Coberturas e Solicitações</p>
+        <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('solicitacoes')"><span class="tab-icon">&#128203;</span>Solicitações</div>
+        <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('historico')"><span class="tab-icon">&#128220;</span>Histórico</div>
+        <div class="tab tab-sub" style="opacity:.5;cursor:not-allowed;" title="Em breve"><span class="tab-icon">&#127958;</span>Gestão de Férias</div>
         <a class="tab" href="https://elevalife-ats.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;"><span class="tab-icon">&#128101;</span>RecrutaHub</a>
       </nav>
     </div>
@@ -377,7 +380,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
     <div id="panel-coberturas" class="panel">
       <div class="kanban-header">
-        <h2 class="kanban-client-name">Coberturas e Substituicoes</h2>
+        <h2 class="kanban-client-name">Coberturas e Solicitações</h2>
         <span class="badge-note">Banco de talentos sincronizado com o RecrutaHub</span>
         <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
       </div>
