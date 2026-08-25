@@ -267,6 +267,19 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
           <div class="client-filter-list" id="clientFilterList"></div>
         </div>
       </div>
+      <div class="client-filter" id="responsavelFilterWrap">
+        <button type="button" class="client-filter-btn" id="responsavelFilterBtn" onclick="toggleResponsavelFilter()">
+          <span id="responsavelFilterLabel">Responsável...</span>
+          <span class="client-filter-caret">&#9660;</span>
+        </button>
+        <div class="client-filter-panel hidden" id="responsavelFilterPanel">
+          <div class="client-filter-actions">
+            <button type="button" onclick="selectAllResponsaveis()">Selecionar todos</button>
+            <button type="button" onclick="clearAllResponsaveis()">Limpar</button>
+          </div>
+          <div id="responsavelFilterList"></div>
+        </div>
+      </div>
       <button class="btn-new" onclick="openModal()">+ Nova implantacao</button>
     </div>
 
@@ -1070,6 +1083,11 @@ try {
   var __savedSelectedClients = JSON.parse(localStorage.getItem("selectedClients") || "null");
   if (Array.isArray(__savedSelectedClients)) selectedClients = __savedSelectedClients;
 } catch (e) {}
+var selectedResponsaveis = [];
+try {
+  var __savedSelectedResponsaveis = JSON.parse(localStorage.getItem("selectedResponsaveis") || "null");
+  if (Array.isArray(__savedSelectedResponsaveis)) selectedResponsaveis = __savedSelectedResponsaveis;
+} catch (e) {}
 var chartInstance = null;
 var TEMPLATE_CLIENT_LABEL = "Checklist Mestre (modelo)";
 var HIDE_COMPLETED = false;
@@ -1334,6 +1352,97 @@ async function updateCardAvatarPreview(email){
 
 function clienteLabel(c){ return c ? c : TEMPLATE_CLIENT_LABEL; }
 
+function responsavelDisplayName(email){
+  if (!email) return "";
+  var namePart = email.split("@")[0].replace(/[._]+/g, " ").trim();
+  return namePart.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+}
+
+function responsavelEmailsFromItems(){
+  var emails = [];
+  ITEMS.forEach(function(it){
+    if (it.emailResponsavel && emails.indexOf(it.emailResponsavel) === -1) emails.push(it.emailResponsavel);
+  });
+  emails.sort(function(a,b){ return responsavelDisplayName(a).localeCompare(responsavelDisplayName(b)); });
+  return emails;
+}
+
+function itemsForResponsaveis(items){
+  if (!selectedResponsaveis.length) return items;
+  return items.filter(function(it){ return it.emailResponsavel && selectedResponsaveis.indexOf(it.emailResponsavel) !== -1; });
+}
+
+function saveSelectedResponsaveis(){
+  try { localStorage.setItem("selectedResponsaveis", JSON.stringify(selectedResponsaveis)); } catch (e) {}
+  var label = document.getElementById("responsavelFilterLabel");
+  if (!label) return;
+  if (!selectedResponsaveis.length) label.textContent = "Responsável...";
+  else if (selectedResponsaveis.length === 1) label.textContent = responsavelDisplayName(selectedResponsaveis[0]);
+  else label.textContent = selectedResponsaveis.length + " selecionados";
+}
+
+function refreshResponsavelFilter(){
+  var emails = responsavelEmailsFromItems();
+  var list = document.getElementById("responsavelFilterList");
+  if (!list) return;
+  list.innerHTML = "";
+  emails.forEach(function(email, idx){
+    var row = document.createElement("div");
+    row.className = "client-filter-item";
+    var checkboxId = "responsavelFilterChk" + idx;
+    var checked = selectedResponsaveis.indexOf(email) !== -1;
+    var avatarSpanId = "responsavelFilterAvatar" + idx;
+    row.innerHTML = '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;">'
+      + '<input type="checkbox" id="' + checkboxId + '"' + (checked ? " checked" : "") + '>'
+      + '<span id="' + avatarSpanId + '" style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:#e5e6e9;align-items:center;justify-content:center;font-size:10px;overflow:hidden;flex-shrink:0;">' + initialsOf(email) + '</span>'
+      + '<span>' + responsavelDisplayName(email) + '</span>'
+      + '</label>';
+    row.querySelector("input").addEventListener("change", function(){ toggleResponsavel(email); });
+    list.appendChild(row);
+    getUserPhotoUrl(email).then(function(url){
+      if (!url) return;
+      var span = document.getElementById(avatarSpanId);
+      if (span) span.innerHTML = '<img src="' + url + '" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">';
+    });
+  });
+}
+
+function toggleResponsavel(email){
+  var i = selectedResponsaveis.indexOf(email);
+  if (i === -1) selectedResponsaveis.push(email); else selectedResponsaveis.splice(i, 1);
+  saveSelectedResponsaveis();
+  buildBoard();
+}
+
+function selectAllResponsaveis(){
+  selectedResponsaveis = responsavelEmailsFromItems();
+  refreshResponsavelFilter();
+  saveSelectedResponsaveis();
+  buildBoard();
+}
+
+function clearAllResponsaveis(){
+  selectedResponsaveis = [];
+  refreshResponsavelFilter();
+  saveSelectedResponsaveis();
+  buildBoard();
+}
+
+function toggleResponsavelFilter(){
+  var panel = document.getElementById("responsavelFilterPanel");
+  if (!panel) return;
+  var willOpen = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
+  if (willOpen) refreshResponsavelFilter();
+}
+
+document.addEventListener("click", function(ev){
+  var wrap = document.getElementById("responsavelFilterWrap");
+  var panel = document.getElementById("responsavelFilterPanel");
+  if (!wrap || !panel || panel.classList.contains("hidden")) return;
+  if (!wrap.contains(ev.target)) panel.classList.add("hidden");
+});
+
 function itemsForClients(clients){
   return ITEMS.filter(function(it){ return clients.indexOf(clienteLabel(it.cliente)) !== -1; });
 }
@@ -1527,7 +1636,7 @@ function buildBoard(){
   board.innerHTML = "";
   var cols = HIDE_COMPLETED ? COLS.filter(function(s){ return s !== "Concluido"; }) : COLS;
   board.style.gridTemplateColumns = "repeat(" + cols.length + ",minmax(0,1fr))";
-  var items = itemsForClients(selectedClients);
+  var items = itemsForResponsaveis(itemsForClients(selectedClients));
   cols.forEach(function(status){
     var colItems = items.filter(function(it){ return it.status === status; });
     var col = document.createElement("div");
