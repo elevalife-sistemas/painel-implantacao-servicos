@@ -1352,11 +1352,18 @@ async function updateCardAvatarPreview(email){
 
 function clienteLabel(c){ return c ? c : TEMPLATE_CLIENT_LABEL; }
 
+var RESPONSAVEL_NAME_OVERRIDES = {
+  "gabrielepaes@elevalife.com.br": "Gabriele Paes"
+};
+
 function responsavelDisplayName(email){
   if (!email) return "";
+  var key = email.toLowerCase();
+  if (RESPONSAVEL_NAME_OVERRIDES[key]) return RESPONSAVEL_NAME_OVERRIDES[key];
   var namePart = email.split("@")[0].replace(/[._]+/g, " ").trim();
   return namePart.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
 }
+
 
 function responsavelEmailsFromItems(){
   var emails = [];
