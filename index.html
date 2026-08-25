@@ -2696,7 +2696,6 @@ function renderCoberturaAreaTabs(){
     btn.addEventListener("click", function(){
       coberturaAreaFiltro = area;
       renderCoberturaAreaTabs();
-  loadCoberturaHistorico().then(buildCoberturasBoard);
       renderCoberturas();
     });
     wrap.appendChild(btn);
@@ -2722,6 +2721,7 @@ function renderCoberturas(){
   if (!wrap) return;
   if (!talentPoolLoaded && !talentPoolLoading) { loadTalentPool(); }
   renderCoberturaAreaTabs();
+  loadCoberturaHistorico().then(buildCoberturasBoard);
   wrap.innerHTML = "";
   if (talentPoolLoading && !talentPoolLoaded) { wrap.innerHTML = '<p style="padding:16px;color:#666;">Carregando banco de talentos do RecrutaHub...</p>'; return; }
   var listaFiltrada = coberturaAreaFiltro === "Todas" ? TALENT_POOL : TALENT_POOL.filter(function(p){ return p.area === coberturaAreaFiltro; });
