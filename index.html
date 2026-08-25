@@ -613,6 +613,10 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     </div>
     <label>Solicitante</label>
     <input type="text" id="coberturaSolicitante" disabled>
+    <label>Responsável pela solicitação</label>
+    <input type="email" id="coberturaEmailResponsavel" placeholder="email@elevalife.com.br">
+    <label>Prazo de conclusão</label>
+    <input type="date" id="coberturaPrazoConclusao">
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeCoberturaModal()">Cancelar</button>
       <button class="btn-confirm" id="confirmCoberturaBtn">Confirmar solicitacao</button>
@@ -2832,6 +2836,9 @@ var fields = {
 Title: "Informativo -> " + cliente,
 Cliente: cliente,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
+StatusSolicitacao: "Registrada",
 Status: "Pendente",
 PrecisaSubstituicao: "Nao",
 Observacao: observacao
@@ -3149,6 +3156,9 @@ Cliente: cliente,
 Profissional: profDireto || null,
 Area: area,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
+StatusSolicitacao: "Registrada",
 Status: "Pendente",
 PrecisaSubstituicao: "Sim",
 TipoContrato: tipoContrato || null,
@@ -3185,6 +3195,9 @@ Cliente: cliente,
 Profissional: p.nome,
 Area: p.area,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
+EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
+StatusSolicitacao: "Registrada",
 Status: "Pendente",
 PrecisaSubstituicao: "Sim",
 MotivoSubstituicao: motivo || null,
