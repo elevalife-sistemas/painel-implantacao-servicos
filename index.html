@@ -2864,7 +2864,7 @@ function statusBadgeClass(status){
   if (st.indexOf("andamento") !== -1) return "andamento";
   return "outro";
 }
-function coberturaTipoLabel(item){
+function coberturaTipoLabel(item){ if (item.__tipoOverride) return item.__tipoOverride;
   var precisa = item.PrecisaSubstituicao || "";
   if (precisa === "Nao") return "Informativo";
   if (item.TipoContrato) return item.TipoContrato;
@@ -2928,13 +2928,13 @@ async function loadCoberturaHistorico(){
     coberturaHistoricoData.sort(function(a, b){
       return new Date(b.__created || 0) - new Date(a.__created || 0);
     });
-    coberturaHistoricoLoaded = true;
+    coberturaHistoricoLoaded = true; appendAvaliacoesToHistorico();
     renderCoberturaHistorico();
   } catch (err){
     wrap.innerHTML = '<div class="hist-empty">Erro ao carregar historico: ' + escapeHtml(err.message) + '</div>';
   }
 }
-var COB_STATUS_COLS = ["Registrada","Em Triagem","Psel Aberto","Contratação","Concluída","Atrasado"];
+async function appendAvaliacoesToHistorico(){ try { var avalData = await graphFetch(AVALIACOES_GRAPH_BASE + "/items?expand=fields&$top=999"); var extra = []; (avalData.value || []).forEach(function(it){ var af = it.fields || {}; var nome = (af.Title || af.LinkTitle || "").trim() || "Candidato"; if (af.Oculto === "Sim"){ extra.push({ Cliente: nome, Area: "-", Solicitante: af.Coordenador || "-", Status: "Cancelado", DataInicio: null, DataFim: null, __created: af.Data || it.createdDateTime, __id: "aval-excl-" + it.id, __tipoOverride: "Exclusao do banco de talentos" }); } else if (af.Decisao === "Aprovado" || af.Decisao === "Reprovado"){ extra.push({ Cliente: nome, Area: "-", Solicitante: af.Coordenador || "-", Status: af.Decisao === "Aprovado" ? "Concluido" : "Cancelado", DataInicio: null, DataFim: null, __created: af.Data || it.createdDateTime, __id: "aval-" + it.id, __tipoOverride: "Avaliacao banco de talentos: " + af.Decisao + (af.MotivoReprovacao ? " (" + af.MotivoReprovacao + ")" : "") }); } }); coberturaHistoricoData = (coberturaHistoricoData || []).filter(function(f){ return String(f.__id||"").indexOf("aval-") !== 0; }); coberturaHistoricoData = coberturaHistoricoData.concat(extra); coberturaHistoricoData.sort(function(a, b){ return new Date(b.__created || 0) - new Date(a.__created || 0); }); renderCoberturaHistorico(); } catch (err){ console.warn("Falha ao anexar avaliacoes ao historico:", err); } } var COB_STATUS_COLS = ["Registrada","Em Triagem","Psel Aberto","Contratação","Concluída","Atrasado"];
 function buildCoberturasBoard(){
   var board = document.getElementById("coberturasBoard");
   if (!board) return;
