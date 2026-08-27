@@ -1115,7 +1115,7 @@ var CURRENT_USER_NAME = "";
 // endpoint de portfolio de profissionais estiver disponivel.
 var TALENT_POOL = [];
 var talentPoolLoaded = false;
-var talentPoolLoading = false;
+var talentPoolLoading = false; var RECRUTAHUB_CANDIDATURAS = []; var recrutahubCandidaturasLoaded = false; var recrutahubCandidaturasLoading = false;
 function loadTalentPool(force){
   if (talentPoolLoading) return;
   if (talentPoolLoaded && !force) return;
@@ -1138,7 +1138,7 @@ function loadTalentPool(force){
       renderCoberturas();
     });
 }
-var AVALIACOES_LIST_ID = "3487b470-9ebd-427f-b59e-1acff8513177"; var AVALIACOES_GRAPH_BASE = "https://graph.microsoft.com/v1.0/sites/" + GRAPH_SITE_SEGMENT + "/lists/" + AVALIACOES_LIST_ID; var TALENT_AVALIACOES = {}; var talentAvaliacoesLoaded = false; var talentAvaliacoesLoading = false; var coberturaAvaliacaoDecisaoPendente = null; var RS_EMAIL = "gisleiny@elevalife.com.br"; async function loadTalentAvaliacoes(force){ if (talentAvaliacoesLoading) return; if (talentAvaliacoesLoaded && !force) return; talentAvaliacoesLoading = true; try { var data = await graphFetch(AVALIACOES_GRAPH_BASE + "/items?expand=fields&$top=999"); TALENT_AVALIACOES = {}; (data.value || []).forEach(function(it){ var f = it.fields || {}; if (!f.CandidatoId) return; TALENT_AVALIACOES[f.CandidatoId] = { itemId: it.id, decisao: f.Decisao || "", motivoReprovacao: f.MotivoReprovacao || "", coordenador: f.Coordenador || "", data: f.Data || "", oculto: f.Oculto === "Sim" }; }); talentAvaliacoesLoaded = true; } catch (err){ console.error("Erro ao carregar avaliacoes do banco de talentos:", err); } finally { talentAvaliacoesLoading = false; } renderCoberturas(); } function canDeleteImplantacoes(){
+aunction loadRecrutaHubCandidaturas(force){ if (recrutahubCandidaturasLoading) return; if (recrutahubCandidaturasLoaded && !force) return; recrutahubCandidaturasLoading = true; var url = RECRUTAHUB_API_URL.replace("/personnel-requests", "/recrutahub") + "?resource=candidaturas"; fetch(url, { headers: { "x-painel-secret": RECRUTAHUB_API_SECRET } }).then(function(resp){ if (!resp.ok) { throw new Error("HTTP " + resp.status); } return resp.json(); }).then(function(json){ RECRUTAHUB_CANDIDATURAS = (json && json.data) || []; recrutahubCandidaturasLoaded = true; recrutahubCandidaturasLoading = false; renderCoberturas(); }).catch(function(err){ console.error("Erro ao carregar candidaturas do RecrutaHub:", err); recrutahubCandidaturasLoading = false; }); } function pretensaoSalarialDoCandidato(candidatoId){ var c = RECRUTAHUB_CANDIDATURAS.filter(function(x){ return x.candidato_id === candidatoId || x.candidatoId === candidatoId || x.id === candidatoId; })[0]; if (!c) return null; return c.pretensao_salarial || c.pretensaoSalarial || c.salario_pretendido || null; } var AVALIACOES_LIST_ID = "3487b470-9ebd-427f-b59e-1acff8513177"; var AVALIACOES_GRAPH_BASE = "https://graph.microsoft.com/v1.0/sites/" + GRAPH_SITE_SEGMENT + "/lists/" + AVALIACOES_LIST_ID; var TALENT_AVALIACOES = {}; var talentAvaliacoesLoaded = false; var talentAvaliacoesLoading = false; var coberturaAvaliacaoDecisaoPendente = null; var RS_EMAIL = "gisleiny@elevalife.com.br"; async function loadTalentAvaliacoes(force){ if (talentAvaliacoesLoading) return; if (talentAvaliacoesLoaded && !force) return; talentAvaliacoesLoading = true; try { var data = await graphFetch(AVALIACOES_GRAPH_BASE + "/items?expand=fields&$top=999"); TALENT_AVALIACOES = {}; (data.value || []).forEach(function(it){ var f = it.fields || {}; if (!f.CandidatoId) return; TALENT_AVALIACOES[f.CandidatoId] = { itemId: it.id, decisao: f.Decisao || "", motivoReprovacao: f.MotivoReprovacao || "", coordenador: f.Coordenador || "", data: f.Data || "", oculto: f.Oculto === "Sim" }; }); talentAvaliacoesLoaded = true; } catch (err){ console.error("Erro ao carregar avaliacoes do banco de talentos:", err); } finally { talentAvaliacoesLoading = false; } renderCoberturas(); } function canDeleteImplantacoes(){
   return AUTHORIZED_DELETE_EMAILS.indexOf((CURRENT_USER_EMAIL || "").toLowerCase()) !== -1;
 }
 
@@ -2723,7 +2723,7 @@ function renderCoberturas(){
   setupCoberturaSubTabs();
   var wrap = document.getElementById("coberturasList");
   if (!wrap) return;
-  if (!talentPoolLoaded && !talentPoolLoading) { loadTalentPool(); } if (!talentAvaliacoesLoaded && !talentAvaliacoesLoading) { loadTalentAvaliacoes(); }
+  if (!talentPoolLoaded && !talentPoolLoading) { loadTalentPool(); } if (!talentAvaliacoesLoaded && !talentAvaliacoesLoading) { loadTalentAvaliacoes(); } if (!recrutahubCandidaturasLoaded && !recrutahubCandidaturasLoading) { loadRecrutaHubCandidaturas(); }
   renderCoberturaAreaTabs();
   loadCoberturaHistorico().then(buildCoberturasBoard);
   wrap.innerHTML = "";
@@ -2738,7 +2738,7 @@ function renderCoberturas(){
       '<div class="prof-name">' + p.nome + '</div>' +
       '<span class="prof-tag">' + p.area + '</span>' + (function(){ var av = TALENT_AVALIACOES[p.id]; if (!av || !av.decisao) return ""; return '<span class="prof-tag" style="margin-left:4px;background:' + (av.decisao === "Aprovado" ? "var(--green-bg);color:var(--green-tx)" : "var(--red-bg);color:var(--red-tx)") + ';">' + av.decisao + '</span>'; })() +
       '<div class="prof-meta">' + p.qualificacao + '</div>' +
-      '<div class="prof-meta">' + p.disponibilidade + '</div>' + '<div class="prof-meta">Cidade: ' + (p.cidade || "Nao informada") + '</div>' +
+      '<div class="prof-meta">' + p.disponibilidade + '</div>' + '<div class="prof-meta">Cidade: ' + (p.cidade || "Nao informada") + '</div>' + (function(){ var ps = pretensaoSalarialDoCandidato(p.id); return ps ? '<div class="prof-meta">Pretensao salarial: ' + formatCurrencyBRL(ps) + '</div>' : ''; })() +
       '<button type="button" class="prof-link">Ver curriculo e parecer do RH</button>' +
       '<button type="button" class="btn-cobertura">Selecionar para Cobertura/Substituicao</button>';
     card.querySelector(".prof-link").addEventListener("click", function(){ openCoberturaProfileModal(p.id); });
