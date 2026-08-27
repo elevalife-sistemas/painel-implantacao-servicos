@@ -228,7 +228,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <div class="tab active tab-sub" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
         <div class="tab tab-sub" data-tab="kanban"><span class="tab-icon">&#128203;</span>Kanban</div>
         <p class="tab-group-label" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.14);">Coberturas e Substituições</p>
-        <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('solicitacoes')"><span class="tab-icon">&#128203;</span>Solicitações</div>
+        <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('solicitacoes')"><span class="tab-icon">&#128203;</span>Solicitações</div><div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('banco')"><span class="tab-icon">&#128451;</span>Banco de Talentos</div>
         <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('historico')"><span class="tab-icon">&#128220;</span>Histórico</div>
         <div class="tab tab-sub" style="opacity:.5;cursor:not-allowed;" title="Em breve"><span class="tab-icon">&#127958;</span>Gestão de Férias</div>
         <a class="tab" href="https://elevalife-ats.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;"><span class="tab-icon">&#128101;</span>RecrutaHub</a>
@@ -382,20 +382,20 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <div class="kanban-header">
         <h2 class="kanban-client-name">Coberturas e Substituições</h2>
         <span class="badge-note">Banco de talentos sincronizado com o RecrutaHub</span>
-        <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button>
+        <button type="button" class="btn-new" id="novaSolicitacaoCoberturaBtn" style="margin-left:auto;">+ Nova solicitacao</button><button type="button" class="btn-new" id="coberturaPselHeaderBtn" style="margin-left:10px;background:var(--grena-bg);color:var(--grena);">Nenhum candidato adequado? Abrir Psel</button>
       </div>
-      <div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div>
+       
       <div class="chip-row" style="margin-bottom:16px;">
         <button type="button" class="chip active" id="coberturaSubTabSolicitacoes">Solicitacoes</button>
-        <button type="button" class="chip" id="coberturaSubTabHistorico">Historico</button>
+        <button type="button" class="chip" id="coberturaSubTabBanco">Banco de Talentos</button><button type="button" class="chip" id="coberturaSubTabHistorico">Historico</button>
       </div>
       <div id="coberturaViewSolicitacoes">
       <div id="coberturasBoardWrap" style="margin-bottom:26px;">
         <h3 style="font-size:15px;font-weight:600;margin:0 0 12px;color:var(--text);">Solicitações em andamento</h3>
         <div id="coberturasBoard" class="board" style="grid-template-columns:repeat(6,minmax(0,1fr));"></div>
       </div>
-      <p style="font-size:12.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin:28px 0 12px;">Solicitar nova cobertura</p>
-      <div id="coberturasList" class="coberturas-grid"></div>
+      </div><div id="coberturaViewBanco" class="hidden"><div class="chip-row" id="coberturaAreaChips" style="margin-bottom:16px;"></div><p style="font-size:12.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin:28px 0 12px;">Solicitar nova cobertura</p>
+      <div id="coberturasList" class="coberturas-grid"></div><div style="text-align:center;margin-top:20px;"><button type="button" class="btn-new" id="coberturaPselBancoBtn">Nenhum candidato adequado? Abrir Psel</button></div>
       </div>
       <div id="coberturaViewHistorico" class="hidden">
         <div class="hist-filters">
@@ -406,7 +406,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <div id="histTableWrap"></div>
       </div>
 <div style="text-align:center;margin-top:20px;">
-<button type="button" class="btn-new" id="coberturaPselDiretoBtn">Nenhum candidato adequado? Abrir Psel</button>
+<button type="button" class="btn-new" id="coberturaPselDiretoBtn" style="display:none;">Nenhum candidato adequado? Abrir Psel</button>
 </div>
     </div>
 
@@ -2711,7 +2711,7 @@ function setupCoberturaSubTabs(){
   var btnSol = document.getElementById("coberturaSubTabSolicitacoes");
   var btnHist = document.getElementById("coberturaSubTabHistorico");
   if (btnSol) btnSol.addEventListener("click", function(){ switchCoberturaSubTab("solicitacoes"); buildCoberturasBoard(); });
-  if (btnHist) btnHist.addEventListener("click", function(){ switchCoberturaSubTab("historico"); });
+  if (btnHist) btnHist.addEventListener("click", function(){ switchCoberturaSubTab("historico"); }); var btnBanco = document.getElementById("coberturaSubTabBanco"); if (btnBanco) btnBanco.addEventListener("click", function(){ switchCoberturaSubTab("banco"); });
   var selArea = document.getElementById("histFiltroArea");
   var selStatus = document.getElementById("histFiltroStatus");
   var inpCliente = document.getElementById("histFiltroCliente");
@@ -2738,7 +2738,7 @@ function renderCoberturas(){
       '<div class="prof-name">' + p.nome + '</div>' +
       '<span class="prof-tag">' + p.area + '</span>' + (function(){ var av = TALENT_AVALIACOES[p.id]; if (!av || !av.decisao) return ""; return '<span class="prof-tag" style="margin-left:4px;background:' + (av.decisao === "Aprovado" ? "var(--green-bg);color:var(--green-tx)" : "var(--red-bg);color:var(--red-tx)") + ';">' + av.decisao + '</span>'; })() +
       '<div class="prof-meta">' + p.qualificacao + '</div>' +
-      '<div class="prof-meta">' + p.disponibilidade + '</div>' +
+      '<div class="prof-meta">' + p.disponibilidade + '</div>' + '<div class="prof-meta">Cidade: ' + (p.cidade || "Nao informada") + '</div>' +
       '<button type="button" class="prof-link">Ver curriculo e parecer do RH</button>' +
       '<button type="button" class="btn-cobertura">Selecionar para Cobertura/Substituicao</button>';
     card.querySelector(".prof-link").addEventListener("click", function(){ openCoberturaProfileModal(p.id); });
@@ -2883,7 +2883,7 @@ function formatDateBR(dateStr){
 }
 var coberturaHistoricoData = [];
 var coberturaHistoricoLoaded = false;
-function switchCoberturaSubTab(tab){
+function switchCoberturaSubTab(tab){ var conf = {solicitacoes:["coberturaSubTabSolicitacoes","coberturaViewSolicitacoes"],banco:["coberturaSubTabBanco","coberturaViewBanco"],historico:["coberturaSubTabHistorico","coberturaViewHistorico"]}; var keys = Object.keys(conf); for (var i=0;i<keys.length;i++){ var btnChk = document.getElementById(conf[keys[i]][0]); var viewChk = document.getElementById(conf[keys[i]][1]); if (!btnChk || !viewChk) return; } for (var j=0;j<keys.length;j++){ var k = keys[j]; var b = document.getElementById(conf[k][0]); var v = document.getElementById(conf[k][1]); if (k === tab){ b.classList.add("active"); v.classList.remove("hidden"); } else { b.classList.remove("active"); v.classList.add("hidden"); } } if (tab === "historico") loadCoberturaHistorico(); } function __legacySwitchCoberturaSubTab(tab){
   var btnSol = document.getElementById("coberturaSubTabSolicitacoes");
   var btnHist = document.getElementById("coberturaSubTabHistorico");
   var viewSol = document.getElementById("coberturaViewSolicitacoes");
@@ -3292,7 +3292,7 @@ function openCoberturaPselDiretoModal(){
  document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
  document.getElementById("coberturaModalOverlay").classList.add("show");
 }
-document.getElementById("coberturaPselDiretoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); });
+document.getElementById("coberturaPselDiretoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); }); document.getElementById("coberturaPselHeaderBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); }); document.getElementById("coberturaPselBancoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); });
 document.getElementById("coberturaDuplicadaCancelarBtn").addEventListener("click", function(){ closeCoberturaDuplicadaModal(); });
 document.getElementById("coberturaDuplicadaConfirmarBtn").addEventListener("click", async function(){ closeCoberturaDuplicadaModal(); await doSubmitCobertura(); });
 function openModal(){
