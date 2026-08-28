@@ -3730,11 +3730,11 @@ document.getElementById("gateLoginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);
 document.getElementById("refreshBtn").addEventListener("click", async function(){
   showToast("Atualizando...");
-  try { await loadItems(); renderAll(); loadTalentPool(true); await syncRecrutaHubStatuses(); showToast("Atualizado."); }
+  try { await loadItems(); renderAll(); loadTalentPool(true); await syncRecrutaHubStatuses(); await loadCoberturaHistorico(); await loadRecrutaHubVagas(true); showToast("Atualizado."); }
   catch (err){ showToast("Erro ao atualizar: " + err.message, true); }
 });
 
-(async function init(){
+(async function init(){  setInterval(function(){ try { if (typeof loadCoberturaHistorico === "function") loadCoberturaHistorico(); if (typeof loadRecrutaHubVagas === "function") loadRecrutaHubVagas(true); if (typeof syncRecrutaHubStatuses === "function") syncRecrutaHubStatuses(); } catch (err) { console.error("Erro na sincronizacao automatica:", err); } }, 300000);
   await msalInstance.initialize();
   var response = await msalInstance.handleRedirectPromise();
   var accounts = msalInstance.getAllAccounts();
