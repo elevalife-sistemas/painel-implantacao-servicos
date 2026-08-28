@@ -2939,7 +2939,7 @@ function buildCoberturasBoard(){
   var items = coberturaHistoricoData || [];
   board.innerHTML = "";
   COB_STATUS_COLS.forEach(function(status){
-    var colItems = items.filter(function(f){ return (f.StatusSolicitacao || "Registrada") === status; });
+    var colItems = items.filter(function(f){ return !(f.__id && String(f.__id).indexOf("aval-") === 0) && (f.StatusSolicitacao || "Registrada") === status; });
     var col = document.createElement("div");
     col.className = "col";
     col.dataset.status = status;
