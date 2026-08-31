@@ -3111,7 +3111,7 @@ var COBERTURAS_RH_STATUS_MAP = { "rascunho":"Pendente", "enviada":"Pendente", "e
     }
     if (changed) renderCoberturaHistorico();
   }
-  async function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } function confirmCobertura(){
+  async function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
