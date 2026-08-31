@@ -1235,7 +1235,7 @@ async function loadItems(){
       statusChecklistRaw: f.StatusChecklist || null,
       empresa: f.Empresa || "",
       statusCliente: f.StatusCliente || "",
-      unidade: f.Unidade || "",
+      unidade: f.Unidade || "",      movimentacaoPor: f.UltimaMovimentacaoPor || "", movimentacaoData: f.UltimaMovimentacaoData || null,
       cnpj: f.CNPJ || "",
       cnae: f.CNAE || "",
       grauRisco: f.GrauRisco || "",
@@ -1627,7 +1627,7 @@ async function onColDrop(e){
   var oldPrazo = item.dataPrevista || null;
   if (oldStatus === newStatus) return;
   item.status = newStatus;
-  var fields = { field_12: newStatus };
+  var fields = { field_12: newStatus }; var movAutor = (typeof CURRENT_USER_NAME !== "undefined" && CURRENT_USER_NAME) || ""; var movData = new Date().toISOString(); item.movimentacaoPor = movAutor; item.movimentacaoData = movData; fields.UltimaMovimentacaoPor = movAutor; fields.UltimaMovimentacaoData = movData;
   if (newStatus === "Concluido" && !item.dataReal){
     var today = new Date().toISOString().slice(0,10);
     item.dataReal = today;
@@ -1692,7 +1692,7 @@ function buildBoard(){
         '<div class="card-title">' + it.title + '</div>' +
         epiBadgeHtml +
         '<div class="card-area" style="background:' + ac.bg + ';color:' + ac.tx + ';">' + it.areaResp + '</div>' +
-        '<div class="card-meta">' + meta + '</div>' +
+        '<div class="card-meta">' + meta + '</div>' + (it.movimentacaoPor ? '<div class="card-meta" style="font-style:italic;opacity:.75;">Movido por ' + it.movimentacaoPor + (it.movimentacaoData ? (' em ' + new Date(it.movimentacaoData).toLocaleDateString("pt-BR")) : "") + '</div>' : "") +
         '<a class="card-link" href="' + SP_EDIT_URL + it.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation();">Ver no SharePoint &#8594;</a>';
       col.appendChild(c);
     });
