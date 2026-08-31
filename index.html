@@ -390,7 +390,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <button type="button" class="chip" id="coberturaSubTabBanco">Banco de Talentos</button><button type="button" class="chip" id="coberturaSubTabHistorico">Historico</button>
       </div>
       <div id="coberturaViewSolicitacoes">
-      <div id="coberturasBoardWrap" style="margin-bottom:26px;">
+      <div id="coberturaKpiGrid" class="kpi-grid"></div><div id="coberturasBoardWrap" style="margin-bottom:26px;">
         <h3 style="font-size:15px;font-weight:600;margin:0 0 12px;color:var(--text);">Solicitações em andamento</h3>
         <div id="coberturasBoard" class="board" style="grid-template-columns:repeat(6,minmax(0,1fr));"></div>
       </div>
@@ -2920,7 +2920,7 @@ async function loadCoberturaHistorico(){
     coberturaHistoricoData = (data.value || []).map(function(it){
       var f = it.fields || {};
       f.__id = it.id;
-      f.__created = it.createdDateTime || f.Created;
+      f.__created = it.createdDateTime || f.Created; f.__modified = it.lastModifiedDateTime || null;
       return f;
     });
     coberturaHistoricoData.sort(function(a, b){
@@ -2975,9 +2975,9 @@ var RECRUTAHUB_VAGAS_MAP = {}; var recrutahubVagasLoaded = false; var recrutahub
     });
     board.appendChild(col);
   });
-  populateCoberturaBoardAvatars(items);
+  populateCoberturaBoardAvatars(items); renderCoberturaKPIs();
 }
-function onCobCardDragStart(e){
+function renderCoberturaKPIs(){ var el = document.getElementById("coberturaKpiGrid"); if (!el) return; var real = (coberturaHistoricoData || []).filter(function(f){ return !(f.__id && String(f.__id).indexOf("aval-") === 0) && f.PrecisaSubstituicao !== "Nao"; }); var abertas = real.filter(function(f){ return (f.StatusSolicitacao || "Registrada") !== "Concluída"; }); var concluidas = real.filter(function(f){ return (f.StatusSolicitacao || "Registrada") === "Concluída"; }); var temposDias = concluidas.map(function(f){ if (!f.__created || !f.__modified) return null; var dias = (new Date(f.__modified) - new Date(f.__created)) / 86400000; return dias >= 0 ? dias : null; }).filter(function(d){ return d !== null; }); var tempoMedio = temposDias.length ? (temposDias.reduce(function(a,b){ return a+b; },0) / temposDias.length) : null; var porMotivo = {}; abertas.forEach(function(f){ var m = f.MotivoSubstituicao || "Nao informado"; porMotivo[m] = (porMotivo[m]||0) + 1; }); var viaPsel = concluidas.filter(function(f){ return f.PrecisaPsel === "Sim"; }).length; var viaBanco = concluidas.length - viaPsel; var pctPsel = concluidas.length ? Math.round((viaPsel / concluidas.length) * 100) : 0; var pctBanco = concluidas.length ? (100 - pctPsel) : 0; var motivoKeys = Object.keys(porMotivo); var motivoHtml = motivoKeys.length ? motivoKeys.map(function(m){ var pct = abertas.length ? Math.round(porMotivo[m] / abertas.length * 100) : 0; return '<div class="rank-row"><div class="rank-name">' + escapeHtml(m) + '</div><div class="rank-track"><div class="rank-fill" style="width:' + pct + '%;background:var(--grena);"></div></div><div class="rank-value">' + porMotivo[m] + '</div></div>'; }).join("") : '<p style="font-size:13px;color:var(--text2);margin:0;">Nenhuma solicitacao em aberto no momento.</p>'; el.innerHTML = '<div class="kpi-card"><div class="kpi-icon" style="background:var(--blue-bg);color:var(--blue-tx);">&#9201;</div><p class="kpi-label">Tempo medio p/ preencher</p><p class="kpi-value">' + (tempoMedio !== null ? tempoMedio.toFixed(1) + ' dias' : "-") + '</p><p class="kpi-sub">' + concluidas.length + ' concluida(s) com dados</p></div>' + '<div class="kpi-card"><div class="kpi-icon" style="background:var(--amber-bg);color:var(--amber-tx);">&#128203;</div><p class="kpi-label">Abertas no momento</p><p class="kpi-value">' + abertas.length + '</p><p class="kpi-sub">' + real.length + ' solicitacao(oes) no total</p></div>' + '<div class="kpi-card"><div class="kpi-icon" style="background:var(--green-bg);color:var(--green-tx);">&#128193;</div><p class="kpi-label">Via banco de talentos</p><p class="kpi-value">' + pctBanco + '%</p><p class="kpi-sub">' + viaBanco + ' de ' + concluidas.length + ' concluida(s)</p></div>' + '<div class="kpi-card"><div class="kpi-icon" style="background:var(--grena-bg);color:var(--grena);">&#128506;</div><p class="kpi-label">Via Psel</p><p class="kpi-value">' + pctPsel + '%</p><p class="kpi-sub">' + viaPsel + ' de ' + concluidas.length + ' concluida(s)</p></div>' + '<div class="chart-card" style="grid-column:1 / -1;margin-bottom:0;"><p class="chart-title" style="font-size:15px;">Abertas por motivo</p><div class="rank-list">' + motivoHtml + '</div></div>'; } function onCobCardDragStart(e){
   e.currentTarget.classList.add("dragging");
   e.dataTransfer.setData("text/plain", e.currentTarget.dataset.id);
 }
