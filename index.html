@@ -3569,7 +3569,7 @@ async function confirmNewClient(){
   try {
     var abertura = new Date();
     var prazos = computeAutoPrazos(abertura);
-    for (var i=0;i<template.length;i++){
+    var createdIds = []; for (var i=0;i<template.length;i++){
       var t = template[i];
       var prazo = prazos[t.num];
       var fields = {
@@ -3586,7 +3586,7 @@ async function confirmNewClient(){
       Object.keys(extraFields).forEach(function(k){ fields[k] = extraFields[k]; });
       var body = { fields: fields };
       if (prazo) body.fields.field_10 = toPrazoIso(prazo);
-      await graphFetch(GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify(body) });
+      var createdItem; try { createdItem = await graphFetch(GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify(body) }); } catch (creationErr) { showToast("Falha ao criar a etapa " + (i+1) + " de " + template.length + " para \"" + name + "\". Revertendo as " + createdIds.length + " etapa(s) ja criada(s)...", true); var rollbackErrors = 0; for (var r=0;r<createdIds.length;r++){ try { await graphFetch(GRAPH_BASE + "/items/" + createdIds[r], { method: "DELETE" }); } catch (delErr){ rollbackErrors++; console.error("Nao consegui reverter a etapa " + createdIds[r] + ": " + delErr.message); } } await loadItems(); renderAll(); if (rollbackErrors === 0){ showToast("Implantacao \"" + name + "\" nao foi criada (" + creationErr.message + "). Nenhuma etapa parcial ficou salva, pode tentar novamente.", true); } else { showToast("Implantacao \"" + name + "\" falhou (" + creationErr.message + ") e " + rollbackErrors + " etapa(s) ja criada(s) nao puderam ser revertidas automaticamente. Revise no SharePoint antes de tentar de novo.", true); } return; } if (createdItem && createdItem.id) createdIds.push(createdItem.id);
     }
     await loadItems();
     selectedClients = [name];
