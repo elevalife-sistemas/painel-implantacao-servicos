@@ -2826,7 +2826,7 @@ function closeCoberturaInformativoModal(){ document.getElementById("coberturaInf
 async function confirmCoberturaInformativo(){
 var cliente = document.getElementById("coberturaInformativoCliente").value.trim();
 var observacao = document.getElementById("coberturaInformativoObservacao").value.trim();
-if (!cliente){ showToast("Digite o cliente para o comunicado informativo.", true); return; }
+if (!cliente){ showToast("Digite o cliente para o comunicado informativo.", true); return; } var emailResp = getValidCoberturaEmailResponsavel(); if (emailResp === null) return;
 closeCoberturaInformativoModal();
 showToast("Enviando comunicado informativo...");
 try {
@@ -2834,7 +2834,7 @@ var fields = {
 Title: "Informativo -> " + cliente,
 Cliente: cliente,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+EmailResponsavel: emailResp,
 PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
 StatusSolicitacao: "Registrada",
 Status: "Pendente",
@@ -3111,14 +3111,14 @@ var COBERTURAS_RH_STATUS_MAP = { "rascunho":"Pendente", "enviada":"Pendente", "e
     }
     if (changed) renderCoberturaHistorico();
   }
-  async function confirmCobertura(){
+  async function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
 var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
 if (!pselDireto && !p){ showToast("Selecione um profissional.", true); return; }
 if (pselDireto && !areaDireto){ showToast("Selecione a area de servico.", true); return; }
-if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; }
+if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; } var emailResp = getValidCoberturaEmailResponsavel(); if (emailResp === null) return;
 var area = pselDireto ? areaDireto : p.area;
 var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
 if (pselDireto && !dataInicioPsel){ showToast("Informe a data de inicio desejada.", true); return; }
@@ -3154,7 +3154,7 @@ Cliente: cliente,
 Profissional: profDireto || null,
 Area: area,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+EmailResponsavel: emailResp,
 PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
 StatusSolicitacao: "Registrada",
 Status: "Pendente",
@@ -3193,7 +3193,7 @@ Cliente: cliente,
 Profissional: p.nome,
 Area: p.area,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-EmailResponsavel: (document.getElementById("coberturaEmailResponsavel").value || "").trim() || CURRENT_USER_EMAIL || "",
+EmailResponsavel: emailResp,
 PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
 StatusSolicitacao: "Registrada",
 Status: "Pendente",
