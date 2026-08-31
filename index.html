@@ -1218,7 +1218,7 @@ async function loadItems(){
       ancora: f.field_7 || "",
       dias: f.field_8,
       prazoRef: f.field_9 || "",
-      dataPrevista: f.field_10 || null,
+      dataPrevista: f.field_10 || null, prazoAlteradoPor: f.PrazoAlteradoPor || "", prazoAlteradoData: f.PrazoAlteradoData || null,
       dataReal: f.field_11 || null,
       status: f.field_12 || "A definir",
       obs: f.field_13 || "",
@@ -1692,7 +1692,7 @@ function buildBoard(){
         '<div class="card-title">' + it.title + '</div>' +
         epiBadgeHtml +
         '<div class="card-area" style="background:' + ac.bg + ';color:' + ac.tx + ';">' + it.areaResp + '</div>' +
-        '<div class="card-meta">' + meta + '</div>' + (it.movimentacaoPor ? '<div class="card-meta" style="font-style:italic;opacity:.75;">Movido por ' + it.movimentacaoPor + (it.movimentacaoData ? (' em ' + new Date(it.movimentacaoData).toLocaleDateString("pt-BR")) : "") + '</div>' : "") +
+        '<div class="card-meta">' + meta + '</div>' + (it.movimentacaoPor ? '<div class="card-meta" style="font-style:italic;opacity:.75;">Movido por ' + it.movimentacaoPor + (it.movimentacaoData ? (' em ' + new Date(it.movimentacaoData).toLocaleDateString("pt-BR")) : "") + '</div>' : "") + (it.prazoAlteradoPor ? '<div class="card-meta" style="font-style:italic;opacity:.75;">Prazo alterado por ' + it.prazoAlteradoPor + (it.prazoAlteradoData ? (' em ' + new Date(it.prazoAlteradoData).toLocaleDateString("pt-BR")) : "") + '</div>' : "") +
         '<a class="card-link" href="' + SP_EDIT_URL + it.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation();">Ver no SharePoint &#8594;</a>';
       col.appendChild(c);
     });
@@ -2342,7 +2342,7 @@ async function saveCardModal(){
 
   var fields = {};
   if (newStatus !== item.status) fields.field_12 = newStatus;
-  if ((newPrazo||null) !== (item.dataPrevista||null)) fields.field_10 = newPrazo;
+  if ((newPrazo||null) !== (item.dataPrevista||null)) { fields.field_10 = newPrazo; var prazoAutor = (typeof CURRENT_USER_NAME !== "undefined" && CURRENT_USER_NAME) || ""; var prazoDataAlt = new Date().toISOString(); fields.PrazoAlteradoPor = prazoAutor; fields.PrazoAlteradoData = prazoDataAlt; item.prazoAlteradoPor = prazoAutor; item.prazoAlteradoData = prazoDataAlt; }
   if (newEmail !== (item.emailResponsavel||"")) fields.EmailResponsavel = newEmail;
   if (newObs !== (item.obs||"")) fields.field_13 = newObs;
 
