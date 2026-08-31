@@ -78,7 +78,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .btn-danger{background:var(--red-tx);color:#fff;border:none;}
 .btn-danger:hover{background:#8f2222;}
 .btn-new{margin-left:auto;background:var(--grena);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
-.btn-new:hover{background:var(--grena-dark);}
+.btn-new:hover{background:var(--grena-dark);}.btn-outline{background:#fff;color:var(--grena);border:1px solid var(--grena);padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}.btn-outline:hover{background:var(--grena-bg);}.btn-outline:disabled{opacity:.4;cursor:not-allowed;}
 .panel{display:none;}
 .panel.active{display:block;}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px;}
@@ -2713,9 +2713,9 @@ function setupCoberturaSubTabs(){
   var selArea = document.getElementById("histFiltroArea");
   var selStatus = document.getElementById("histFiltroStatus");
   var inpCliente = document.getElementById("histFiltroCliente");
-  if (selArea) selArea.addEventListener("change", renderCoberturaHistorico);
-  if (selStatus) selStatus.addEventListener("change", renderCoberturaHistorico);
-  if (inpCliente) inpCliente.addEventListener("input", renderCoberturaHistorico);
+  if (selArea) selArea.addEventListener("change", function(){ histPage = 1; renderCoberturaHistorico(); });
+  if (selStatus) selStatus.addEventListener("change", function(){ histPage = 1; renderCoberturaHistorico(); });
+  if (inpCliente) inpCliente.addEventListener("input", function(){ histPage = 1; renderCoberturaHistorico(); });
 }
 function renderCoberturas(){
   setupCoberturaSubTabs();
@@ -2728,7 +2728,7 @@ function renderCoberturas(){
   if (talentPoolLoading && !talentPoolLoaded) { wrap.innerHTML = '<p style="padding:16px;color:#666;">Carregando banco de talentos do RecrutaHub...</p>'; return; }
   var listaFiltradaBase = coberturaAreaFiltro === "Todas" ? TALENT_POOL : TALENT_POOL.filter(function(p){ return p.area === coberturaAreaFiltro; }); var listaFiltrada = listaFiltradaBase.filter(function(p){ var av = TALENT_AVALIACOES[p.id]; return !(av && av.oculto); });
   if (talentPoolLoaded && listaFiltrada.length === 0) { wrap.innerHTML = '<p style="padding:16px;color:#666;">Nenhum talento disponivel no banco do RecrutaHub para esta area no momento.</p>'; return; }
-  listaFiltrada.forEach(function(p){
+  var bancoTotalRows = listaFiltrada.length; var bancoTotalPages = Math.max(1, Math.ceil(bancoTotalRows / BANCO_PAGE_SIZE)); if (bancoPage > bancoTotalPages) bancoPage = bancoTotalPages; if (bancoPage < 1) bancoPage = 1; var bancoPageItems = listaFiltrada.slice((bancoPage-1)*BANCO_PAGE_SIZE, bancoPage*BANCO_PAGE_SIZE); bancoPageItems.forEach(function(p){
     var card = document.createElement("div");
     card.className = "prof-card";
     card.innerHTML =
@@ -2741,7 +2741,7 @@ function renderCoberturas(){
       '<button type="button" class="btn-cobertura">Selecionar para Cobertura/Substituicao</button>';
     card.querySelector(".prof-link").addEventListener("click", function(){ openCoberturaProfileModal(p.id); });
     card.querySelector(".btn-cobertura").addEventListener("click", function(){ openCoberturaModal(p.id); });
-    wrap.appendChild(card);
+    wrap.appendChild(card); if (bancoPageItems.indexOf(p) === bancoPageItems.length - 1) { wrap.insertAdjacentHTML("beforeend", coberturaPaginationHtml(bancoPage, bancoTotalPages, "goToBancoPage")); }
   });
 }
 
@@ -2910,7 +2910,7 @@ function populateCoberturaHistFiltros(){
     sel.appendChild(opt);
   });
 }
-async function loadCoberturaHistorico(){
+var histPage = 1; var HIST_PAGE_SIZE = 20; var bancoPage = 1; var BANCO_PAGE_SIZE = 12; function coberturaPaginationHtml(current, totalPages, fnName){ if (totalPages <= 1) return ""; var prevDis = current <= 1 ? "disabled" : ""; var nextDis = current >= totalPages ? "disabled" : ""; return '<div class="pagination-controls" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">' + '<button type="button" class="btn-outline" ' + prevDis + ' onclick="' + fnName + '(' + (current-1) + ')">Anterior</button>' + '<span style="font-size:13px;color:var(--text2);">Pagina ' + current + ' de ' + totalPages + '</span>' + '<button type="button" class="btn-outline" ' + nextDis + ' onclick="' + fnName + '(' + (current+1) + ')">Proxima</button>' + '</div>'; } function goToHistPage(p){ histPage = p; renderCoberturaHistorico(); } function goToBancoPage(p){ bancoPage = p; renderCoberturas(); } async function loadCoberturaHistorico(){
   populateCoberturaHistFiltros();
   var wrap = document.getElementById("histTableWrap");
   if (!wrap) return;
@@ -3038,10 +3038,10 @@ function renderCoberturaHistorico(){
     wrap.innerHTML = '<div class="hist-empty">Nenhum registro encontrado.</div>';
     return;
   }
-  var html = '<div class="hist-table-wrap"><table class="hist-table"><thead><tr>' +
+  var histTotalRows = rows.length; var histTotalPages = Math.max(1, Math.ceil(histTotalRows / HIST_PAGE_SIZE)); if (histPage > histTotalPages) histPage = histTotalPages; if (histPage < 1) histPage = 1; var histPageRows = rows.slice((histPage-1)*HIST_PAGE_SIZE, histPage*HIST_PAGE_SIZE); var html = '<div class="hist-table-wrap"><table class="hist-table"><thead><tr>' +
     "<th>Cliente</th><th>Area</th><th>Tipo</th><th>Solicitante</th><th>Inicio</th><th>Fim</th><th>Status</th><th>Data solicitacao</th><th>RecrutaHub</th>" +
     "</tr></thead><tbody>";
-  rows.forEach(function(f){
+  histPageRows.forEach(function(f){
     html += "<tr>" +
       "<td>" + escapeHtml(f.Cliente || "-") + "</td>" +
       "<td>" + escapeHtml(f.Area || "-") + "</td>" +
@@ -3054,7 +3054,7 @@ function renderCoberturaHistorico(){
       "<td>" + (f.RecrutaHubRequestId ? ('<button type="button" class="btn-link" data-rh-id="' + escapeHtml(f.RecrutaHubRequestId) + '" data-item-id="' + escapeHtml(String(f.id)) + '" onclick="checkRecrutaHubStatus(this)">Verificar status</button><span id="rhStatus_' + escapeHtml(String(f.id)) + '"></span>') : "-") + "</td>" +
       "</tr>";
   });
-  html += "</tbody></table></div>";
+  html += "</tbody></table></div>"; html += coberturaPaginationHtml(histPage, histTotalPages, "goToHistPage");
   wrap.innerHTML = html;
 }
 async function checkRecrutaHubStatus(btn){
