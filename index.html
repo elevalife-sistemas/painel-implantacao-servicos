@@ -1280,7 +1280,7 @@ async function checkOverdueItems(){
     item.status = "Atrasado";
     try {
       await graphFetch(GRAPH_BASE + "/items/" + item.id + "/fields", { method: "PATCH", body: JSON.stringify({ field_12: "Atrasado" }) });
-      await maybeSendNotification(item, oldStatus, oldPrazo);
+
       await advanceNextStepToFazer(item);
     } catch (err){
       item.status = oldStatus;
