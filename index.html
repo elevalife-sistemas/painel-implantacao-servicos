@@ -3226,7 +3226,7 @@ DataInicioPrevisto: dataInicioPsel
 });
 } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
 }
-showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail."); switchCoberturaSubTab("banco");
+showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
 }
 } catch (err){
 showToast("Erro ao enviar solicitacao: " + err.message, true);
@@ -3643,7 +3643,7 @@ document.getElementById("coberturaProfileSelectBtn").addEventListener("click", f
 document.getElementById("novaSolicitacaoCoberturaBtn").addEventListener("click", openCoberturaTipoModal);
 document.getElementById("coberturaTipoSimBtn").addEventListener("click", function(){
   closeCoberturaTipoModal();
-  showToast("Selecione um profissional abaixo para continuar.");
+  showToast("Selecione um profissional abaixo para continuar."); switchCoberturaSubTab("banco");
 });
 document.getElementById("coberturaTipoNaoBtn").addEventListener("click", function(){
   closeCoberturaTipoModal();
