@@ -3226,7 +3226,7 @@ DataInicioPrevisto: dataInicioPsel
 });
 } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
 }
-showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
+showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail."); switchCoberturaSubTab("banco");
 }
 } catch (err){
 showToast("Erro ao enviar solicitacao: " + err.message, true);
