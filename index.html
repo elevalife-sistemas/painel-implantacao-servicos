@@ -901,7 +901,7 @@ var EPI_ITEMS = [
   "Outros"
 ];
 
-function isEpiItem(item){ return item && Number(item.num) === EPI_STEP_NUM; }
+function isEpiItem(item){ return item && (Number(item.num) === EPI_STEP_NUM || /kit admissional/i.test(String(item.title||""))); }
 function isMeetingStep(item){ return item && MEETING_STEPS.indexOf(Number(item.num)) !== -1; }
 function linkForStep(item){ return item ? LINK_STEPS[Number(item.num)] : null; }
 
@@ -965,6 +965,13 @@ function parseDadosAcesso(raw){
 function findItemByClienteNum(cliente, num){
   for (var i=0;i<ITEMS.length;i++){
     if (ITEMS[i].cliente === cliente && Number(ITEMS[i].num) === Number(num)) return ITEMS[i];
+  }
+  return null;
+}
+
+function findEpiItemForCliente(cliente){
+  for (var i=0;i<ITEMS.length;i++){
+    if (ITEMS[i].cliente === cliente && isEpiItem(ITEMS[i])) return ITEMS[i];
   }
   return null;
 }
@@ -1841,7 +1848,7 @@ function renderDadosAcessoBox(item){
   });
   document.getElementById("docOutros").value = d.documentosOutros || "";
 
-  var epiSibling = findItemByClienteNum(item.cliente, EPI_STEP_NUM);
+  var epiSibling = findEpiItemForCliente(item.cliente);
   var epiState = epiSibling ? epiSibling.epiChecklist : parseEpiChecklist(null);
   document.getElementById("daEpiEmailCoordenador").value = (epiSibling && epiSibling.emailCoordenador) || "";
   var epiList = document.getElementById("dadosEpiItemsList");
@@ -1935,7 +1942,7 @@ async function saveDadosAcesso(){
       DadosAcessoPreenchido: true
     }) });
 
-    var epiSibling = findItemByClienteNum(item.cliente, EPI_STEP_NUM);
+    var epiSibling = findEpiItemForCliente(item.cliente);
     if (epiSibling){
       var epiChecklist = readDaEpiState();
       var nowIso = new Date().toISOString();
