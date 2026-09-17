@@ -709,6 +709,20 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <img class="modal-avatar" id="cardAvatarImg" alt="" style="display:none;">
       <div class="modal-avatar-initials" id="cardAvatarInitials" style="display:none;"></div>
       <span style="font-size:12px;color:var(--text2);" id="cardAvatarLabel"></span>
+</div>
+<label>2o responsavel (opcional)</label>
+<input type="email" id="cardEmail2" placeholder="nome@elevalife.com.br">
+<div class="modal-avatar-row" id="cardAvatarRow2" style="display:none;">
+<img class="modal-avatar" id="cardAvatarImg2" alt="" style="display:none;">
+<div class="modal-avatar-initials" id="cardAvatarInitials2" style="display:none;"></div>
+<span style="font-size:12px;color:var(--text2);" id="cardAvatarLabel2"></span>
+</div>
+<label>3o responsavel (opcional)</label>
+<input type="email" id="cardEmail3" placeholder="nome@elevalife.com.br">
+<div class="modal-avatar-row" id="cardAvatarRow3" style="display:none;">
+<img class="modal-avatar" id="cardAvatarImg3" alt="" style="display:none;">
+<div class="modal-avatar-initials" id="cardAvatarInitials3" style="display:none;"></div>
+<span style="font-size:12px;color:var(--text2);" id="cardAvatarLabel3"></span>
     </div>
     <label>Anotacoes</label>
     <textarea id="cardObs" placeholder="Observacoes sobre esta etapa..."></textarea>
@@ -1230,6 +1244,8 @@ async function loadItems(){
       status: f.field_12 || "A definir",
       obs: f.field_13 || "",
       emailResponsavel: f.EmailResponsavel || "",
+emailResponsavel2: f.EmailResponsavel2 || "",
+emailResponsavel3: f.EmailResponsavel3 || "",
       epiChecklist: parseEpiChecklist(f.EPIChecklist),
       epiPreenchido: !!f.EPIPreenchido,
       epiDataPreenchimento: f.EPIDataPreenchimento || null,
@@ -1367,6 +1383,42 @@ async function updateCardAvatarPreview(email){
   }
 }
 
+async function updateCardAvatarPreview2(email){
+var row = document.getElementById("cardAvatarRow2");
+var img = document.getElementById("cardAvatarImg2");
+var initialsBox = document.getElementById("cardAvatarInitials2");
+var label = document.getElementById("cardAvatarLabel2");
+if (!email){ row.style.display = "none"; return; }
+row.style.display = "flex";
+label.textContent = email;
+img.style.display = "none";
+initialsBox.style.display = "flex";
+initialsBox.textContent = initialsOf(email);
+var url = await getUserPhotoUrl(email);
+if (url){
+img.src = url;
+img.style.display = "block";
+initialsBox.style.display = "none";
+}
+}
+async function updateCardAvatarPreview3(email){
+var row = document.getElementById("cardAvatarRow3");
+var img = document.getElementById("cardAvatarImg3");
+var initialsBox = document.getElementById("cardAvatarInitials3");
+var label = document.getElementById("cardAvatarLabel3");
+if (!email){ row.style.display = "none"; return; }
+row.style.display = "flex";
+label.textContent = email;
+img.style.display = "none";
+initialsBox.style.display = "flex";
+initialsBox.textContent = initialsOf(email);
+var url = await getUserPhotoUrl(email);
+if (url){
+img.src = url;
+img.style.display = "block";
+initialsBox.style.display = "none";
+}
+}
 function clienteLabel(c){ return c ? c : TEMPLATE_CLIENT_LABEL; }
 
 var RESPONSAVEL_NAME_OVERRIDES = {
@@ -1722,10 +1774,14 @@ function openCardModal(id){
   document.getElementById("cardStatus").value = item.status;
   document.getElementById("cardDataPrevista").value = item.dataPrevista ? String(item.dataPrevista).slice(0,10) : "";
   document.getElementById("cardEmail").value = item.emailResponsavel || "";
+document.getElementById("cardEmail2").value = item.emailResponsavel2 || "";
+document.getElementById("cardEmail3").value = item.emailResponsavel3 || "";
   document.getElementById("cardObs").value = item.obs || "";
   document.getElementById("cardSpLink").href = SP_EDIT_URL + item.id;
   document.getElementById("cardModalOverlay").classList.add("show");
   updateCardAvatarPreview(item.emailResponsavel || "");
+updateCardAvatarPreview2(item.emailResponsavel2 || "");
+updateCardAvatarPreview3(item.emailResponsavel3 || "");
   renderEpiBox(item);
   renderMeetingBox(item);
   renderLinkBox(item);
@@ -2212,6 +2268,13 @@ function isValidEmail(v){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+function notificationRecipients(item){
+var list = [];
+if (item.emailResponsavel) list.push(item.emailResponsavel);
+if (item.emailResponsavel2 && list.indexOf(item.emailResponsavel2) === -1) list.push(item.emailResponsavel2);
+if (item.emailResponsavel3 && list.indexOf(item.emailResponsavel3) === -1) list.push(item.emailResponsavel3);
+return list;
+}
 async function sendNotificationEmail(item){
   var prazoTxt = item.dataPrevista ? String(item.dataPrevista).slice(0,10).split("-").reverse().join("/") : "Nao definido";
   var subject = "[" + clienteLabel(item.cliente) + "] Atualizacao na etapa: " + item.title;
@@ -2230,7 +2293,7 @@ async function sendNotificationEmail(item){
     message: {
       subject: subject,
       body: { contentType: "HTML", content: html },
-      toRecipients: [ { emailAddress: { address: item.emailResponsavel } } ]
+      toRecipients: notificationRecipients(item).map(function(e){ return { emailAddress: { address: e } }; })
     },
     saveToSentItems: true
   };
@@ -2290,17 +2353,24 @@ async function sendTeamsMessageToEmail(email, html){
 }
 
 async function sendTeamsNotification(item){
-  return sendTeamsMessageToEmail(item.emailResponsavel, notificationHtml(item));
+  var __recipients = notificationRecipients(item);
+var __allSelf = true;
+for (var __i=0; __i<__recipients.length; __i++){
+var __r = await sendTeamsMessageToEmail(__recipients[__i], notificationHtml(item));
+if (__r !== "SELF") __allSelf = false;
+}
+return __allSelf ? "SELF" : "OK";
 }
 
 async function maybeSendNotification(item, oldStatus, oldPrazo){
   var statusChanged = oldStatus !== item.status;
   var prazoChanged = (oldPrazo || null) !== (item.dataPrevista || null);
-  if (!item.emailResponsavel) return;
+  var notifRecipients = notificationRecipients(item);
+if (!notifRecipients.length) return;
   if (!statusChanged && !prazoChanged) return;
   try {
     await sendNotificationEmail(item);
-    showToast("E-mail de notificacao enviado para " + item.emailResponsavel);
+    showToast("E-mail de notificacao enviado para " + notifRecipients.join(", "));
   } catch (err){
     showToast("Nao consegui enviar o e-mail de notificacao: " + err.message, true);
   }
@@ -2309,7 +2379,7 @@ async function maybeSendNotification(item, oldStatus, oldPrazo){
     if (teamsResult === "SELF"){
       showToast("Voce e o responsavel: notificacao do Teams nao se aplica (apenas o e-mail foi enviado).");
     } else {
-      showToast("Mensagem do Teams enviada para " + item.emailResponsavel);
+      showToast("Mensagem do Teams enviada para " + notifRecipients.join(", "));
     }
   } catch (err){
     showToast("Nao consegui enviar a mensagem do Teams: " + err.message, true);
@@ -2325,12 +2395,22 @@ async function saveCardModal(){
   var newPrazoRaw = document.getElementById("cardDataPrevista").value;
   var newPrazo = newPrazoRaw ? (newPrazoRaw + "T12:00:00Z") : null;
   var newEmail = document.getElementById("cardEmail").value.trim();
+var newEmail2 = document.getElementById("cardEmail2").value.trim();
+var newEmail3 = document.getElementById("cardEmail3").value.trim();
   var newObs = document.getElementById("cardObs").value;
 
   if (newEmail && !isValidEmail(newEmail)){
     showToast("Digite um e-mail valido para o responsavel.", true);
     return;
   }
+if (newEmail2 && !isValidEmail(newEmail2)){
+showToast("Digite um e-mail valido para o 2o responsavel.", true);
+return;
+}
+if (newEmail3 && !isValidEmail(newEmail3)){
+showToast("Digite um e-mail valido para o 3o responsavel.", true);
+return;
+}
 
   if (newStatus === "Concluido" && isDadosAcessoStep(item) && !item.dadosAcessoPreenchido){
     showToast("Preencha e salve os dados de acesso do colaborador antes de concluir esta etapa.", true);
@@ -2351,6 +2431,8 @@ async function saveCardModal(){
   if (newStatus !== item.status) fields.field_12 = newStatus;
   if ((newPrazo||null) !== (item.dataPrevista||null)) { fields.field_10 = newPrazo; var prazoAutor = (typeof CURRENT_USER_NAME !== "undefined" && CURRENT_USER_NAME) || ""; var prazoDataAlt = new Date().toISOString(); fields.PrazoAlteradoPor = prazoAutor; fields.PrazoAlteradoData = prazoDataAlt; item.prazoAlteradoPor = prazoAutor; item.prazoAlteradoData = prazoDataAlt; }
   if (newEmail !== (item.emailResponsavel||"")) fields.EmailResponsavel = newEmail;
+if (newEmail2 !== (item.emailResponsavel2||"")) fields.EmailResponsavel2 = newEmail2;
+if (newEmail3 !== (item.emailResponsavel3||"")) fields.EmailResponsavel3 = newEmail3;
   if (newObs !== (item.obs||"")) fields.field_13 = newObs;
 
   if (Object.keys(fields).length === 0){ closeCardModal(); return; }
@@ -2358,6 +2440,8 @@ async function saveCardModal(){
   item.status = newStatus;
   item.dataPrevista = newPrazo;
   item.emailResponsavel = newEmail;
+item.emailResponsavel2 = newEmail2;
+item.emailResponsavel3 = newEmail3;
   item.obs = newObs;
   if (newStatus === "Concluido" && !item.dataReal){
     var today = new Date().toISOString().slice(0,10);
@@ -3590,6 +3674,8 @@ async function confirmNewClient(){
         field_12: isInitialFazerStep(t.areaResp) ? "A fazer" : "A definir",
         EmailResponsavel: resolveResponsavelEmailForStep(t.areaResp, area)
       };
+if (t.emailResponsavel2) fields.EmailResponsavel2 = t.emailResponsavel2;
+if (t.emailResponsavel3) fields.EmailResponsavel3 = t.emailResponsavel3;
       Object.keys(extraFields).forEach(function(k){ fields[k] = extraFields[k]; });
       var body = { fields: fields };
       if (prazo) body.fields.field_10 = toPrazoIso(prazo);
