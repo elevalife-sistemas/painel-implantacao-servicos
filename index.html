@@ -438,9 +438,11 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     </div>
     <datalist id="empresaList"></datalist>
     <div class="field-row">
-      <div><label>Unidade (cidade)</label><input type="text" id="newUnidade" placeholder="Ex: Sao Paulo"></div>
       <div><label>UF da prestacao de servico</label><select id="newUf"></select></div>
-    </div>
+</div>
+<div class="da-subhead" style="margin-top:12px;">Unidades / locais desta implantacao</div>
+<div id="unitsContainer"></div>
+<button type="button" onclick="addUnitRow()" style="margin:4px 0 8px;padding:6px 12px;border-radius:6px;border:1px solid var(--grena);background:#fff;color:var(--grena);cursor:pointer;">+ Adicionar unidade</button>
     <div class="field-row">
       <div><label>CNPJ</label><input type="text" id="newCnpj" placeholder="00.000.000/0000-00"></div>
       <div><label>CNAE</label><input type="text" id="newCnae" placeholder="Ex: 8630-5/03"></div>
@@ -2749,7 +2751,7 @@ function updateBudgetTotalPreview(){
   el.textContent = "Budget total do contrato: R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 }
 function resetNewClientModalFields(){
-  ["newEmpresa","newUnidade","newCnpj","newCnae","newEndereco","newCargo","newJornada","newNumeroContrato",
+  ["newEmpresa","newCnpj","newCnae","newEndereco","newCargo","newJornada","newNumeroContrato",
    "newBudgetBen","newBudgetMo","newBudgetCustos","newRemuneracaoInicial","newDataSolicitacao","newCargaHoraria"].forEach(function(id){
     document.getElementById(id).value = "";
   });
@@ -2759,6 +2761,7 @@ function resetNewClientModalFields(){
   document.getElementById("newConfidencial").value = "Nao";
   document.getElementById("newAdmOper").value = "OPER";
   document.getElementById("newPrazoInicioDias").value = "30";
+resetUnitsContainer();
   document.querySelectorAll("#newTipoContratacaoChips .chip").forEach(function(c){ c.classList.remove("active"); });
   updateTipoValorWrapVisibility();
   populatePerfilSelect(null);
@@ -3494,12 +3497,36 @@ function dataInicioPrevistoCalc(){
   return addDays(d, dias);
 }
 
+function addUnitRow(nome, data){
+var container = document.getElementById("unitsContainer");
+var row = document.createElement("div");
+row.className = "unit-row";
+row.style.cssText = "display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;";
+row.innerHTML = '<div style="flex:2"><label>Nome da unidade / local</label><input type="text" class="unitNome" placeholder="Ex: Sao Paulo - Loja Centro"></div><div style="flex:1"><label>Data de abertura</label><input type="date" class="unitData"></div><button type="button" class="unit-remove-btn" onclick="removeUnitRow(this)" style="height:36px;padding:0 10px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer;">Remover</button>';
+container.appendChild(row);
+row.querySelector(".unitNome").value = nome || "";
+row.querySelector(".unitData").value = data || new Date().toISOString().slice(0,10);
+}
+function removeUnitRow(btn){
+var container = document.getElementById("unitsContainer");
+if (container.children.length <= 1){ showToast("Mantenha pelo menos uma unidade.", true); return; }
+btn.closest(".unit-row").remove();
+}
+function resetUnitsContainer(){
+var container = document.getElementById("unitsContainer");
+container.innerHTML = "";
+addUnitRow("", new Date().toISOString().slice(0,10));
+}
+function gatherUnits(){
+return Array.from(document.querySelectorAll("#unitsContainer .unit-row")).map(function(row){
+return { nome: row.querySelector(".unitNome").value.trim(), data: row.querySelector(".unitData").value };
+});
+}
 function gatherNewClientFields(){
   var f = {};
   f.Empresa = txtVal("newEmpresa");
   f.StatusCliente = selVal("newStatusCliente");
-  f.Unidade = txtVal("newUnidade");
-  f.CNPJ = txtVal("newCnpj");
+    f.CNPJ = txtVal("newCnpj");
   f.CNAE = txtVal("newCnae");
   f.GrauRisco = selVal("newGrauRisco");
   f.UFPrestacaoServico = selVal("newUf");
@@ -3652,20 +3679,36 @@ async function confirmNewClient(){
   var name = document.getElementById("newClientName").value.trim();
   var area = document.getElementById("newClientArea").value;
   if (!name){ showToast("Digite o nome do cliente ou programa.", true); return; }
-  if (ITEMS.some(function(it){ return it.cliente === name; })){ showToast("Ja existe uma implantacao com esse nome.", true); return; }
-  var extraFields = gatherNewClientFields();
+  var units = gatherUnits().filter(function(u){ return u.nome || u.data; });
+if (!units.length) units = [{ nome: "", data: new Date().toISOString().slice(0,10) }];
+var clienteNames = units.map(function(u){ return u.nome ? (name + " - " + u.nome) : name; });
+var seen = {};
+for (var ci=0; ci<clienteNames.length; ci++){
+if (seen[clienteNames[ci]]){ showToast("Unidades duplicadas: " + clienteNames[ci] + ". Ajuste os nomes das unidades.", true); return; }
+seen[clienteNames[ci]] = true;
+if (ITEMS.some(function(it){ return it.cliente === clienteNames[ci]; })){ showToast("Ja existe uma implantacao com o nome " + clienteNames[ci] + ".", true); return; }
+}
+  var extraFieldsBase = gatherNewClientFields();
   var template = ITEMS.filter(function(it){ return !it.cliente; }).sort(function(a,b){ return a.num-b.num; });
   closeModal();
   showToast("Criando " + template.length + " etapas para \"" + name + "\"...");
   try {
-    var abertura = new Date();
-    var prazos = computeAutoPrazos(abertura);
-    var createdIds = []; for (var i=0;i<template.length;i++){
+var totalUnits = units.length;
+var createdIds = [];
+for (var ui=0; ui<totalUnits; ui++){
+var unit = units[ui];
+var clienteFinal = clienteNames[ui];
+var abertura = unit.data ? new Date(unit.data + "T00:00:00") : new Date();
+var prazos = computeAutoPrazos(abertura);
+var extraFields = {};
+Object.keys(extraFieldsBase).forEach(function(k){ extraFields[k] = extraFieldsBase[k]; });
+if (unit.nome) extraFields.Unidade = unit.nome;
+for (var i=0;i<template.length;i++){
       var t = template[i];
       var prazo = prazos[t.num];
       var fields = {
         Title: adjustPlantTourTitle(t.num, t.title),
-        field_1: name,
+field_1: clienteFinal,
         field_2: area,
         field_3: t.num,
         field_4: t.etapaGrupo,
@@ -3680,9 +3723,10 @@ if (t.emailResponsavel3) fields.EmailResponsavel3 = t.emailResponsavel3;
       var body = { fields: fields };
       if (prazo) body.fields.field_10 = toPrazoIso(prazo);
       var createdItem; try { createdItem = await graphFetch(GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify(body) }); } catch (creationErr) { showToast("Falha ao criar a etapa " + (i+1) + " de " + template.length + " para \"" + name + "\". Revertendo as " + createdIds.length + " etapa(s) ja criada(s)...", true); var rollbackErrors = 0; for (var r=0;r<createdIds.length;r++){ try { await graphFetch(GRAPH_BASE + "/items/" + createdIds[r], { method: "DELETE" }); } catch (delErr){ rollbackErrors++; console.error("Nao consegui reverter a etapa " + createdIds[r] + ": " + delErr.message); } } await loadItems(); renderAll(); if (rollbackErrors === 0){ showToast("Implantacao \"" + name + "\" nao foi criada (" + creationErr.message + "). Nenhuma etapa parcial ficou salva, pode tentar novamente.", true); } else { showToast("Implantacao \"" + name + "\" falhou (" + creationErr.message + ") e " + rollbackErrors + " etapa(s) ja criada(s) nao puderam ser revertidas automaticamente. Revise no SharePoint antes de tentar de novo.", true); } return; } if (createdItem && createdItem.id) createdIds.push(createdItem.id);
-    }
-    await loadItems();
-    selectedClients = [name];
+}
+}
+await loadItems();
+selectedClients = clienteNames;
     saveSelectedClients();
     renderAll();
     showToast("Implantacao \"" + name + "\" criada com sucesso.");
