@@ -224,13 +224,13 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <div>
       <p class="sidebar-nav-label">Menu</p>
       <nav class="tabs">
-        <p class="tab-group-label">Implantacao de Servicos</p>
+        <p class="tab-group-label">Visao Executiva</p><div class="tab tab-sub" data-tab="dashboardExec"><span class="tab-icon">&#128200;</span>Dashboard</div><p class="tab-group-label">Implantacao de Servicos</p>
         <div class="tab active tab-sub" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
         <div class="tab tab-sub" data-tab="kanban"><span class="tab-icon">&#128203;</span>Kanban</div>
         <p class="tab-group-label" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.14);">Coberturas e Substituições</p>
         <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('solicitacoes')"><span class="tab-icon">&#128203;</span>Solicitações</div><div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('banco')"><span class="tab-icon">&#128451;</span>Banco de Talentos</div>
         <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('historico')"><span class="tab-icon">&#128220;</span>Histórico</div>
-        <div class="tab tab-sub" style="opacity:.5;cursor:not-allowed;" title="Em breve"><span class="tab-icon">&#127958;</span>Gestão de Férias</div><p class="tab-group-label" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.14);">Visao Executiva</p><div class="tab tab-sub" data-tab="dashboardExec"><span class="tab-icon">&#128200;</span>Dashboard</div>
+        <div class="tab tab-sub" style="opacity:.5;cursor:not-allowed;" title="Em breve"><span class="tab-icon">&#127958;</span>Gestão de Férias</div>
         <a class="tab" href="https://elevalife-ats.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;"><span class="tab-icon">&#128101;</span>RecrutaHub</a>
       </nav>
     </div>
@@ -253,7 +253,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
     <button class="btn-login" id="gateLoginBtn" style="background:var(--grena);color:#fff;border:none;">Entrar com Microsoft</button>
   </div>
 
-  <div id="mainArea" class="hidden">
+  <div id="mainArea" class="hidden"><div class="panel" id="panel-dashboardExec"><div class="chart-card" style="margin-top:0;"><h3 style="font-size:15px;font-weight:600;margin:0 0 4px;color:var(--text);">Dashboard Executivo</h3><p style="font-size:13px;color:var(--text2);margin:0 0 16px;">Visao consolidada de Implantacao de Servicos e Coberturas e Substituicoes.</p><h4 style="font-size:13px;font-weight:600;margin:0 0 10px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">Implantacao de Servicos</h4><div id="dashExecImplantacaoGrid" class="kpi-grid"></div><h4 style="font-size:13px;font-weight:600;margin:24px 0 10px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">Coberturas e Substituicoes</h4><div id="dashExecCoberturasGrid" class="kpi-grid"></div></div></div>
 
     <div class="clientbar" id="clientbarWrap">
       <label>Cliente / Implantacao</label>
@@ -416,7 +416,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
 </div>
 
-<div class="panel" id="panel-dashboardExec"><div class="chart-card" style="margin-top:0;"><h3 style="font-size:15px;font-weight:600;margin:0 0 4px;color:var(--text);">Dashboard Executivo</h3><p style="font-size:13px;color:var(--text2);margin:0 0 16px;">Visao consolidada de Implantacao de Servicos e Coberturas e Substituicoes.</p><h4 style="font-size:13px;font-weight:600;margin:0 0 10px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">Implantacao de Servicos</h4><div id="dashExecImplantacaoGrid" class="kpi-grid"></div><h4 style="font-size:13px;font-weight:600;margin:24px 0 10px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;">Coberturas e Substituicoes</h4><div id="dashExecCoberturasGrid" class="kpi-grid"></div></div></div><div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal modal-xl">
