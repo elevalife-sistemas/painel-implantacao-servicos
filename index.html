@@ -48,7 +48,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 .prof-link{background:none;border:none;color:var(--grena);font-size:12.5px;font-weight:600;cursor:pointer;padding:0;text-align:left;text-decoration:underline;margin-top:2px;}
 
 .app{flex:1;min-width:0;width:100%;max-width:none;margin:0;padding:20px 28px 36px;}
-.header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:18px 26px;display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:22px;}
+.header{background:linear-gradient(135deg,var(--grena) 0%,var(--grena-dark) 100%);color:#fff;border-radius:16px;padding:18px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;}.header-brand{display:flex;align-items:center;gap:18px;min-width:0;}.header-logo{height:30px;width:auto;display:block;flex-shrink:0;}.header-tagline{margin:0;font-size:13px;color:rgba(255,255,255,0.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}@media (max-width:1024px){.header{flex-wrap:wrap;}.header-tagline{white-space:normal;}}
 .header-right{text-align:right;display:flex;align-items:center;gap:14px;}
 .user-chip{font-size:13px;opacity:0.9;text-align:right;}
 .btn-refresh, .btn-login, .btn-logout{background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:9px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;}
@@ -222,7 +222,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       </div>
     </div>
     <div>
-      <p class="sidebar-nav-label">Menu</p>
+      
       <nav class="tabs">
         <p class="tab-group-label">Visao Executiva</p><div class="tab tab-sub" data-tab="dashboardExec"><span class="tab-icon">&#128200;</span>Dashboard</div><p class="tab-group-label">Implantacao de Servicos</p>
         <div class="tab active tab-sub" data-tab="geral"><span class="tab-icon">&#128202;</span>Visao Geral</div>
@@ -238,7 +238,7 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
 
   <div class="app">
 
-  <div class="header">
+  <div class="header"><div class="header-brand"><img src="data:image/png;base64,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" alt="elevalife" class="header-logo"><p class="header-tagline">15 anos elevando pessoas e resultados · base ao vivo · atualizado em <span id="headerUpdatedAt">--</span></p></div><script>function stampHeaderUpdated(){var e=document.getElementById('headerUpdatedAt');if(e){var d=new Date();e.textContent=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}}</script>
     <div class="header-right">
       <div class="user-chip hidden" id="userChip"></div>
       <button class="btn-login hidden" id="loginBtn">Entrar com Microsoft</button>
@@ -1225,7 +1225,7 @@ async function graphFetch(url, options){
   return JSON.parse(raw);
 }
 
-async function loadItems(){
+async function loadItems(){ var __r = await __loadItemsOrig.apply(this, arguments); if (typeof stampHeaderUpdated === "function") stampHeaderUpdated(); return __r; } async function __loadItemsOrig(){
   var url = GRAPH_BASE + "/items?expand=fields&$top=999";
   var data = await graphFetch(url);
   ITEMS = data.value.map(function(it){
