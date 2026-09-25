@@ -2935,7 +2935,7 @@ PrecisaSubstituicao: "Nao",
 Observacao: observacao
 };
 await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(fields) }) });
-showToast("Comunicado informativo enviado.");
+showToast("Comunicado informativo enviado."); refreshCoberturasAfterSubmit();
 } catch (err){
 showToast("Erro ao enviar comunicado: " + err.message, true);
 }
@@ -3204,7 +3204,7 @@ var COBERTURAS_RH_STATUS_MAP = { "rascunho":"Pendente", "enviada":"Pendente", "e
     }
     if (changed) renderCoberturaHistorico();
   }
-  function cleanGraphFields(o){ var r = {}; Object.keys(o || {}).forEach(function(k){ var v = o[k]; if (v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) return; r[k] = v; }); return r; } function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } async function confirmCobertura(){
+  function refreshCoberturasAfterSubmit(){ try { if (typeof loadCoberturaHistorico === "function") { Promise.resolve(loadCoberturaHistorico()).then(function(){ if (typeof renderDashboardExecutivo === "function") renderDashboardExecutivo(); }).catch(function(e){ console.warn("Falha ao recarregar coberturas:", e); }); } } catch (e) {} } function cleanGraphFields(o){ var r = {}; Object.keys(o || {}).forEach(function(k){ var v = o[k]; if (v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) return; r[k] = v; }); return r; } function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
@@ -3274,7 +3274,7 @@ if (recrutaHubResult && recrutaHubResult.requestId && coberturaCreated && cobert
 await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + coberturaCreated.id + "/fields", { method: "PATCH", body: JSON.stringify({ RecrutaHubRequestId: String(recrutaHubResult.requestId) }) });
 }
 } catch (e){ console.warn("Falha ao notificar RecrutaHub (Psel direto):", e); }
-showToast("Solicitacao de Psel enviada. O RH foi notificado por Teams e e-mail.");
+showToast("Solicitacao de Psel enviada. O RH foi notificado por Teams e e-mail."); refreshCoberturasAfterSubmit();
 } else {
 var motivo = document.getElementById("coberturaMotivo").value;
 var dataInicio = document.getElementById("coberturaDataInicio").value;
@@ -3319,7 +3319,7 @@ DataInicioPrevisto: dataInicioPsel
 });
 } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
 }
-showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail.");
+showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail."); refreshCoberturasAfterSubmit();
 }
 } catch (err){
 showToast("Erro ao enviar solicitacao: " + err.message, true);
@@ -3764,7 +3764,7 @@ document.querySelectorAll(".tab").forEach(function(t){
     t.classList.add("active");
     document.getElementById("panel-" + t.dataset.tab).classList.add("active");
     var cbar = document.getElementById("clientbarWrap");
-    if (cbar) cbar.style.display = (t.dataset.tab === "coberturas" || t.dataset.tab === "dashboardExec") ? "none" : ""; if (t.dataset.tab === "dashboardExec"){ renderDashboardExecutivo(); if (typeof coberturaHistoricoLoaded !== "undefined" && !coberturaHistoricoLoaded && typeof loadCoberturaHistorico === "function"){ loadCoberturaHistorico().then(function(){ if (typeof renderDashboardExecutivo === "function") renderDashboardExecutivo(); }); } }
+    if (cbar) cbar.style.display = (t.dataset.tab === "coberturas" || t.dataset.tab === "dashboardExec") ? "none" : ""; if (t.dataset.tab === "dashboardExec"){ renderDashboardExecutivo(); if (typeof loadCoberturaHistorico === "function"){ loadCoberturaHistorico().then(function(){ if (typeof renderDashboardExecutivo === "function") renderDashboardExecutivo(); }); } }
   });
 });
 document.getElementById("confirmNewClientBtn").addEventListener("click", confirmNewClient);
