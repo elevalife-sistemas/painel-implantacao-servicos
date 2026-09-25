@@ -3224,7 +3224,7 @@ return;
 await doSubmitCobertura();
 }
 
-async function doSubmitCobertura(){
+async function doSubmitCobertura(){ var emailResp = getValidCoberturaEmailResponsavel(); if (emailResp === null) return;
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
