@@ -550,6 +550,39 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   </div>
 </div>
 
+<div class="modal-overlay" id="coberturaEditModalOverlay">
+<div class="modal">
+<button type="button" class="modal-close" onclick="closeCoberturaEditModal()" aria-label="Fechar">&#10005;</button>
+<h3>Editar solicitacao</h3>
+<p id="coberturaEditSub" style="color:var(--text2);font-size:13px;margin-top:0;"></p>
+<label>Cargo *</label>
+<input type="text" id="cobEditCargo">
+<label>Requisitos obrigatorios *</label>
+<textarea id="cobEditRequisitosObrig" rows="3"></textarea>
+<label>Requisitos diferenciais</label>
+<textarea id="cobEditRequisitosDif" rows="2"></textarea>
+<label>Escala / turno *</label>
+<input type="text" id="cobEditEscalaTurno">
+<label>Tipo de contrato</label>
+<select id="cobEditTipoContrato"><option value="">Selecione...</option><option value="CLT">CLT</option><option value="Autonomo">Autonomo</option><option value="PJ">PJ</option></select>
+<label>Salario / remuneracao *</label>
+<input type="number" id="cobEditValor" step="0.01" min="0" placeholder="0,00">
+<label>Liquido ou bruto</label>
+<select id="cobEditTipoValor"><option value="">Selecione...</option><option value="Liquido">Liquido</option><option value="Bruto">Bruto</option></select>
+<label>Beneficios</label>
+<textarea id="cobEditBeneficios" rows="2"></textarea>
+<label>Nivel do profissional</label>
+<select id="cobEditNivel"><option value="">-</option><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option></select>
+<label>Data de inicio desejada</label>
+<input type="date" id="cobEditDataInicio">
+<label>Prazo de conclusao</label>
+<input type="date" id="cobEditPrazo">
+<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+<button type="button" class="btn-outline" onclick="closeCoberturaEditModal()">Cancelar</button>
+<button type="button" class="btn-new" id="cobEditSaveBtn" onclick="saveCoberturaEdit()">Salvar alteracoes</button>
+</div>
+</div>
+</div>
 <div class="modal-overlay" id="coberturaModalOverlay">
   <div class="modal">
     <button type="button" class="modal-close" onclick="closeCoberturaModal()" aria-label="Fechar">&#10005;</button>
@@ -596,15 +629,23 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
       <input type="date" id="coberturaDataFim">
     </div>
     </div>
- <label>Tipo de contrato</label>
+ <label>Cargo *</label>
+<input type="text" id="coberturaCargo" placeholder="Ex.: Medico do Trabalho">
+<label>Requisitos obrigatorios *</label>
+<textarea id="coberturaRequisitosObrig" rows="3" placeholder="Formacao, registro profissional (ex.: CRM), experiencia minima..."></textarea>
+<label>Requisitos diferenciais</label>
+<textarea id="coberturaRequisitosDif" rows="2" placeholder="Opcional"></textarea>
+<label>Escala / turno *</label>
+<input type="text" id="coberturaEscalaTurno" placeholder="Ex.: Segunda a sexta, 08h as 17h">
+<label>Tipo de contrato</label>
     <select id="coberturaTipoContrato">
       <option value="">Selecione...</option>
       <option value="CLT">CLT</option>
       <option value="Autonomo">Autonomo</option>
       <option value="PJ">PJ</option>
     </select>
-    <div id="coberturaRemuneracaoWrap" style="display:none;">
-      <label>Valor de remuneracao</label>
+    <div id="coberturaRemuneracaoWrap">
+      <label>Salario / remuneracao *</label>
       <input type="number" id="coberturaValorRemuneracao" step="0.01" min="0" placeholder="0,00">
       <label>Liquido ou bruto</label>
       <select id="coberturaTipoValor">
@@ -613,6 +654,8 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <option value="Bruto">Bruto</option>
       </select>
     </div>
+<label>Beneficios</label>
+<textarea id="coberturaBeneficios" rows="2" placeholder="Ex.: VR, VT, plano de saude"></textarea>
     <label>Solicitante</label>
     <input type="text" id="coberturaSolicitante" disabled>
     <label>Responsável pela solicitação</label>
@@ -2885,9 +2928,9 @@ function openCoberturaModal(profId){
   document.getElementById("coberturaTipoContrato").value = "";
   document.getElementById("coberturaValorRemuneracao").value = "";
   document.getElementById("coberturaTipoValor").value = "";
-  document.getElementById("coberturaRemuneracaoWrap").style.display = "none";
+  document.getElementById("coberturaRemuneracaoWrap").style.display = "block";
   document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
-  document.getElementById("coberturaModalOverlay").classList.add("show");
+  resetCoberturaVagaFields(); document.getElementById("coberturaModalOverlay").classList.add("show");
 }
 function closeCoberturaModal(){ document.getElementById("coberturaModalOverlay").classList.remove("show"); }
 
@@ -2900,7 +2943,7 @@ document.getElementById("coberturaAbrirPsel").addEventListener("change", functio
 });
 document.getElementById("coberturaTipoContrato").addEventListener("change", function(){
   var precisaRemuneracao = this.value === "Autonomo" || this.value === "PJ";
-  document.getElementById("coberturaRemuneracaoWrap").style.display = precisaRemuneracao ? "block" : "none";
+  document.getElementById("coberturaRemuneracaoWrap").style.display = "block";
 });
 
 function openCoberturaTipoModal(){
@@ -3059,12 +3102,12 @@ var RECRUTAHUB_VAGAS_MAP = {}; var recrutahubVagasLoaded = false; var recrutahub
         '<div class="card-title">' + escapeHtml(f.MotivoSubstituicao || f.Title || "Solicitação de cobertura") + '</div>' +
         '<div class="card-meta">Prazo: ' + prazoTxt + '</div>' + recrutaHubBadgeHtml(f) +
         (f.EmailResponsavel ? '<div class="modal-avatar-row" id="' + avatarId + '" style="margin:6px 0;"></div>' : "") +
-        '<select class="cob-status-select" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--border);margin-top:6px;">' + optsHtml + '</select>';
+        '<select class="cob-status-select" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--border);margin-top:6px;">' + optsHtml + '</select>' + '<button type="button" class="cob-edit-btn" style="width:100%;margin-top:6px;padding:6px;font-size:12px;border-radius:6px;border:1px solid var(--grena);background:#fff;color:var(--grena);cursor:pointer;font-weight:600;">Editar solicitacao</button>';
       col.appendChild(c);
       var sel = c.querySelector(".cob-status-select");
       sel.addEventListener("click", function(e){ e.stopPropagation(); });
       sel.addEventListener("mousedown", function(e){ e.stopPropagation(); });
-      sel.addEventListener("change", function(){ patchCoberturaStatus(f, sel.value); });
+      sel.addEventListener("change", function(){ patchCoberturaStatus(f, sel.value); }); var eb = c.querySelector(".cob-edit-btn"); if (eb){ eb.addEventListener("mousedown", function(e){ e.stopPropagation(); }); eb.addEventListener("click", function(e){ e.stopPropagation(); openCoberturaEditModal(f); }); }
     });
     board.appendChild(col);
   });
@@ -3204,14 +3247,26 @@ var COBERTURAS_RH_STATUS_MAP = { "rascunho":"Pendente", "enviada":"Pendente", "e
     }
     if (changed) renderCoberturaHistorico();
   }
-  function refreshCoberturasAfterSubmit(){ try { if (typeof loadCoberturaHistorico === "function") { Promise.resolve(loadCoberturaHistorico()).then(function(){ if (typeof renderDashboardExecutivo === "function") renderDashboardExecutivo(); }).catch(function(e){ console.warn("Falha ao recarregar coberturas:", e); }); } } catch (e) {} } function cleanGraphFields(o){ var r = {}; Object.keys(o || {}).forEach(function(k){ var v = o[k]; if (v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) return; r[k] = v; }); return r; } function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } async function confirmCobertura(){
+  function cobVal(id){ var el = document.getElementById(id); return el ? String(el.value || "").trim() : ""; }
+function resetCoberturaVagaFields(){ ["coberturaCargo","coberturaRequisitosObrig","coberturaRequisitosDif","coberturaEscalaTurno","coberturaBeneficios"].forEach(function(id){ var el = document.getElementById(id); if (el) el.value = ""; }); var w = document.getElementById("coberturaRemuneracaoWrap"); if (w) w.style.display = "block"; }
+function validateCoberturaVagaFields(){ var faltando = []; if (!cobVal("coberturaCargo")) faltando.push("Cargo"); if (!cobVal("coberturaRequisitosObrig")) faltando.push("Requisitos obrigatorios"); if (!cobVal("coberturaEscalaTurno")) faltando.push("Escala / turno"); if (!cobVal("coberturaValorRemuneracao")) faltando.push("Salario"); if (faltando.length){ showToast("Preencha: " + faltando.join(", ") + ".", true); return false; } return true; }
+function coberturaSalarioTexto(valor, tipo){ var n = parseFloat(valor); if (!valor || isNaN(n)) return ""; var txt = (typeof formatCurrencyBRL === "function") ? formatCurrencyBRL(n) : ("R$ " + n.toFixed(2)); return txt + (tipo ? " (" + tipo + ")" : ""); }
+function collectCoberturaVagaFields(){ var v = cobVal("coberturaValorRemuneracao"); return { Cargo: cobVal("coberturaCargo"), RequisitosObrigatorios: cobVal("coberturaRequisitosObrig"), RequisitosDiferenciais: cobVal("coberturaRequisitosDif"), EscalaTurno: cobVal("coberturaEscalaTurno"), Beneficios: cobVal("coberturaBeneficios"), ValorRemuneracao: v ? parseFloat(v) : null, TipoValor: cobVal("coberturaTipoValor") }; }
+function mapMotivoRecrutaHub(m){ if (m === "Ferias") return "Cobertura de férias"; if (m === "Atestado medico" || m === "Falta" || m === "Definitivo") return "Substituição"; return "Nova posição"; }
+function coberturaRecrutaHubExtra(opts){ opts = opts || {}; return { RequisitosObrigatorios: cobVal("coberturaRequisitosObrig"), RequisitosDiferenciais: cobVal("coberturaRequisitosDif"), EscalaTurno: cobVal("coberturaEscalaTurno"), Beneficios: cobVal("coberturaBeneficios"), SalaryRangeText: coberturaSalarioTexto(cobVal("coberturaValorRemuneracao"), cobVal("coberturaTipoValor")), Motivo: mapMotivoRecrutaHub(opts.motivo), ColaboradorSubstituido: opts.colaborador || "" }; }
+var coberturaEditItem = null;
+function isoToDateInput(v){ if (!v) return ""; var s = String(v); return s.length >= 10 ? s.substring(0, 10) : ""; }
+function openCoberturaEditModal(f){ coberturaEditItem = f; function set(id, v){ var el = document.getElementById(id); if (el) el.value = (v === null || v === undefined) ? "" : v; } set("cobEditCargo", f.Cargo || f.Area || ""); set("cobEditRequisitosObrig", f.RequisitosObrigatorios); set("cobEditRequisitosDif", f.RequisitosDiferenciais); set("cobEditEscalaTurno", f.EscalaTurno); set("cobEditTipoContrato", f.TipoContrato); set("cobEditValor", f.ValorRemuneracao); set("cobEditTipoValor", f.TipoValor); set("cobEditBeneficios", f.Beneficios); set("cobEditNivel", f.NivelProfissional); set("cobEditDataInicio", isoToDateInput(f.DataInicioTrabalho)); set("cobEditPrazo", isoToDateInput(f.PrazoConclusao)); var sub = document.getElementById("coberturaEditSub"); if (sub) sub.textContent = (f.Cliente || "") + (f.Area ? " - " + f.Area : "") + (f.RecrutaHubRequestId ? " | vaga vinculada ao RecrutaHub (sera atualizada junto)" : ""); document.getElementById("coberturaEditModalOverlay").classList.add("show"); }
+function closeCoberturaEditModal(){ document.getElementById("coberturaEditModalOverlay").classList.remove("show"); coberturaEditItem = null; }
+async function saveCoberturaEdit(){ var f = coberturaEditItem; if (!f) return; function g(id){ var el = document.getElementById(id); return el ? String(el.value || "").trim() : ""; } var faltando = []; if (!g("cobEditCargo")) faltando.push("Cargo"); if (!g("cobEditRequisitosObrig")) faltando.push("Requisitos obrigatorios"); if (!g("cobEditEscalaTurno")) faltando.push("Escala / turno"); if (!g("cobEditValor")) faltando.push("Salario"); if (faltando.length){ showToast("Preencha: " + faltando.join(", ") + ".", true); return; } var btn = document.getElementById("cobEditSaveBtn"); if (btn) btn.disabled = true; var valor = parseFloat(g("cobEditValor")); var patch = { Cargo: g("cobEditCargo"), RequisitosObrigatorios: g("cobEditRequisitosObrig"), RequisitosDiferenciais: g("cobEditRequisitosDif"), EscalaTurno: g("cobEditEscalaTurno"), Beneficios: g("cobEditBeneficios") }; var extra = cleanGraphFields({ TipoContrato: g("cobEditTipoContrato"), ValorRemuneracao: isNaN(valor) ? null : valor, TipoValor: g("cobEditTipoValor"), NivelProfissional: g("cobEditNivel"), DataInicioTrabalho: g("cobEditDataInicio") ? g("cobEditDataInicio") + "T12:00:00Z" : "", PrazoConclusao: g("cobEditPrazo") }); Object.assign(patch, extra); try { await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + f.__id + "/fields", { method: "PATCH", body: JSON.stringify(patch) }); var rhMsg = ""; var rhErro = false; if (f.RecrutaHubRequestId){ try { var resp = await fetch(RECRUTAHUB_API_URL, { method: "PATCH", headers: { "Content-Type": "application/json", "x-painel-secret": RECRUTAHUB_API_SECRET }, body: JSON.stringify({ id: f.RecrutaHubRequestId, cliente: f.Cliente || "", cargo: patch.Cargo, tipoContratacao: g("cobEditTipoContrato") || undefined, salaryRange: coberturaSalarioTexto(g("cobEditValor"), g("cobEditTipoValor")) || undefined, dataInicioPrevisto: g("cobEditDataInicio") || undefined, perfilProfissional: g("cobEditNivel") || undefined, requisitosObrigatorios: patch.RequisitosObrigatorios, requisitosDiferenciais: patch.RequisitosDiferenciais || undefined, escalaTurno: patch.EscalaTurno, beneficios: patch.Beneficios || undefined }) }); if (resp.ok){ rhMsg = " Vaga no RecrutaHub atualizada."; } else { rhErro = true; rhMsg = " Atencao: nao foi possivel atualizar o RecrutaHub (erro " + resp.status + ")."; } } catch (e2){ rhErro = true; rhMsg = " Atencao: nao foi possivel atualizar o RecrutaHub."; } } closeCoberturaEditModal(); showToast("Solicitacao atualizada." + rhMsg, rhErro); refreshCoberturasAfterSubmit(); } catch (err){ showToast("Erro ao salvar alteracoes: " + err.message, true); } finally { if (btn) btn.disabled = false; } }
+function refreshCoberturasAfterSubmit(){ try { if (typeof loadCoberturaHistorico === "function") { Promise.resolve(loadCoberturaHistorico()).then(function(){ if (typeof renderDashboardExecutivo === "function") renderDashboardExecutivo(); }).catch(function(e){ console.warn("Falha ao recarregar coberturas:", e); }); } } catch (e) {} } function cleanGraphFields(o){ var r = {}; Object.keys(o || {}).forEach(function(k){ var v = o[k]; if (v === null || v === undefined || v === '' || (typeof v === 'number' && isNaN(v))) return; r[k] = v; }); return r; } function getValidCoberturaEmailResponsavel(){ var v = (document.getElementById("coberturaEmailResponsavel").value || "").trim(); if (v && !isValidEmail(v)){ showToast("E-mail do responsavel pela solicitacao e invalido.", true); return null; } return v || CURRENT_USER_EMAIL || ""; } async function confirmCobertura(){
 var p = coberturaSelectedProf;
 var pselDireto = !!coberturaPselDiretoMode;
 var cliente = document.getElementById("coberturaCliente").value.trim();
 var areaDireto = pselDireto ? document.getElementById("coberturaPselDiretoArea").value : "";
 if (!pselDireto && !p){ showToast("Selecione um profissional.", true); return; }
 if (pselDireto && !areaDireto){ showToast("Selecione a area de servico.", true); return; }
-if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; } var emailResp = getValidCoberturaEmailResponsavel(); if (emailResp === null) return;
+if (!cliente){ showToast("Digite o cliente que recebera a cobertura/substituicao.", true); return; } var emailResp = getValidCoberturaEmailResponsavel(); if (emailResp === null) return; if (!validateCoberturaVagaFields()) return;
 var area = pselDireto ? areaDireto : p.area;
 var dataInicioPsel = document.getElementById("coberturaDataInicioPsel").value;
 if (pselDireto && !dataInicioPsel){ showToast("Informe a data de inicio desejada.", true); return; }
@@ -3261,10 +3316,10 @@ if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
 if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
 if (tipoValor) fields.TipoValor = tipoValor;
 }
-var coberturaCreated = await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(fields) }) });
+var coberturaCreated = await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(Object.assign(fields, collectCoberturaVagaFields())) }) });
 try {
 var recrutaHubResult = await notifyRecrutaHub(cliente, area, {
-Cargo: area,
+Cargo: (cobVal("coberturaCargo") || area), ...coberturaRecrutaHubExtra({ motivo: "" }),
 PerfilProfissional: nivelPsel,
 NumeroVagas: 1,
 TipoContratacao: tipoContrato,
@@ -3307,16 +3362,16 @@ if (tipoContrato === "Autonomo" || tipoContrato === "PJ"){
 if (valorRemuneracao) fields.ValorRemuneracao = parseFloat(valorRemuneracao);
 if (tipoValor) fields.TipoValor = tipoValor;
 }
-await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(fields) }) });
+var coberturaCreated2 = await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(Object.assign(fields, collectCoberturaVagaFields())) }) });
 if (abrirPsel){
 try {
-await notifyRecrutaHub(cliente, p.area, {
-Cargo: p.area,
+var rhRes2 = await notifyRecrutaHub(cliente, p.area, {
+Cargo: (cobVal("coberturaCargo") || p.area), ...coberturaRecrutaHubExtra({ motivo: motivo, colaborador: p.nome }),
 PerfilProfissional: nivelPsel,
 NumeroVagas: 1,
 TipoContratacao: tipoContrato,
 DataInicioPrevisto: dataInicioPsel
-});
+}); if (rhRes2 && rhRes2.requestId && coberturaCreated2 && coberturaCreated2.id){ await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + coberturaCreated2.id + "/fields", { method: "PATCH", body: JSON.stringify({ RecrutaHubRequestId: String(rhRes2.requestId) }) }); }
 } catch (e){ console.warn("Falha ao notificar RecrutaHub (cobertura):", e); }
 }
 showToast("Solicitacao enviada. O RH foi notificado por Teams e e-mail."); refreshCoberturasAfterSubmit();
@@ -3379,9 +3434,9 @@ function openCoberturaPselDiretoModal(){
  document.getElementById("coberturaTipoContrato").value = "";
  document.getElementById("coberturaValorRemuneracao").value = "";
  document.getElementById("coberturaTipoValor").value = "";
- document.getElementById("coberturaRemuneracaoWrap").style.display = "none";
+ document.getElementById("coberturaRemuneracaoWrap").style.display = "block";
  document.getElementById("coberturaSolicitante").value = CURRENT_USER_NAME || CURRENT_USER_EMAIL || "";
- document.getElementById("coberturaModalOverlay").classList.add("show");
+ resetCoberturaVagaFields(); document.getElementById("coberturaModalOverlay").classList.add("show");
 }
 document.getElementById("coberturaPselDiretoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); }); document.getElementById("coberturaPselHeaderBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); }); document.getElementById("coberturaPselBancoBtn").addEventListener("click", function(){ openCoberturaPselDiretoModal(); });
 document.getElementById("coberturaDuplicadaCancelarBtn").addEventListener("click", function(){ closeCoberturaDuplicadaModal(); });
@@ -3647,7 +3702,7 @@ async function notifyRecrutaHub(name, area, extraFields){
         numeroVagas: extraFields.NumeroVagas,
         coordinatorEmail: coordinatorEmail,
         coordinatorName: emailToDisplayName(coordinatorEmail),
-        salaryRange: formatCurrencyBRL(extraFields.RemuneracaoInicial),
+        salaryRange: extraFields.SalaryRangeText || formatCurrencyBRL(extraFields.RemuneracaoInicial), requisitosObrigatorios: extraFields.RequisitosObrigatorios || undefined, requisitosDiferenciais: extraFields.RequisitosDiferenciais || undefined, escalaTurno: extraFields.EscalaTurno || undefined, beneficios: extraFields.Beneficios || undefined, motivo: extraFields.Motivo || undefined, colaboradorSubstituido: extraFields.ColaboradorSubstituido || undefined,
         tipoContratacao: extraFields.TipoContratacao,
         cargaHorariaSemanal: extraFields.CargaHorariaSemanal,
         jornadaTrabalho: extraFields.JornadaTrabalho,
