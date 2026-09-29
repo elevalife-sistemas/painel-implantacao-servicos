@@ -729,6 +729,79 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
   </div>
 </div>
 
+<div class="modal-overlay" id="cobDetailModalOverlay">
+  <style>
+    #cobDetailModalOverlay .cobd-modal{width:960px;max-width:95vw;max-height:92vh;overflow-y:auto;}
+    #cobDetailModalOverlay .cobd-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start;}
+    @media (max-width:820px){ #cobDetailModalOverlay .cobd-grid{grid-template-columns:1fr;} }
+    #cobDetailModalOverlay .cobd-info{background:var(--grena-bg,#fbeef0);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+    #cobDetailModalOverlay .cobd-info-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,.08);font-size:13px;}
+    #cobDetailModalOverlay .cobd-info-row:last-child{border-bottom:none;}
+    #cobDetailModalOverlay .cobd-info-lbl{min-width:150px;color:var(--text2);font-weight:600;}
+    #cobDetailModalOverlay .cobd-info-val{flex:1;white-space:pre-wrap;word-break:break-word;}
+    #cobDetailModalOverlay .cobd-section{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--grena);margin:4px 0 8px;}
+    #cobDetailModalOverlay .cobd-badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px;}
+    #cobDetailModalOverlay .cobd-badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--grena);color:var(--grena);}
+    #cobDetailModalOverlay .cobd-badge.sig{background:var(--grena);color:#fff;}
+    #cobDetailModalOverlay .coment-item{padding:10px 0;border-bottom:1px solid var(--border);}
+    #cobDetailModalOverlay .coment-item:last-child{border-bottom:none;}
+    #cobDetailModalOverlay .coment-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);margin-bottom:4px;}
+    #cobDetailModalOverlay .coment-autor{font-weight:600;color:var(--text1);}
+    #cobDetailModalOverlay .coment-actions{display:flex;gap:8px;}
+    #cobDetailModalOverlay .coment-actions button{background:none;border:none;color:var(--grena);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;}
+    #cobDetailModalOverlay .coment-texto{font-size:13px;white-space:pre-wrap;}
+  </style>
+  <div class="modal cobd-modal">
+    <button type="button" class="modal-close" onclick="closeCobDetailModal()" aria-label="Fechar">&#10005;</button>
+    <h3 id="cobdTitle">Solicitacao</h3>
+    <p id="cobdSub"></p>
+    <div class="cobd-badges" id="cobdBadges"></div>
+    <div class="cobd-grid">
+      <div>
+        <div class="cobd-section">Dados da solicitacao</div>
+        <div class="cobd-info" id="cobdInfo"></div>
+        <div class="cobd-section">Andamento</div>
+        <div class="field-row">
+          <div>
+            <label>Status</label>
+            <select id="cobdStatus"></select>
+          </div>
+          <div>
+            <label>Prazo de conclusao</label>
+            <input type="date" id="cobdPrazo">
+          </div>
+        </div>
+        <label>E-mail do responsavel</label>
+        <input type="email" id="cobdEmail1" placeholder="nome@elevalife.com.br">
+        <div class="modal-avatar-row" id="cobdAv1" style="display:none;"></div>
+        <label>2o responsavel (opcional)</label>
+        <input type="email" id="cobdEmail2" placeholder="nome@elevalife.com.br">
+        <div class="modal-avatar-row" id="cobdAv2" style="display:none;"></div>
+        <label>3o responsavel (opcional)</label>
+        <input type="email" id="cobdEmail3" placeholder="nome@elevalife.com.br">
+        <div class="modal-avatar-row" id="cobdAv3" style="display:none;"></div>
+        <label>Anotacoes</label>
+        <textarea id="cobdAnotacoes" rows="3" placeholder="Anotacoes internas sobre esta solicitacao..."></textarea>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+          <button type="button" class="btn-cancel" onclick="cobdOpenEditVaga()" style="border:1px solid var(--grena);color:var(--grena);">Editar dados da vaga</button>
+          <a class="card-link" id="cobdSpLink" href="#" target="_blank" rel="noopener">Ver no SharePoint &#8594;</a>
+        </div>
+      </div>
+      <div>
+        <div class="epi-box" style="margin-top:0;">
+          <div class="epi-box-head"><span class="epi-box-title">Historico de comunicacao</span></div>
+          <div id="cobdComentariosList" style="max-height:420px;overflow-y:auto;margin-bottom:12px;"></div>
+          <textarea id="cobdNovoComentario" rows="3" placeholder="Adicionar comentario..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;"></textarea>
+          <div style="text-align:right;margin-top:8px;"><button type="button" class="primary" onclick="cobdAddComentario()">Adicionar comentario</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCobDetailModal()">Cancelar</button>
+      <button class="btn-confirm" id="cobdSaveBtn" onclick="saveCobDetailModal()">Salvar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="cardModalOverlay">
   <div class="modal modal-wide">
     <button type="button" class="modal-close" onclick="closeCardModal()" aria-label="Fechar">&#10005;</button>
@@ -3103,7 +3176,7 @@ function recrutaHubBadgeHtmlBase(f){ var vaga = f.RecrutaHubRequestId ? RECRUTAH
       c.innerHTML =
         '<div class="card-client">' + escapeHtml(f.Cliente || f.Area || "") + '</div>' +
         '<div class="card-title">' + escapeHtml(f.MotivoSubstituicao || f.Title || "Solicitação de cobertura") + '</div>' +
-        '<div class="card-meta">Prazo: ' + prazoTxt + '</div>' + recrutaHubBadgeHtml(f) +
+        '<div class="card-meta">Prazo: ' + prazoTxt + '</div>' + recrutaHubBadgeHtml(f) + (function(){ var n = (typeof cobdParseComentarios === 'function') ? cobdParseComentarios(f).length : 0; return n ? '<div class="card-meta">&#128172; ' + n + ' comentario(s)</div>' : ''; })() +
         (f.EmailResponsavel ? '<div class="modal-avatar-row" id="' + avatarId + '" style="margin:6px 0;"></div>' : "") +
         '<select class="cob-status-select" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--border);margin-top:6px;">' + optsHtml + '</select>' + '<button type="button" class="cob-edit-btn" style="width:100%;margin-top:6px;padding:6px;font-size:12px;border-radius:6px;border:1px solid var(--grena);background:#fff;color:var(--grena);cursor:pointer;font-weight:600;">Editar solicitacao</button>';
       col.appendChild(c);
@@ -3952,6 +4025,122 @@ document.getElementById("refreshBtn").addEventListener("click", async function()
       showToast("Sua sessao precisa ser renovada (nova permissao de e-mail). Clique em Entrar com Microsoft.", true);
     }
   }
+})();
+</script>
+<script>
+var cobDetailItem = null; var COB_LIST_WEBURL = null;
+function cobdFmtDate(v){ if (!v) return ""; var d = new Date(v); if (isNaN(d)) return String(v); return d.toLocaleDateString("pt-BR", { timeZone: "UTC" }); }
+function cobdVal(v){ if (v === null || v === undefined) return ""; if (typeof v === "object"){ if (v.Value !== undefined) return String(v.Value); if (Array.isArray(v)) return v.map(cobdVal).join(", "); return ""; } return String(v); }
+function cobdInfoRows(f){
+  var sal = ""; if (f.ValorRemuneracao !== undefined && f.ValorRemuneracao !== null && f.ValorRemuneracao !== ""){ var n = Number(f.ValorRemuneracao); sal = isNaN(n) ? String(f.ValorRemuneracao) : ("R$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })); if (f.TipoValor) sal += " (" + cobdVal(f.TipoValor) + ")"; }
+  var rows = [
+    ["Cliente", f.Cliente], ["Area de servico", f.Area], ["Solicitante", f.Solicitante],
+    ["Aberta em", cobdFmtDate(f.__created)],
+    ["Precisa de substituicao", f.PrecisaSubstituicao], ["Motivo", f.MotivoSubstituicao],
+    ["Inicio do afastamento", cobdFmtDate(f.DataInicio)], ["Fim previsto", cobdFmtDate(f.DataFim)],
+    ["Profissional / observacao", f.Profissional], ["Observacao", f.Observacao],
+    ["Psel", f.PrecisaPsel], ["Nivel do profissional", f.NivelProfissional],
+    ["Inicio desejado", cobdFmtDate(f.DataInicioTrabalho)],
+    ["Cargo", f.Cargo], ["Requisitos obrigatorios", f.RequisitosObrigatorios], ["Requisitos diferenciais", f.RequisitosDiferenciais],
+    ["Escala / turno", f.EscalaTurno], ["Tipo de contrato", f.TipoContrato], ["Salario / remuneracao", sal], ["Beneficios", f.Beneficios]
+  ];
+  var html = rows.map(function(r){ var v = cobdVal(r[1]).trim(); if (!v) return ""; return '<div class="cobd-info-row"><span class="cobd-info-lbl">' + escapeHtml(r[0]) + '</span><span class="cobd-info-val">' + escapeHtml(v) + '</span></div>'; }).join("");
+  return html || '<p style="font-size:13px;color:var(--text2);margin:0;">Sem dados adicionais.</p>';
+}
+async function cobdAvatar(boxId, email){
+  var box = document.getElementById(boxId); if (!box) return;
+  email = (email || "").trim();
+  if (!email || !isValidEmail(email)){ box.style.display = "none"; box.innerHTML = ""; return; }
+  box.style.display = "flex";
+  box.innerHTML = '<span class="modal-avatar-initials">' + escapeHtml(initialsOf(email)) + '</span><span style="font-size:12px;color:var(--text2);">' + escapeHtml(email) + '</span>';
+  var url = await getUserPhotoUrl(email);
+  if (url && box.style.display !== "none") box.innerHTML = '<img class="modal-avatar" alt="" src="' + url + '"><span style="font-size:12px;color:var(--text2);">' + escapeHtml(email) + '</span>';
+}
+function cobdParseComentarios(f){ var raw = f.ComentariosSolicitacao; if (!raw) return []; if (Array.isArray(raw)) return raw; try { var a = JSON.parse(raw); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+function cobdRenderComentarios(){
+  var list = document.getElementById("cobdComentariosList"); if (!list || !cobDetailItem) return;
+  var coments = cobdParseComentarios(cobDetailItem).slice().sort(function(a,b){ return new Date(a.data) - new Date(b.data); });
+  if (!coments.length){ list.innerHTML = '<p style="font-size:13px;color:var(--text2);">Nenhum comentario registrado ainda.</p>'; return; }
+  list.innerHTML = coments.map(function(c){
+    var dt = new Date(c.data); var dataFmt = dt.toLocaleDateString("pt-BR") + " " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+    var isAutor = c.autorEmail && CURRENT_USER_EMAIL && c.autorEmail.toLowerCase() === CURRENT_USER_EMAIL.toLowerCase();
+    var actions = isAutor ? ('<span class="coment-actions"><button type="button" onclick="cobdEditComentario(\'' + c.id + '\')">Editar</button><button type="button" onclick="cobdDeleteComentario(\'' + c.id + '\')">Excluir</button></span>') : "";
+    return '<div class="coment-item"><div class="coment-head"><span class="coment-autor">' + escapeHtml(c.autorNome || c.autorEmail || "Usuario") + ' - ' + dataFmt + (c.editadoEm ? ' (editado)' : '') + '</span>' + actions + '</div><div class="coment-texto">' + escapeHtml(c.texto) + '</div></div>';
+  }).join("");
+  list.scrollTop = list.scrollHeight;
+}
+async function cobdPersistComentarios(coments){
+  var f = cobDetailItem; if (!f) return; var previous = f.ComentariosSolicitacao;
+  f.ComentariosSolicitacao = JSON.stringify(coments); cobdRenderComentarios();
+  try { await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + f.__id + "/fields", { method: "PATCH", body: JSON.stringify({ ComentariosSolicitacao: JSON.stringify(coments) }) }); if (typeof buildCoberturasBoard === "function") buildCoberturasBoard(); }
+  catch(e){ f.ComentariosSolicitacao = previous; cobdRenderComentarios(); showToast("Nao consegui salvar o comentario: " + e.message, true); }
+}
+function cobdAddComentario(){ if (!cobDetailItem) return; var ta = document.getElementById("cobdNovoComentario"); var texto = ta.value.trim(); if (!texto) return; var coments = cobdParseComentarios(cobDetailItem); coments.push({ id: "c" + Date.now(), autorEmail: CURRENT_USER_EMAIL, autorNome: CURRENT_USER_NAME, data: new Date().toISOString(), texto: texto }); ta.value = ""; cobdPersistComentarios(coments); }
+function cobdEditComentario(id){ if (!cobDetailItem) return; var coments = cobdParseComentarios(cobDetailItem); var c = coments.filter(function(x){ return x.id === id; })[0]; if (!c || !c.autorEmail || c.autorEmail.toLowerCase() !== CURRENT_USER_EMAIL.toLowerCase()) return; var t = window.prompt("Editar comentario:", c.texto); if (t === null) return; t = t.trim(); if (!t) return; c.texto = t; c.editadoEm = new Date().toISOString(); cobdPersistComentarios(coments); }
+function cobdDeleteComentario(id){ if (!cobDetailItem) return; var coments = cobdParseComentarios(cobDetailItem); var c = coments.filter(function(x){ return x.id === id; })[0]; if (!c || !c.autorEmail || c.autorEmail.toLowerCase() !== CURRENT_USER_EMAIL.toLowerCase()) return; if (!window.confirm("Excluir este comentario?")) return; cobdPersistComentarios(coments.filter(function(x){ return x.id !== id; })); }
+async function cobdSetSpLink(f){
+  var a = document.getElementById("cobdSpLink"); if (!a) return; a.style.display = "none";
+  try { if (!COB_LIST_WEBURL){ var info = await graphFetch(COBERTURAS_GRAPH_BASE + "?$select=webUrl"); COB_LIST_WEBURL = info && info.webUrl; } if (COB_LIST_WEBURL && cobDetailItem === f){ a.href = COB_LIST_WEBURL + "/DispForm.aspx?ID=" + f.__id; a.style.display = ""; } } catch(e){}
+}
+function openCobDetailModal(f){
+  if (!f) return; cobDetailItem = f;
+  var status = f.StatusSolicitacao || "Registrada";
+  document.getElementById("cobdTitle").textContent = (f.Cliente || f.Area || "Solicitacao") + (f.Cargo ? " - " + f.Cargo : "");
+  document.getElementById("cobdSub").textContent = [f.MotivoSubstituicao || f.Title || "Solicitacao de cobertura", f.Area, "Status: " + status].filter(Boolean).join(" · ");
+  var badges = []; if (f.PselSigiloso === "Sim") badges.push('<span class="cobd-badge sig">&#128274; Psel sigiloso</span>'); if (f.PrecisaPsel === "Sim") badges.push('<span class="cobd-badge">Psel aberto</span>');
+  var rh = (typeof recrutaHubBadgeHtmlBase === "function") ? recrutaHubBadgeHtmlBase(f) : "";
+  document.getElementById("cobdBadges").innerHTML = badges.join("") + rh;
+  document.getElementById("cobdInfo").innerHTML = cobdInfoRows(f);
+  var sel = document.getElementById("cobdStatus"); var cols = (typeof COB_STATUS_COLS !== "undefined") ? COB_STATUS_COLS : [status];
+  sel.innerHTML = cols.map(function(s){ return '<option value="' + escapeHtml(s) + '"' + (s === status ? ' selected' : '') + '>' + escapeHtml(s) + '</option>'; }).join("");
+  document.getElementById("cobdPrazo").value = f.PrazoConclusao ? String(f.PrazoConclusao).slice(0,10) : "";
+  document.getElementById("cobdEmail1").value = f.EmailResponsavel || "";
+  document.getElementById("cobdEmail2").value = f.EmailResponsavel2 || "";
+  document.getElementById("cobdEmail3").value = f.EmailResponsavel3 || "";
+  document.getElementById("cobdAnotacoes").value = f.AnotacoesSolicitacao || "";
+  document.getElementById("cobdNovoComentario").value = "";
+  cobdAvatar("cobdAv1", f.EmailResponsavel); cobdAvatar("cobdAv2", f.EmailResponsavel2); cobdAvatar("cobdAv3", f.EmailResponsavel3);
+  cobdRenderComentarios(); cobdSetSpLink(f);
+  document.getElementById("cobDetailModalOverlay").classList.add("show");
+}
+function closeCobDetailModal(){ document.getElementById("cobDetailModalOverlay").classList.remove("show"); cobDetailItem = null; }
+function cobdOpenEditVaga(){ var f = cobDetailItem; if (!f) return; closeCobDetailModal(); if (typeof openCoberturaEditModal === "function") openCoberturaEditModal(f); }
+async function saveCobDetailModal(){
+  var f = cobDetailItem; if (!f) return;
+  var newStatus = document.getElementById("cobdStatus").value;
+  var prazoRaw = document.getElementById("cobdPrazo").value; var newPrazo = prazoRaw ? (prazoRaw + "T12:00:00Z") : null;
+  var e1 = document.getElementById("cobdEmail1").value.trim(), e2 = document.getElementById("cobdEmail2").value.trim(), e3 = document.getElementById("cobdEmail3").value.trim();
+  var anot = document.getElementById("cobdAnotacoes").value;
+  var emails = [[e1,"responsavel"],[e2,"2o responsavel"],[e3,"3o responsavel"]];
+  for (var i=0;i<emails.length;i++){ if (emails[i][0] && !isValidEmail(emails[i][0])){ showToast("Digite um e-mail valido para o " + emails[i][1] + ".", true); return; } }
+  var fields = {};
+  if (newStatus !== (f.StatusSolicitacao || "Registrada")) { fields.StatusSolicitacao = newStatus; fields.AvisoProximaEtapaEnviado = false; }
+  var oldPrazo = f.PrazoConclusao ? String(f.PrazoConclusao).slice(0,10) : "";
+  if (prazoRaw !== oldPrazo) { fields.PrazoConclusao = newPrazo; fields.AvisoProximaEtapaEnviado = false; }
+  if (e1 !== (f.EmailResponsavel || "")) fields.EmailResponsavel = e1;
+  if (e2 !== (f.EmailResponsavel2 || "")) fields.EmailResponsavel2 = e2;
+  if (e3 !== (f.EmailResponsavel3 || "")) fields.EmailResponsavel3 = e3;
+  if (anot !== (f.AnotacoesSolicitacao || "")) fields.AnotacoesSolicitacao = anot;
+  if (!Object.keys(fields).length){ closeCobDetailModal(); return; }
+  var btn = document.getElementById("cobdSaveBtn"); btn.disabled = true;
+  try {
+    await graphFetch(COBERTURAS_GRAPH_BASE + "/items/" + f.__id + "/fields", { method: "PATCH", body: JSON.stringify(fields) });
+    Object.keys(fields).forEach(function(k){ f[k] = fields[k]; });
+    closeCobDetailModal(); if (typeof buildCoberturasBoard === "function") buildCoberturasBoard();
+    showToast("Solicitacao atualizada (salvo no SharePoint)");
+  } catch(err){ showToast("Nao consegui salvar: " + err.message, true); }
+  finally { btn.disabled = false; }
+}
+(function(){
+  ["cobdEmail1","cobdEmail2","cobdEmail3"].forEach(function(id, i){ var el = document.getElementById(id); if (el) el.addEventListener("blur", function(){ cobdAvatar("cobdAv" + (i+1), el.value); }); });
+  var board = document.getElementById("coberturasBoard");
+  if (board) board.addEventListener("click", function(e){
+    if (e.target.closest("select, button, a, input, textarea")) return;
+    var card = e.target.closest(".card"); if (!card || !card.dataset.id) return;
+    var id = card.dataset.id; var f = (coberturaHistoricoData || []).filter(function(x){ return String(x.__id) === String(id); })[0];
+    if (f) openCobDetailModal(f);
+  });
+  var st = document.createElement("style"); st.textContent = "#coberturasBoard .card{cursor:pointer;} #coberturasBoard .card:hover{box-shadow:0 4px 14px rgba(110,20,35,.18);}"; document.head.appendChild(st);
 })();
 </script>
 </body>
