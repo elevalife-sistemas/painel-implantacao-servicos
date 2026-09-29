@@ -4350,5 +4350,47 @@ async function sendPrazoRequest(){
 }
 if (CURRENT_USER_EMAIL) applyRole();
 </script>
+<script>
+/* ===== Historico de pedidos de prazo (aprovado/recusado) no card e no chat ===== */
+var PRAZO_HIST = {};
+loadPendingPrazos = async function(){
+  try {
+    var r = await graphFetch(LISTS_BASE + PEDIDOS_PRAZO_LIST_ID + "/items?expand=fields&$top=500");
+    PENDING_PRAZO = {}; PRAZO_HIST = {};
+    (r.value || []).forEach(function(it){
+      var f = it.fields || {}; var key = (f.Origem || "") + ":" + f.ItemOrigemId;
+      f.__criado = it.createdDateTime; f.__modificado = it.lastModifiedDateTime;
+      if (f.StatusPedido === "Pendente") PENDING_PRAZO[key] = f;
+      (PRAZO_HIST[key] = PRAZO_HIST[key] || []).push(f);
+    });
+    Object.keys(PRAZO_HIST).forEach(function(k){ PRAZO_HIST[k].sort(function(a,b){ return new Date(a.__criado) - new Date(b.__criado); }); });
+  } catch(e){}
+};
+function prazoDecisionHtml(key){
+  var list = (PRAZO_HIST[key] || []).filter(function(p){ return p.StatusPedido === "Aprovado" || p.StatusPedido === "Recusado"; });
+  return list.map(function(p){
+    var ok = p.StatusPedido === "Aprovado"; var dt = p.__modificado ? new Date(p.__modificado) : null;
+    var quando = dt ? (dt.toLocaleDateString("pt-BR") + " " + dt.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})) : "";
+    return '<div class="coment-item" style="background:' + (ok ? '#eaf7ee' : '#fdecec') + ';border-radius:8px;padding:10px;margin:6px 0;border-bottom:none;">' +
+      '<div class="coment-head"><span class="coment-autor">' + (ok ? '&#9989; Novo prazo APROVADO' : '&#10060; Pedido de novo prazo RECUSADO') + ' - ' + escapeHtml(p.RespondidoPor || p.AprovadorEmail || "gestor") + (quando ? ' - ' + quando : '') + '</span></div>' +
+      '<div class="coment-texto">Pedido de ' + escapeHtml(p.SolicitanteNome || p.SolicitanteEmail || "") + ': de ' + fmtBr(p.PrazoAtual) + ' para ' + fmtBr(p.PrazoSolicitado) + '.' + (p.ComentarioAprovador ? ' Comentario do gestor: ' + escapeHtml(p.ComentarioAprovador) : '') + '</div></div>';
+  }).join("");
+}
+showPendNote = function(noteId, key){
+  var n = document.getElementById(noteId); if (!n) return; var p = PENDING_PRAZO[key];
+  var hist = (PRAZO_HIST[key] || []).filter(function(x){ return x.StatusPedido !== "Pendente"; });
+  var last = hist[hist.length - 1];
+  if (p){ n.style.display = "block"; n.style.background = "#fff4db"; n.style.borderColor = "#f0d08a"; n.style.color = "#8a5a00"; n.textContent = "⏳ Pedido de novo prazo (" + fmtBr(p.PrazoSolicitado) + ") aguardando aprovacao de " + (p.AprovadorEmail || "gestor") + "."; }
+  else if (last){ var ok = last.StatusPedido === "Aprovado"; n.style.display = "block"; n.style.background = ok ? "#eaf7ee" : "#fdecec"; n.style.borderColor = ok ? "#9fd3ae" : "#f2b8b5"; n.style.color = ok ? "#1e6b34" : "#b42318"; n.textContent = (ok ? "✅ Ultimo pedido de prazo APROVADO por " : "❌ Ultimo pedido de prazo (" + fmtBr(last.PrazoSolicitado) + ") RECUSADO por ") + (last.RespondidoPor || "gestor") + (last.ComentarioAprovador ? ". Comentario: " + last.ComentarioAprovador : "."); }
+  else { n.style.display = "none"; n.textContent = ""; }
+};
+(function(){
+  var oRK = renderComentariosBox; renderComentariosBox = function(item){ var r = oRK.apply(this, arguments); try { var list = document.getElementById("comentariosList"); if (list && item){ var h = prazoDecisionHtml("kanban:" + item.id); if (h){ if (/Nenhum comentario/.test(list.textContent)) list.innerHTML = ""; list.insertAdjacentHTML("beforeend", h); } } } catch(e){} return r; };
+  var oRC = cobdRenderComentarios; cobdRenderComentarios = function(){ var r = oRC.apply(this, arguments); try { var list = document.getElementById("cobdComentariosList"); if (list && cobDetailItem){ var h = prazoDecisionHtml("cobertura:" + cobDetailItem.__id); if (h){ if (/Nenhum comentario/.test(list.textContent)) list.innerHTML = ""; list.insertAdjacentHTML("beforeend", h); list.scrollTop = list.scrollHeight; } } } catch(e){} return r; };
+  var oOpenCard2 = openCardModal; openCardModal = function(id){ var r = oOpenCard2.apply(this, arguments); loadPendingPrazos().then(function(){ if (currentCardItem){ showPendNote("cardPrazoPend", "kanban:" + currentCardItem.id); renderComentariosBox(currentCardItem); } }); return r; };
+  var oOpenCob2 = openCobDetailModal; openCobDetailModal = function(f){ var r = oOpenCob2.apply(this, arguments); loadPendingPrazos().then(function(){ if (cobDetailItem === f){ showPendNote("cobdPrazoPend", "cobertura:" + f.__id); cobdRenderComentarios(); } }); return r; };
+})();
+if (CURRENT_USER_EMAIL) loadPendingPrazos();
+</script>
 </body>
 </html>
