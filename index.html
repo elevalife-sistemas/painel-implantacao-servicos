@@ -3045,7 +3045,7 @@ var fields = {
 Title: "Informativo -> " + cliente,
 Cliente: cliente,
 Solicitante: CURRENT_USER_NAME || CURRENT_USER_EMAIL || "",
-EmailResponsavel: emailResp,
+EmailResponsavel: (AREA_RESPONSAVEL_EMAIL["Departamento Pessoal"] || emailResp),
 PrazoConclusao: document.getElementById("coberturaPrazoConclusao").value || null,
 StatusSolicitacao: "Registrada",
 Status: "Pendente",
@@ -3053,7 +3053,7 @@ PrecisaSubstituicao: "Nao",
 Observacao: observacao
 };
 await graphFetch(COBERTURAS_GRAPH_BASE + "/items", { method: "POST", body: JSON.stringify({ fields: cleanGraphFields(fields) }) });
-showToast("Comunicado informativo enviado."); refreshCoberturasAfterSubmit();
+try { await notifyInformativoDP(fields); } catch(eN){ showToast("Informativo salvo, mas nao consegui avisar o DP: " + eN.message, true); } showToast("Comunicado informativo enviado ao DP."); refreshCoberturasAfterSubmit();
 } catch (err){
 showToast("Erro ao enviar comunicado: " + err.message, true);
 }
@@ -4391,6 +4391,22 @@ showPendNote = function(noteId, key){
   var oOpenCob2 = openCobDetailModal; openCobDetailModal = function(f){ var r = oOpenCob2.apply(this, arguments); loadPendingPrazos().then(function(){ if (cobDetailItem === f){ showPendNote("cobdPrazoPend", "cobertura:" + f.__id); cobdRenderComentarios(); } }); return r; };
 })();
 if (CURRENT_USER_EMAIL) loadPendingPrazos();
+</script>
+<script>
+/* ===== Informativo (sem substituicao): contato direto com a responsavel do DP ===== */
+async function notifyInformativoDP(fields){
+  var dp = AREA_RESPONSAVEL_EMAIL["Departamento Pessoal"]; if (!dp) return;
+  var agora = new Date(); var quando = agora.toLocaleDateString("pt-BR") + " " + agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+  var html = "<p><b>Comunicado informativo - Coberturas e Substituicoes</b></p>" +
+    "<p>Ola! Este e um comunicado <b>informativo</b>: nao ha necessidade de substituicao de profissional.</p><ul>" +
+    "<li><b>Cliente:</b>&nbsp;" + escapeHtml(fields.Cliente || "") + "</li>" +
+    "<li><b>Observacao:</b>&nbsp;" + escapeHtml(fields.Observacao || "-") + "</li>" +
+    "<li><b>Solicitante:</b>&nbsp;" + escapeHtml(fields.Solicitante || "") + "</li>" +
+    "<li><b>Registrado em:</b>&nbsp;" + quando + "</li></ul>" +
+    "<p>O card foi criado no Painel de Gestao Operacional com voce como responsavel: <a href=\"" + PAINEL_URL + "\">" + PAINEL_URL + "</a></p>";
+  await graphFetch("https://graph.microsoft.com/v1.0/me/sendMail", { method: "POST", body: JSON.stringify({ message: { subject: "[Painel ElevaLife] Comunicado informativo: " + (fields.Cliente || ""), body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: dp } }] }, saveToSentItems: true }) });
+  try { await sendTeamsMessageToEmail(dp, html); } catch(e){ showToast("E-mail enviado ao DP, mas o Teams falhou: " + e.message, true); }
+}
 </script>
 </body>
 </html>
