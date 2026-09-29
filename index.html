@@ -4143,5 +4143,212 @@ async function saveCobDetailModal(){
   var st = document.createElement("style"); st.textContent = "#coberturasBoard .card{cursor:pointer;} #coberturasBoard .card:hover{box-shadow:0 4px 14px rgba(110,20,35,.18);}"; document.head.appendChild(st);
 })();
 </script>
+<script>
+/* ===== Perfis (gestor x operacional), Minhas atribuicoes, avisos de atribuicao e pedidos de prazo ===== */
+var LISTS_BASE = "https://graph.microsoft.com/v1.0/sites/" + GRAPH_SITE_SEGMENT + "/lists/";
+var GESTORES_LIST_ID = "75eb3a49-e2d5-4e36-9ce6-ae420039264b";
+var ATRIB_LIST_ID = "1be4089b-d6ea-47e2-baec-9066608699c6";
+var PEDIDOS_PRAZO_LIST_ID = "8c32950c-8d03-49c1-badb-1eddee54c156";
+var PAINEL_URL = "https://elevalife-sistemas.github.io/painel-implantacao-servicos/";
+var IS_GESTOR = true; var ROLE_APPLIED = false; var GESTORES_EMAILS = []; var PENDING_PRAZO = {};
+var COB_AREA_HEAD_ALIAS = { "RH":"Recursos Humanos", "Medicina do Trabalho":"Medicina", "Terapias":"Massoterapia" };
+function headEmailForKanban(item){ var e = ""; try { e = resolveResponsavelEmailForStep(item.areaResp, item.areaServico); } catch(x){} return e || "cristiano@elevalife.com.br"; }
+function headEmailForCobertura(f){ var a = cobdVal(f.Area); if (a === "Marketing") return "clara@elevalife.com.br"; if (a === "Comercial") return "leonardo@elevalife.com.br"; var k = COB_AREA_HEAD_ALIAS[a] || a; return AREA_RESPONSAVEL_EMAIL[k] || "cristiano@elevalife.com.br"; }
+function fmtBr(d){ if (!d) return "Nao definido"; return String(d).slice(0,10).split("-").reverse().join("/"); }
+function myEmail(){ return (CURRENT_USER_EMAIL || "").toLowerCase(); }
+function isMineEmails(list){ var me = myEmail(); return !!me && list.some(function(e){ return e && String(e).toLowerCase() === me; }); }
+
+(function injectRoleUi(){
+  var css = document.createElement("style");
+  css.textContent =
+    "body.op-mode .tabs > *:not(#tabMinhas):not(#tabMinhasLabel){display:none !important;}" +
+    "body.op-mode #clientbarWrap{display:none !important;}" +
+    "body.op-mode .cobd-edit-vaga-btn{display:none !important;}" +
+    ".req-prazo-btn{display:none;margin-top:6px;padding:6px 10px;font-size:12px;border-radius:6px;border:1px solid var(--grena);background:#fff;color:var(--grena);cursor:pointer;font-weight:600;}" +
+    "body.op-mode .req-prazo-btn{display:inline-block;}" +
+    ".prazo-pend-note{display:none;margin-top:6px;font-size:12px;font-weight:600;color:#8a5a00;background:#fff4db;border:1px solid #f0d08a;border-radius:6px;padding:6px 8px;}" +
+    ".minhas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin:10px 0 24px;}" +
+    ".minhas-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--grena);border-radius:10px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s;}" +
+    ".minhas-card:hover{box-shadow:0 4px 14px rgba(110,20,35,.18);}" +
+    ".minhas-card .mc-cli{font-size:12px;font-weight:700;color:var(--grena);text-transform:uppercase;letter-spacing:.03em;}" +
+    ".minhas-card .mc-tit{font-size:14px;font-weight:600;margin:4px 0 6px;}" +
+    ".minhas-card .mc-meta{font-size:12px;color:var(--text2);margin-top:2px;}" +
+    ".mc-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--grena-bg,#fbeef0);color:var(--grena);margin-right:4px;}" +
+    ".mc-pill.late{background:#fde2e2;color:#b42318;} .mc-pill.pend{background:#fff4db;color:#8a5a00;}" +
+    ".minhas-empty{font-size:13px;color:var(--text2);padding:14px;background:#fff;border:1px dashed var(--border);border-radius:10px;}";
+  document.head.appendChild(css);
+  var tabs = document.querySelector(".tabs");
+  if (tabs){
+    var lbl = document.createElement("p"); lbl.className = "tab-group-label"; lbl.id = "tabMinhasLabel"; lbl.textContent = "Meu trabalho";
+    var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "tabMinhas"; tab.dataset.tab = "minhas"; tab.innerHTML = '<span class="tab-icon">&#9989;</span>Minhas atribuicoes';
+    tabs.insertBefore(tab, tabs.firstChild); tabs.insertBefore(lbl, tab);
+    tab.addEventListener("click", function(){ showMinhasPanel(); });
+  }
+  var main = document.getElementById("mainArea");
+  if (main){
+    var p = document.createElement("div"); p.className = "panel"; p.id = "panel-minhas";
+    p.innerHTML = '<div class="chart-card" style="margin-top:0;"><h3 style="font-size:18px;font-weight:700;margin:0 0 4px;color:var(--grena);">Minhas atribuicoes</h3>' +
+      '<p style="font-size:13px;color:var(--text2);margin:0;">Tarefas em que voce esta como responsavel ou corresponsavel. Clique no card para abrir, atualizar o status, conversar no chat ou solicitar novo prazo.</p></div>' +
+      '<h4 style="margin:18px 0 0;font-size:15px;">Etapas de implantacao</h4><div id="minhasKanban" class="minhas-grid"></div>' +
+      '<h4 style="margin:6px 0 0;font-size:15px;">Solicitacoes de cobertura e substituicao</h4><div id="minhasCob" class="minhas-grid"></div>';
+    main.appendChild(p);
+  }
+  function addReqBtn(inputId, noteId, handler){
+    var inp = document.getElementById(inputId); if (!inp) return;
+    var b = document.createElement("button"); b.type = "button"; b.className = "req-prazo-btn"; b.textContent = "Solicitar novo prazo"; b.addEventListener("click", handler);
+    var n = document.createElement("div"); n.className = "prazo-pend-note"; n.id = noteId;
+    inp.insertAdjacentElement("afterend", n); inp.insertAdjacentElement("afterend", b);
+  }
+  addReqBtn("cardDataPrevista", "cardPrazoPend", function(){ if (currentCardItem) openPrazoRequest("kanban", currentCardItem); });
+  addReqBtn("cobdPrazo", "cobdPrazoPend", function(){ if (cobDetailItem) openPrazoRequest("cobertura", cobDetailItem); });
+  var ev = document.querySelector('#cobDetailModalOverlay button[onclick="cobdOpenEditVaga()"]'); if (ev) ev.classList.add("cobd-edit-vaga-btn");
+  var ov = document.createElement("div"); ov.className = "modal-overlay"; ov.id = "prazoReqOverlay"; ov.style.zIndex = "90";
+  ov.innerHTML = '<div class="modal"><button type="button" class="modal-close" onclick="closePrazoRequest()" aria-label="Fechar">&#10005;</button>' +
+    '<h3>Solicitar novo prazo</h3><p id="prazoReqSub" style="font-size:13px;color:var(--text2);"></p>' +
+    '<label>Prazo atual</label><input type="text" id="prazoReqAtual" disabled>' +
+    '<label>Novo prazo desejado *</label><input type="date" id="prazoReqNovo">' +
+    '<label>Motivo *</label><textarea id="prazoReqMotivo" rows="3" placeholder="Explique por que o prazo precisa mudar..."></textarea>' +
+    '<p id="prazoReqAprov" style="font-size:12px;color:var(--text2);margin-top:8px;"></p>' +
+    '<div class="modal-actions"><button class="btn-cancel" onclick="closePrazoRequest()">Cancelar</button><button class="btn-confirm" id="prazoReqSend" onclick="sendPrazoRequest()">Enviar para aprovacao</button></div></div>';
+  document.body.appendChild(ov);
+})();
+
+async function loadGestores(){
+  try {
+    var r = await graphFetch(LISTS_BASE + GESTORES_LIST_ID + "/items?expand=fields(select=Title)&$top=500");
+    GESTORES_EMAILS = (r.value || []).map(function(it){ return String((it.fields || {}).Title || "").trim().toLowerCase(); }).filter(Boolean);
+    return GESTORES_EMAILS.length ? GESTORES_EMAILS.indexOf(myEmail()) !== -1 : true;
+  } catch(e){ return true; }
+}
+async function loadPendingPrazos(){
+  try {
+    var r = await graphFetch(LISTS_BASE + PEDIDOS_PRAZO_LIST_ID + "/items?expand=fields&$top=500");
+    PENDING_PRAZO = {};
+    (r.value || []).forEach(function(it){ var f = it.fields || {}; if (f.StatusPedido === "Pendente") PENDING_PRAZO[(f.Origem || "") + ":" + f.ItemOrigemId] = f; });
+  } catch(e){}
+}
+function showMinhasPanel(){
+  document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
+  document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); });
+  var t = document.getElementById("tabMinhas"); if (t) t.classList.add("active");
+  var p = document.getElementById("panel-minhas"); if (p) p.classList.add("active");
+  var cbar = document.getElementById("clientbarWrap"); if (cbar) cbar.style.display = "none";
+  renderMinhas();
+  if (typeof loadCoberturaHistorico === "function") loadCoberturaHistorico().then(renderMinhas).catch(function(){});
+  loadPendingPrazos().then(renderMinhas);
+}
+function renderMinhas(){
+  var kWrap = document.getElementById("minhasKanban"), cWrap = document.getElementById("minhasCob"); if (!kWrap || !cWrap) return;
+  var today = new Date().toISOString().slice(0,10);
+  var ks = (typeof ITEMS !== "undefined" ? ITEMS : []).filter(function(it){ return it.cliente && isMineEmails([it.emailResponsavel, it.emailResponsavel2, it.emailResponsavel3]); });
+  ks.sort(function(a,b){ var ca = a.status === "Concluido" ? 1 : 0, cb = b.status === "Concluido" ? 1 : 0; if (ca !== cb) return ca - cb; return String(a.dataPrevista || "9999").localeCompare(String(b.dataPrevista || "9999")); });
+  kWrap.innerHTML = ks.length ? ks.map(function(it){
+    var late = it.status !== "Concluido" && it.dataPrevista && String(it.dataPrevista).slice(0,10) < today;
+    var pend = PENDING_PRAZO["kanban:" + it.id];
+    return '<div class="minhas-card" data-kind="kanban" data-id="' + escapeHtml(String(it.id)) + '"><div class="mc-cli">' + escapeHtml(clienteLabel(it.cliente)) + '</div><div class="mc-tit">Etapa ' + escapeHtml(String(it.num)) + ' - ' + escapeHtml(it.title) + '</div>' +
+      '<span class="mc-pill' + (late ? ' late' : '') + '">' + escapeHtml(late ? "Atrasado" : it.status) + '</span>' + (pend ? '<span class="mc-pill pend">&#9203; Prazo em aprovacao</span>' : '') +
+      '<div class="mc-meta">Prazo: ' + fmtBr(it.dataPrevista) + '</div></div>';
+  }).join("") : '<div class="minhas-empty">Nenhuma etapa de implantacao atribuida a voce.</div>';
+  var cs = (typeof coberturaHistoricoData !== "undefined" && coberturaHistoricoData ? coberturaHistoricoData : []).filter(function(f){ return !(f.__id && String(f.__id).indexOf("aval-") === 0) && isMineEmails([f.EmailResponsavel, f.EmailResponsavel2, f.EmailResponsavel3]); });
+  cWrap.innerHTML = cs.length ? cs.map(function(f){
+    var st = f.StatusSolicitacao || "Registrada"; var late = st !== "Concluída" && f.PrazoConclusao && String(f.PrazoConclusao).slice(0,10) < today;
+    var pend = PENDING_PRAZO["cobertura:" + f.__id]; var nc = cobdParseComentarios(f).length;
+    return '<div class="minhas-card" data-kind="cobertura" data-id="' + escapeHtml(String(f.__id)) + '"><div class="mc-cli">' + escapeHtml(f.Cliente || f.Area || "") + '</div><div class="mc-tit">' + escapeHtml(f.Cargo || f.MotivoSubstituicao || f.Title || "Solicitacao") + '</div>' +
+      '<span class="mc-pill' + (late ? ' late' : '') + '">' + escapeHtml(late ? "Atrasado" : st) + '</span>' + (pend ? '<span class="mc-pill pend">&#9203; Prazo em aprovacao</span>' : '') +
+      '<div class="mc-meta">Prazo: ' + fmtBr(f.PrazoConclusao) + (nc ? ' &middot; &#128172; ' + nc : '') + '</div></div>';
+  }).join("") : '<div class="minhas-empty">Nenhuma solicitacao atribuida a voce.</div>';
+}
+document.addEventListener("click", function(e){
+  var c = e.target.closest && e.target.closest(".minhas-card"); if (!c) return;
+  if (c.dataset.kind === "kanban") openCardModal(c.dataset.id);
+  else { var f = (coberturaHistoricoData || []).filter(function(x){ return String(x.__id) === String(c.dataset.id); })[0]; if (f) openCobDetailModal(f); }
+});
+function applyOpRestrictions(){
+  var lock = !IS_GESTOR;
+  ["cardDataPrevista","cardEmail","cardEmail2","cardEmail3","cobdPrazo","cobdEmail1","cobdEmail2","cobdEmail3"].forEach(function(id){ var el = document.getElementById(id); if (el) el.disabled = lock; });
+}
+function showPendNote(noteId, key){
+  var n = document.getElementById(noteId); if (!n) return; var p = PENDING_PRAZO[key];
+  if (p){ n.style.display = "block"; n.textContent = "⏳ Pedido de novo prazo (" + fmtBr(p.PrazoSolicitado) + ") aguardando aprovacao de " + (p.AprovadorEmail || "gestor") + "."; } else { n.style.display = "none"; n.textContent = ""; }
+}
+async function applyRole(){
+  if (ROLE_APPLIED || !CURRENT_USER_EMAIL) return; ROLE_APPLIED = true;
+  IS_GESTOR = await loadGestores();
+  await loadPendingPrazos();
+  if (!IS_GESTOR){ document.body.classList.add("op-mode"); showMinhasPanel(); }
+  applyOpRestrictions();
+}
+(function wrapFns(){
+  var oAfter = afterLogin; afterLogin = async function(){ await oAfter.apply(this, arguments); await applyRole(); };
+  var oRender = renderAll; renderAll = function(){ var r = oRender.apply(this, arguments); try { renderMinhas(); } catch(e){} return r; };
+  var oBuild = buildCoberturasBoard; buildCoberturasBoard = function(){ var r = oBuild.apply(this, arguments); try { renderMinhas(); } catch(e){} return r; };
+  var oOpenCard = openCardModal; openCardModal = function(id){ var r = oOpenCard.apply(this, arguments); applyOpRestrictions(); if (currentCardItem) showPendNote("cardPrazoPend", "kanban:" + currentCardItem.id); return r; };
+  var oOpenCob = openCobDetailModal; openCobDetailModal = function(f){ var r = oOpenCob.apply(this, arguments); applyOpRestrictions(); if (f) showPendNote("cobdPrazoPend", "cobertura:" + f.__id); return r; };
+  var oSaveCob = saveCobDetailModal; saveCobDetailModal = async function(){
+    var f = cobDetailItem; var before = f ? [f.EmailResponsavel, f.EmailResponsavel2, f.EmailResponsavel3].map(function(x){ return (x || "").toLowerCase(); }) : [];
+    await oSaveCob.apply(this, arguments);
+    if (!f) return; var after = [f.EmailResponsavel, f.EmailResponsavel2, f.EmailResponsavel3];
+    after.forEach(function(e){ if (e && before.indexOf(e.toLowerCase()) === -1) notifyAssignment(e, { tipo: "Solicitacao de cobertura/substituicao", origem: "cobertura", id: f.__id, cliente: f.Cliente || f.Area || "", tarefa: f.Cargo || f.MotivoSubstituicao || f.Title || "Solicitacao", status: f.StatusSolicitacao || "Registrada", prazo: f.PrazoConclusao }); });
+  };
+  var sb = document.getElementById("saveCardBtn");
+  if (sb) sb.addEventListener("click", function(){
+    var it = currentCardItem; if (!it) return; var before = [it.emailResponsavel, it.emailResponsavel2, it.emailResponsavel3].map(function(x){ return (x || "").toLowerCase(); });
+    setTimeout(function(){ [it.emailResponsavel, it.emailResponsavel2, it.emailResponsavel3].forEach(function(e){ if (e && before.indexOf(e.toLowerCase()) === -1) notifyAssignment(e, { tipo: "Etapa de implantacao", origem: "kanban", id: it.id, cliente: clienteLabel(it.cliente), tarefa: "Etapa " + it.num + " - " + it.title, status: it.status, prazo: it.dataPrevista }); }); }, 0);
+  }, true);
+})();
+async function notifyAssignment(email, ctx){
+  email = String(email).trim(); if (!email) return;
+  var quem = CURRENT_USER_NAME || CURRENT_USER_EMAIL;
+  var html = "<p><b>Nova atribuicao para voce no Painel de Gestao Operacional</b></p>" +
+    "<p>Ola! " + escapeHtml(quem) + " incluiu voce como responsavel nesta tarefa:</p><ul>" +
+    "<li><b>Tipo:</b>&nbsp;" + escapeHtml(ctx.tipo) + "</li><li><b>Cliente:</b>&nbsp;" + escapeHtml(ctx.cliente) + "</li>" +
+    "<li><b>Tarefa:</b>&nbsp;" + escapeHtml(ctx.tarefa) + "</li><li><b>Status:</b>&nbsp;" + escapeHtml(ctx.status) + "</li>" +
+    "<li><b>Prazo:</b>&nbsp;" + fmtBr(ctx.prazo) + "</li></ul>" +
+    "<p>Acesse o painel e abra <b>Minhas atribuicoes</b>: <a href=\"" + PAINEL_URL + "\">" + PAINEL_URL + "</a></p>";
+  try { await graphFetch(LISTS_BASE + ATRIB_LIST_ID + "/items", { method: "POST", body: JSON.stringify({ fields: { Title: email.toLowerCase(), Origem: ctx.origem, ItemOrigemId: String(ctx.id), Descricao: ctx.cliente + " | " + ctx.tarefa, Link: PAINEL_URL, AtribuidoPor: CURRENT_USER_EMAIL } }) }); } catch(e){}
+  if (email.toLowerCase() === myEmail()) return;
+  try { await graphFetch("https://graph.microsoft.com/v1.0/me/sendMail", { method: "POST", body: JSON.stringify({ message: { subject: "[Painel ElevaLife] Nova atribuicao: " + ctx.cliente + " - " + ctx.tarefa, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: email } }] }, saveToSentItems: true }) }); } catch(e){ showToast("Nao consegui enviar o e-mail de atribuicao para " + email + ": " + e.message, true); }
+  try { await sendTeamsMessageToEmail(email, html); showToast("Atribuicao avisada por e-mail e Teams: " + email); } catch(e){ showToast("E-mail enviado, mas o Teams falhou para " + email + ": " + e.message, true); }
+}
+var prazoReqCtx = null;
+function openPrazoRequest(kind, obj){
+  var atual, sub, aprov;
+  if (kind === "kanban"){ atual = obj.dataPrevista; sub = clienteLabel(obj.cliente) + " - Etapa " + obj.num + " - " + obj.title; aprov = headEmailForKanban(obj); }
+  else { atual = obj.PrazoConclusao; sub = (obj.Cliente || obj.Area || "") + " - " + (obj.Cargo || obj.MotivoSubstituicao || "Solicitacao"); aprov = headEmailForCobertura(obj); }
+  var key = kind + ":" + (kind === "kanban" ? obj.id : obj.__id);
+  if (PENDING_PRAZO[key]){ showToast("Ja existe um pedido de novo prazo aguardando aprovacao para esta tarefa.", true); return; }
+  prazoReqCtx = { kind: kind, obj: obj, atual: atual, sub: sub, aprov: aprov, key: key };
+  document.getElementById("prazoReqSub").textContent = sub;
+  document.getElementById("prazoReqAtual").value = fmtBr(atual);
+  document.getElementById("prazoReqNovo").value = "";
+  document.getElementById("prazoReqMotivo").value = "";
+  document.getElementById("prazoReqAprov").textContent = "O pedido sera enviado para aprovacao de " + aprov + " (Teams e e-mail). O prazo so muda depois de aprovado.";
+  document.getElementById("prazoReqOverlay").classList.add("show");
+}
+function closePrazoRequest(){ document.getElementById("prazoReqOverlay").classList.remove("show"); prazoReqCtx = null; }
+async function sendPrazoRequest(){
+  var c = prazoReqCtx; if (!c) return;
+  var novo = document.getElementById("prazoReqNovo").value; var motivo = document.getElementById("prazoReqMotivo").value.trim();
+  if (!novo){ showToast("Informe o novo prazo desejado.", true); return; }
+  if (!motivo){ showToast("Informe o motivo da mudanca de prazo.", true); return; }
+  var iso = novo + "T12:00:00Z"; var campos, listaId, itemId, campo;
+  if (c.kind === "kanban"){ listaId = LIST_ID; itemId = c.obj.id; campo = "field_10"; campos = { field_10: iso, PrazoAlteradoPor: (CURRENT_USER_NAME || CURRENT_USER_EMAIL) + " (aprovado pelo gestor)" }; }
+  else { listaId = COBERTURAS_LIST_ID; itemId = c.obj.__id; campo = "PrazoConclusao"; campos = { PrazoConclusao: iso, AvisoProximaEtapaEnviado: false }; }
+  var btn = document.getElementById("prazoReqSend"); btn.disabled = true;
+  try {
+    var fields = { Title: "Novo prazo: " + c.sub, Origem: c.kind, ListaId: listaId, ItemOrigemId: String(itemId), CampoPrazo: campo, PrazoAtual: c.atual ? String(c.atual).slice(0,10) : "", PrazoSolicitado: novo, Motivo: motivo, SolicitanteEmail: CURRENT_USER_EMAIL, SolicitanteNome: CURRENT_USER_NAME || CURRENT_USER_EMAIL, AprovadorEmail: c.aprov, StatusPedido: "Pendente", CamposAprovacao: JSON.stringify(campos) };
+    await graphFetch(LISTS_BASE + PEDIDOS_PRAZO_LIST_ID + "/items", { method: "POST", body: JSON.stringify({ fields: fields }) });
+    PENDING_PRAZO[c.key] = fields;
+    var texto = "Solicitou novo prazo: de " + fmtBr(c.atual) + " para " + fmtBr(novo) + ". Motivo: " + motivo + " (aguardando aprovacao de " + c.aprov + ")";
+    var com = { id: "c" + Date.now(), autorEmail: CURRENT_USER_EMAIL, autorNome: CURRENT_USER_NAME, data: new Date().toISOString(), texto: texto };
+    if (c.kind === "kanban"){ var arr = parseComentarios(c.obj); arr.push(com); await persistComentarios(c.obj, arr); showPendNote("cardPrazoPend", c.key); }
+    else { var arr2 = cobdParseComentarios(c.obj); arr2.push(com); if (cobDetailItem === c.obj) await cobdPersistComentarios(arr2); showPendNote("cobdPrazoPend", c.key); }
+    closePrazoRequest(); renderMinhas();
+    showToast("Pedido de novo prazo enviado para aprovacao de " + c.aprov + ".");
+  } catch(e){ showToast("Nao consegui enviar o pedido: " + e.message, true); }
+  finally { btn.disabled = false; }
+}
+if (CURRENT_USER_EMAIL) applyRole();
+</script>
 </body>
 </html>
