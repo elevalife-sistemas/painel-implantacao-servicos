@@ -4462,7 +4462,7 @@ async function notifyInformativoDP(fields){
   function dataBR(iso){ if (!iso) return ""; var s = String(iso).slice(0,10).split("-"); return s.length === 3 ? (s[2] + "/" + s[1] + "/" + s[0]) : iso; }
   function hojeExtenso(){ var d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); }
   function horasFmt(x){ var n = parseFloat(x); if (isNaN(n) || n <= 0) return ""; var h = Math.floor(n), m = Math.round((n - h) * 60); if (m === 60){ h++; m = 0; } return h + "h" + (m < 10 ? "0" + m : m); }
-  function cargaDoHorario(t){ var m = String(t || "").match(/(\d{1,2})\s*[h:]\s*(\d{2})?[^0-9]+(\d{1,2})\s*[h:]\s*(\d{2})?/i); if (!m) return ""; var a = parseInt(m[1],10)*60 + parseInt(m[2]||"0",10), b = parseInt(m[3],10)*60 + parseInt(m[4]||"0",10); var d = b - a; if (d <= 0) d += 1440; var h = Math.floor(d/60), mm = d % 60; return h + "h" + (mm ? (mm < 10 ? "0" + mm : mm) + "min" : ""); }
+  function cargaDoHorario(t){ var m = String(t || "").match(/(\d{1,2})[h:](\d{2})\D+?(\d{1,2})[h:](\d{2})/i); if (!m) return ""; var a = parseInt(m[1],10)*60 + parseInt(m[2],10), b = parseInt(m[3],10)*60 + parseInt(m[4],10); var d = b - a; if (d <= 0) d += 1440; var h = Math.floor(d/60), mm = d % 60; return h + "h" + (mm ? (mm < 10 ? "0" + mm : mm) + "min" : ""); }
   function token(){ var a = new Uint8Array(24); crypto.getRandomValues(a); return Array.prototype.map.call(a, function(b){ return ("0" + b.toString(16)).slice(-2); }).join(""); }
   function lines(t){ return String(t || "").split(/\n+/).map(function(s){ return s.replace(/^[-•*]\s*/, "").trim(); }).filter(Boolean); }
 
@@ -4587,7 +4587,7 @@ async function notifyInformativoDP(fields){
     var ini = v("cartaInicio");
     return { nome: v("cartaNome"), email: v("cartaEmail"), telefone: v("cartaTel"), cargo: v("cartaCargo"), inicio: ini ? dataBR(ini) : "", inicioIso: ini, abertura: document.getElementById("cartaAbertura").value, escopo: v("cartaEscopo"), local: v("cartaLocal"), grade: cartaRows.slice(), salario: v("cartaSalario"), salarioLabel: v("cartaSalarioLabel"), jornada: v("cartaJornada"), regime: v("cartaRegime"), modalidade: v("cartaModalidade"), cidade: v("cartaCidade"), beneficios: v("cartaBeneficios"), dataCarta: hojeExtenso() };
   }
-  function cartaPreview(){ var fr = document.getElementById("cartaPreview"); if (!fr) return; fr.srcdoc = cartaBuildHtml(coletar(), { logoSrc: "data:image/png;base64," + LOGO_B64 }); }
+  function cartaPreview(){ var fr = document.getElementById("cartaPreview"); if (!fr) return; fr.srcdoc = cartaBuildHtml(coletar(), { logoSrc: "data:image/png;base64," + LOGO_B64 }).replace("<head>", "<head><style>html{zoom:" + (fr.clientWidth && fr.clientWidth < 680 ? (fr.clientWidth / 680).toFixed(2) : "1") + "}</style>"); }
   window.cartaClose = function(){ var o = document.getElementById("cartaOverlay"); if (o) o.classList.remove("show"); };
   window.cartaOpen = function(f){
     if (!f) return; ensureModal(); cartaItem = f;
