@@ -4408,5 +4408,33 @@ async function notifyInformativoDP(fields){
   try { await sendTeamsMessageToEmail(dp, html); } catch(e){ showToast("E-mail enviado ao DP, mas o Teams falhou: " + e.message, true); }
 }
 </script>
+<script>
+/* ===== Salario automatico na solicitacao de cobertura (tabela de remuneracao: cargo + nivel) ===== */
+(function(){
+  function setupAuto(cargoId, nivelId, valorId){
+    var cargo = document.getElementById(cargoId), nivel = document.getElementById(nivelId), valor = document.getElementById(valorId);
+    if (!cargo || !valor) return;
+    cargo.setAttribute("list", "cargoList");
+    var leg = document.createElement("small"); leg.id = valorId + "Legenda"; leg.style.cssText = "display:block;color:var(--text2);font-size:12px;margin:-8px 0 12px;";
+    valor.insertAdjacentElement("afterend", leg);
+    var auto = "";
+    function aplicar(){
+      var c = (cargo.value || "").trim(); var n = (nivel && nivel.value) ? nivel.value : "I";
+      var v = (typeof remuneracaoInicialPara === "function") ? remuneracaoInicialPara(c, n) : null;
+      if (v === null){ leg.textContent = c ? "Cargo fora da tabela de remuneracao: informe o salario manualmente." : ""; return; }
+      if (!valor.value || valor.value === auto){ valor.value = Number(v).toFixed(2); auto = valor.value; }
+      leg.textContent = "Referencia da tabela de remuneracao (" + c + " - nivel " + n + "): " + Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) + ". Pode ajustar se necessario.";
+    }
+    cargo.addEventListener("input", aplicar); cargo.addEventListener("change", aplicar);
+    if (nivel) nivel.addEventListener("change", aplicar);
+    valor.addEventListener("input", function(){ if (valor.value !== auto) auto = "__manual__"; });
+    var ov = valor.closest(".modal-overlay");
+    if (ov) new MutationObserver(function(){ if (ov.classList.contains("show")){ auto = valor.value ? "__manual__" : ""; leg.textContent = ""; if (!valor.value) aplicar(); } }).observe(ov, { attributes: true, attributeFilter: ["class"] });
+  }
+  setupAuto("coberturaCargo", "coberturaNivelPsel", "coberturaValorRemuneracao");
+  setupAuto("cobEditCargo", "cobEditNivel", "cobEditValor");
+  try { if (typeof populateCargoDatalist === "function") populateCargoDatalist(); } catch(e){}
+})();
+</script>
 </body>
 </html>
