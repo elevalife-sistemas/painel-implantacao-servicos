@@ -3867,7 +3867,9 @@ function gatherNewClientFields(){
 }
 
 var RECRUTAHUB_API_URL = "https://elevalife-ats.vercel.app/api/personnel-requests";
-var RECRUTAHUB_API_SECRET = "sa9BkKqu0KnXJ_fA9w2pBM0bggEaNteVAcCcz7i8fsQ";
+var RECRUTAHUB_API_SECRET = "";
+/* Seguranca: chamadas a API do ATS usam o token do login Microsoft (validado no servidor); nao ha mais segredo fixo no codigo. */
+(function(){ var _f = window.fetch.bind(window); window.fetch = async function(u, o){ try { var s = (typeof u === "string") ? u : ((u && u.url) || ""); if (/^https:\/\/elevalife-ats\.vercel\.app\/api\/(ats|personnel-requests|recrutahub|talent-pool)/.test(s)) { o = Object.assign({}, o || {}); var h = Object.assign({}, o.headers || {}); delete h["x-painel-secret"]; h["Authorization"] = "Bearer " + (await getToken()); o.headers = h; } } catch (e) { throw e; } return _f(u, o); }; })();
 
 var GISLEINY_EMAIL = "gisleiny@elevalife.com.br";
 
