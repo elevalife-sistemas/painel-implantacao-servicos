@@ -20,7 +20,7 @@ async function api(method, params, body){
   var r = await fetch(url, opt);
   var j = await r.json().catch(function(){ return {}; });
   if (!r.ok) throw new Error(j.error || j.erro || ("HTTP " + r.status));
-  return j.data;
+  if (params && params.r === 'talentos') window.__rsTotal = (j && j.total != null) ? j.total : null; return j.data;
 }
 
 function addDU(d, n){ var x = new Date(d.getTime()); var c = 0; while (c < n){ x.setDate(x.getDate()+1); var w = x.getDay(); if (w !== 0 && w !== 6) c++; } return x; }
@@ -47,10 +47,10 @@ function montar(){
   if (!tabs || !ancora) return;
   var lab = document.createElement("p"); lab.className = "tab-group-label"; lab.id = "rsLabel"; lab.textContent = "Recrutamento e Seleção"; lab.style.display = "none";
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "rsTab"; tab.setAttribute("data-tab","rs"); tab.style.display = "none";
-  tab.innerHTML = '<span class="tab-icon">&#128203;</span>Vagas';
+  tab.innerHTML = '<span class="tab-icon">&#128203;</span>Vagas (piloto)';
   tabs.insertBefore(lab, ancora); tabs.insertBefore(tab, ancora);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-rs";
-  painel.innerHTML = '<div class="kanban-header"><h2 class="kanban-client-name">Recrutamento e Seleção </h2><span class="badge-note">Recrutamento e Seleção</span><button type="button" class="btn-new" id="rsNovaBtn" style="margin-left:auto">+ Nova vaga</button></div><div class="rs-kpis" id="rsKpis"></div><div id="rsLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2 class="kanban-client-name">Recrutamento e Seleção <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2><span class="badge-note">Ambiente de homologação - dados separados da produção</span><button type="button" class="btn-new" id="rsNovaBtn" style="margin-left:auto">+ Nova vaga</button></div><div class="rs-kpis" id="rsKpis"></div><div id="rsLista"></div>';
   var ref = document.getElementById("panel-ajuda");
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregar(); });
@@ -156,7 +156,7 @@ function formVaga(pre){
   var tco = '<option value="">Selecione...</option>' + tc.map(function(x){ return '<option' + (x === pre.tipo_contrato ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join("");
   var tvo = ["","Liquido","Bruto"].map(function(x){ return '<option value="' + x + '"' + (x === pre.tipo_valor ? ' selected' : '') + '>' + (x || "Selecione...") + '</option>'; }).join("");
   var aviso = pre.origem === "requisicao-pessoal" ? '<p style="font-size:13px;background:var(--amber-bg);color:var(--amber-tx);padding:8px 10px;border-radius:8px;margin:0 0 10px">Formulário preenchido a partir da requisição de pessoal' + (pre.solicitante ? ' de <b>' + esc(pre.solicitante) + '</b>' : '') + (pre.motivo_original ? ' (motivo informado: ' + esc(pre.motivo_original) + ')' : '') + '. Confira e ajuste se necessário.</p>' : '';
-  var ov = overlay('<h3>' + (pre.origem === "requisicao-pessoal" ? 'Abrir vaga a partir da requisição' : 'Nova vaga') + '</h3>' + aviso + '<div class="rs-grid">' +
+  var ov = overlay('<h3>' + (pre.origem === "requisicao-pessoal" ? 'Abrir vaga a partir da requisição' : 'Nova vaga') + ' (homologação)</h3>' + aviso + '<div class="rs-grid">' +
     '<div><label>Cargo *</label><input id="f_cargo" list="rsCargoList" value="' + esc(pre.cargo) + '"><datalist id="rsCargoList">' + dl + '</datalist></div><div><label>Área</label><input id="f_area" value="' + esc(pre.area) + '"></div>' +
     '<div><label>Perfil do profissional (nível na tabela)</label><select id="f_perfil"></select></div><div><label>Carga horária semanal (h)</label><input id="f_carga" type="number" min="1" max="60" value="' + esc(pre.carga_horaria) + '"></div>' +
     '<div><label>Salário / remuneração (R$)</label><input id="f_sal" type="number" min="0" step="0.01" value="' + esc(pre.salario) + '"><small id="f_leg" style="color:#777"></small></div><div><label>Líquido ou bruto</label><select id="f_tval">' + tvo + '</select></div>' +
@@ -215,7 +215,7 @@ function formVaga(pre){
   q("f_cancel").addEventListener("click", function(){ ov.remove(); });
   q("f_ok").addEventListener("click", async function(){
     if (!q("f_cargo").value.trim()) { toast("Informe o cargo.", true); return; }
-    var d = { cargo: q("f_cargo").value.trim(), area: q("f_area").value, motivo: q("f_motivo").value, subtipo_motivo: pre.motivo_original || null, colaborador_substituido: q("f_colab").value, gestor_nome: q("f_gestor").value, gestor_email: q("f_gemail").value, solicitante: pre.solicitante || q("f_gestor").value, cliente: q("f_cliente").value, local_trabalho: q("f_local").value, salario: q("f_sal").value ? Number(q("f_sal").value) : null, tipo_valor: q("f_tval").value || null, tipo_contrato: q("f_tcont").value || null, carga_horaria: q("f_carga").value ? Number(q("f_carga").value) : null, modelo_trabalho: q("f_modelo").value, jornada: q("f_jornada").value, requisitos_obrig: q("f_robrig").value, requisitos_dif: q("f_rdif").value, beneficios: q("f_ben").value, equipamentos: q("f_equip").value, epis: q("f_epis").value, sla_dias: Number(q("f_sla").value) || null, exige_diretoria: q("f_dir").checked, sigilosa: q("f_sig").checked, origem: pre.origem || "painel", origem_id: pre.origem_id || null, num_posicoes: Number(q("f_pos").value) || 1 };
+    var d = { cargo: q("f_cargo").value.trim(), area: q("f_area").value, motivo: q("f_motivo").value, subtipo_motivo: pre.motivo_original || null, colaborador_substituido: q("f_colab").value, gestor_nome: q("f_gestor").value, gestor_email: q("f_gemail").value, solicitante: pre.solicitante || q("f_gestor").value, cliente: q("f_cliente").value, local_trabalho: q("f_local").value, salario: q("f_sal").value ? Number(q("f_sal").value) : null, tipo_valor: q("f_tval").value || null, tipo_contrato: q("f_tcont").value || null, carga_horaria: q("f_carga").value ? Number(q("f_carga").value) : null, modelo_trabalho: q("f_modelo").value, jornada: q("f_jornada").value, requisitos_obrig: q("f_robrig").value, requisitos_dif: q("f_rdif").value, beneficios: q("f_ben").value, equipamentos: q("f_equip").value, epis: q("f_epis").value, sla_dias: Number(q("f_sla").value) || null, exige_diretoria: q("f_dir").checked, sigilosa: q("f_sig").checked, origem: pre.origem || "painel-hml", origem_id: pre.origem_id || null, num_posicoes: Number(q("f_pos").value) || 1 };
     q("f_ok").disabled = true;
     try { await api("POST", null, { acao: "criar_vaga", dados: d }); ov.remove(); toast("Vaga criada. Aguardando aprovação."); carregar(); }
     catch(e){ toast("Erro: " + e.message, true); q("f_ok").disabled = false; }
@@ -361,7 +361,7 @@ function cartaOferta(v, c){
         P("Atenciosamente,", { after: 500 }),
         P("______________________________", { after: 40 }), P(g("of_resp") || "Recursos Humanos", { b: true, after: 0 }), P("ElevaLife", { after: 400 }),
         P("De acordo em ____/____/______", { after: 500 }), P("______________________________", { after: 40 }), P(c.nome, { b: true, after: 300 }),
-        P("Minuta gerada pelo painel pelo painel - sujeita à validação do DP/Jurídico.", { size: 16, cor: "888888" })
+        P("Minuta gerada pelo painel em ambiente de homologação - sujeita à validação do DP/Jurídico.", { size: 16, cor: "888888" })
       ] }] });
       var blob = await D.Packer.toBlob(doc);
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
@@ -374,10 +374,37 @@ function cartaOferta(v, c){
 async function perfil(id, aoFechar){
   var c;
   try { c = await api("GET", { r: "candidato", id: id }); } catch(e){ toast("Erro: " + e.message, true); return; }
-  var linhas = [["E-mail", c.email], ["Telefone", c.telefone], ["Cidade", [c.cidade, c.uf].filter(Boolean).join("/")], ["Cargo de interesse", c.cargo_interesse], ["Área de interesse", c.area_interesse], ["Pretensão salarial", c.pretensao ? Number(c.pretensao).toLocaleString("pt-BR", {style: "currency", currency: "BRL"}) : ""], ["LinkedIn", c.linkedin], ["Resumo", c.resumo], ["Origem", c.origem], ["Entrada", fmtDT(c.criado_em)], ["Consentimento", "ciência do aviso em " + fmtDT(c.consentimento_em) + " (" + (c.consentimento_versao || "sem versão") + ")" + (c.banco_talentos ? "; autorizou o banco de talentos" : "; NÃO autorizou o banco de talentos")]];
-  var h = '<h3>' + esc(c.nome) + '</h3><div class="rs-grid" style="grid-template-columns:repeat(2,1fr)">' + linhas.filter(function(l){ return l[1]; }).map(function(l){ return '<div><label style="font-size:12px;color:#777">' + l[0] + '</label><div>' + esc(l[1]) + '</div></div>'; }).join("") + '</div>' +
-    '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">' + (c.tem_curriculo ? '<button class="rs-btn" id="rp_cv">Abrir currículo</button>' : '<span style="font-size:13px;color:#777;align-self:center">Sem currículo anexado.</span>') + '<button class="rs-btn" id="rp_del" style="color:#b02a2a">Excluir dados (LGPD)</button><button class="rs-btn" id="rp_x" style="margin-left:auto">Fechar</button></div>';
-  var ov = overlay(h);
+  var ini = String(c.nome || "?").trim().split(/\s+/).slice(0, 2).map(function(p){ return p.charAt(0).toUpperCase(); }).join("");
+  var txt = String(c.resumo || "");
+  var etapaM = txt.match(/Etapa RecrutaHub:\s*([^|]+?)\s*(\||$)/); var etapa = etapaM ? etapaM[1] : "";
+  var notaM = txt.match(/Pontua[^:]*:\s*([\d.,]+)/); var nota = notaM ? notaM[1] : "";
+  var partes = txt.split(/\s*---\s*Acompanhamento\s*---\s*/);
+  var obs = String(partes[0] || "").replace(/Etapa RecrutaHub:[^|]*\|?/, "").replace(/Pontua[^:]*:\s*[\d.,]+\s*\|?/, "").replace(/^[\s|]+|[\s|]+$/g, "");
+  var acomp = []; var ac = String(partes[1] || "");
+  if (ac) {
+    var labs = ["Data da entrevista", "Responsável entrevista", "Prioridade", "Fonte de Recrutamento", "Cidade", "Estado"];
+    var pos = labs.map(function(l){ return { l: l, i: ac.indexOf(l + ":") }; }).filter(function(x){ return x.i >= 0; }).sort(function(x, y){ return x.i - y.i; });
+    pos.forEach(function(x, k){ var ini2 = x.i + x.l.length + 1; var fim = k + 1 < pos.length ? pos[k + 1].i : ac.length; var val = ac.slice(ini2, fim).trim(); if (x.l === "Data da entrevista") { var dm = val.match(/^(\d{4})-(\d{2})-(\d{2})T?(\d{2})?:?(\d{2})?/); if (dm) val = dm[3] + "/" + dm[2] + "/" + dm[1] + (dm[4] ? " às " + dm[4] + ":" + dm[5] : ""); } if (val) acomp.push([x.l, val]); });
+  }
+  var av = null; try { av = avalDe(c); } catch(e){}
+  var emailOk = c.email && !/sem-email\.invalid$/.test(c.email) ? c.email : "";
+  var origemTxt = c.origem === "recrutahub" ? "RecrutaHub (migrado)" : (c.origem === "publico" || !c.origem ? "Página pública" : c.origem);
+  function item(l, v){ return v ? '<div class="rp-it"><span>' + l + '</span><b>' + esc(v) + '</b></div>' : ""; }
+  function card(tit, corpo){ return corpo ? '<div class="rp-card"><h4>' + tit + '</h4>' + corpo + '</div>' : ""; }
+  var pretensao = c.pretensao ? Number(c.pretensao).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "";
+  var css = '<style>.rp-hd{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#6e1423,#4d0e19);color:#fff;border-radius:12px;padding:16px 18px;margin-bottom:14px}.rp-av{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex:none}.rp-hd h3{margin:0;font-size:19px;color:#fff}.rp-sub{font-size:13px;opacity:.85;margin-top:2px}.rp-tags{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.rp-tag{background:rgba(255,255,255,.16);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600}.rp-tag.ok{background:#e6f4ea;color:#1e7d38}.rp-tag.no{background:#fde8e8;color:#b02a2a}.rp-k{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.rp-kc{background:#fbeef0;border-radius:10px;padding:10px 12px}.rp-kc span{display:block;font-size:11px;color:#6b6f76;text-transform:uppercase;letter-spacing:.4px}.rp-kc b{display:block;font-size:17px;color:#6e1423;margin-top:2px}.rp-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rp-card{background:#fff;border:1px solid #e5e6e9;border-radius:10px;padding:12px 14px}.rp-card.full{grid-column:1/-1}.rp-card h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#6e1423}.rp-it{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #f0f1f3;font-size:13px}.rp-it:last-child{border-bottom:0}.rp-it span{color:#6b6f76}.rp-it b{font-weight:600;text-align:right;word-break:break-word}.rp-p{font-size:13px;line-height:1.5;color:#1f2124;margin:0;white-space:pre-wrap}@media(max-width:640px){.rp-k,.rp-g{grid-template-columns:1fr}.rp-hd{flex-wrap:wrap}.rp-tags{margin-left:0}}</style>';
+  var tags = '<span class="rp-tag">' + esc(origemTxt) + '</span>' + (c.banco_talentos ? '<span class="rp-tag">Banco de talentos</span>' : '') + (av && av.decisao && !av.oculto ? '<span class="rp-tag ' + (av.decisao === "Aprovado" ? "ok" : "no") + '">' + esc(av.decisao) + (av.coordenador ? " — " + esc(av.coordenador) : "") + '</span>' : "");
+  var h = css + '<div class="rp-hd"><div class="rp-av">' + esc(ini) + '</div><div><h3>' + esc(c.nome) + '</h3><div class="rp-sub">' + esc([c.cargo_interesse, c.area_interesse].filter(Boolean).join(" · ")) + '</div></div><div class="rp-tags">' + tags + '</div></div>' +
+    '<div class="rp-k"><div class="rp-kc"><span>Pontuação</span><b>' + esc(nota || "-") + '</b></div><div class="rp-kc"><span>Etapa</span><b>' + esc(etapa || "-") + '</b></div><div class="rp-kc"><span>Entrada</span><b>' + esc(fmtDT(c.criado_em)) + '</b></div><div class="rp-kc"><span>Pretensão</span><b>' + esc(pretensao || "-") + '</b></div></div>' +
+    '<div class="rp-g">' +
+    card("Contato", item("E-mail", emailOk) + item("Telefone", c.telefone) + item("Cidade", [c.cidade, c.uf].filter(Boolean).join(" - ")) + item("LinkedIn", c.linkedin)) +
+    card("Interesse", item("Cargo", c.cargo_interesse) + item("Área", c.area_interesse) + item("Pretensão salarial", pretensao)) +
+    card("Acompanhamento", acomp.map(function(x){ return item(x[0], x[1]); }).join("")) +
+    card("Consentimento (LGPD)", '<p class="rp-p">Ciência do aviso em ' + esc(fmtDT(c.consentimento_em)) + (c.consentimento_versao ? " (" + esc(c.consentimento_versao) + ")" : "") + (c.banco_talentos ? ". Autorizou o banco de talentos." : ". Não autorizou o banco de talentos.") + '</p>') +
+    (obs ? '<div class="rp-card full"><h4>Observações</h4><p class="rp-p">' + esc(obs) + '</p></div>' : "") +
+    '</div>' +
+    '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + (c.tem_curriculo ? '<button class="rs-btn" id="rp_cv">Abrir currículo</button>' : '<span style="font-size:13px;color:#777">Sem currículo anexado.</span>') + '<button class="rs-btn" id="rp_del" style="color:#b02a2a">Excluir dados (LGPD)</button><button class="rs-btn" id="rp_x" style="margin-left:auto">Fechar</button></div>';
+    var ov = overlay(h);
   ov.querySelector("#rp_x").addEventListener("click", function(){ ov.remove(); });
   var cv = ov.querySelector("#rp_cv");
   if (cv) cv.addEventListener("click", async function(){ try { var r = await fetch(RS_URL + "?r=curriculo-url&id=" + encodeURIComponent(id), { headers: { "x-painel-secret": RECRUTAHUB_API_SECRET } }); var j = await r.json(); if (!r.ok) throw new Error(j.error || "erro"); window.open(j.url, "_blank", "noopener"); } catch(e){ toast("Erro: " + e.message, true); } });
@@ -408,8 +435,8 @@ async function buscarBanco(){
   try { talentos = await api("GET", p); } catch(e){ box.innerHTML = '<span style="color:#b02a2a">' + esc(e.message) + '</span>'; return; }
   try { if (typeof loadTalentAvaliacoes === "function") await loadTalentAvaliacoes(true); } catch(e){}
   if (!talentos.length) { box.innerHTML = '<p style="color:#777">Nenhum candidato encontrado.</p>'; return; }
-  box.innerHTML = '<div style="font-size:12px;color:#777;margin-bottom:6px">' + talentos.length + ' resultado(s)' + (talentos.length >= 100 ? ' (mostrando os 100 mais recentes; refine a busca)' : '') + '</div><table class="rs-tbl"><thead><tr><th>Nome</th><th>Cargo / área</th><th>Cidade</th><th>Contato</th><th>Origem</th><th>Entrada</th><th>Avaliação</th><th></th></tr></thead><tbody>' +
-    talentos.map(function(c, i){ return '<tr><td><b>' + esc(c.nome) + '</b>' + (c.numero ? ' <span style="color:#777">#' + esc(c.numero) + '</span>' : '') + (c.etapa ? '<div style="font-size:11px;color:#777">' + esc(c.etapa) + '</div>' : '') + '</td><td>' + esc([c.cargo, c.area].filter(Boolean).join(" / ")) + '</td><td>' + esc(c.cidade || "") + '</td><td>' + esc([c.email, c.telefone].filter(Boolean).join(" · ")) + '</td><td>' + (c.fonte === "publico" ? '<span class="rs-pill rs-green">Página pública</span>' : '<span class="rs-pill rs-blue">RecrutaHub atual</span>') + '</td><td>' + fmtDT(c.criado_em) + '</td><td>' + avalCelula(c) + '</td><td style="white-space:nowrap">' + (c.fonte === "publico" ? '<button class="rs-btn" data-pf="' + i + '">Perfil</button> ' : '') + '<button class="rs-btn o" data-av="' + i + '">Avaliar</button> <button class="rs-btn" data-vc="' + i + '">Vincular</button></td></tr>'; }).join("") + '</tbody></table>';
+  box.innerHTML = '<div style="font-size:12px;color:#777;margin-bottom:6px">' + (window.__rsTotal != null ? (talentos.length + ' exibido(s) de ' + window.__rsTotal + ' candidato(s) no banco' + (window.__rsTotal > talentos.length ? ' (mostrando os mais recentes; refine a busca)' : '')) : (talentos.length + ' resultado(s)')) + '</div><table class="rs-tbl"><thead><tr><th>Nome</th><th>Cargo / área</th><th>Cidade</th><th>Contato</th><th>Origem</th><th>Entrada</th><th>Avaliação</th><th></th></tr></thead><tbody>' +
+    talentos.map(function(c, i){ return '<tr><td><b>' + esc(c.nome) + '</b>' + (c.numero ? ' <span style="color:#777">#' + esc(c.numero) + '</span>' : '') + (c.etapa ? '<div style="font-size:11px;color:#777">' + esc(c.etapa) + '</div>' : '') + '</td><td>' + esc([c.cargo, c.area].filter(Boolean).join(" / ")) + '</td><td>' + esc(c.cidade || "") + '</td><td>' + esc([c.email, c.telefone].filter(Boolean).join(" · ")) + '</td><td>' + (c.fonte === "publico" ? ((c.origem_ids && c.origem_ids.length) ? '<span class="rs-pill rs-blue">RecrutaHub (migrado)</span>' : '<span class="rs-pill rs-green">P\u00e1gina p\u00fablica</span>') : '<span class="rs-pill rs-blue">RecrutaHub atual</span>') + '</td><td>' + fmtDT(c.criado_em) + '</td><td>' + avalCelula(c) + '</td><td style="white-space:nowrap">' + (c.fonte === "publico" ? '<button class="rs-btn" data-pf="' + i + '">Perfil</button> ' : '') + '<button class="rs-btn o" data-av="' + i + '">Avaliar</button> <button class="rs-btn" data-vc="' + i + '">Vincular</button></td></tr>'; }).join("") + '</tbody></table>';
   box.querySelectorAll("button[data-pf]").forEach(function(b){ b.addEventListener("click", function(){ perfil(talentos[Number(b.getAttribute("data-pf"))].id, buscarBanco); }); });
   box.querySelectorAll("button[data-av]").forEach(function(b){ b.addEventListener("click", function(){ avaliarCand(talentos[Number(b.getAttribute("data-av"))], buscarBanco); }); });
   box.querySelectorAll("button[data-vc]").forEach(function(b){ b.addEventListener("click", function(){ vincularBanco(talentos[Number(b.getAttribute("data-vc"))]); }); });
@@ -421,10 +448,10 @@ function montarBanco(){
   var tabs = document.querySelector(".sidebar nav.tabs"), rs = document.getElementById("rsTab"), ref = document.getElementById("panel-ajuda");
   if (!tabs || !rs || !ref || rs.style.display === "none") return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "rtTab"; tab.setAttribute("data-tab","rt");
-  tab.innerHTML = '<span class="tab-icon">&#128269;</span>Talentos R&S';
+  tab.innerHTML = '<span class="tab-icon">&#128269;</span>Talentos R&S (piloto)';
   tabs.insertBefore(tab, rs.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-rt";
-  painel.innerHTML = '<div class="kanban-header"><h2>Talentos R&S</h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos da página pública que autorizaram o banco de talentos e candidatos do RecrutaHub atual.</div>' +
+  painel.innerHTML = '<div class="kanban-header"><h2>Talentos R&S (piloto)</h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos da página pública que autorizaram o banco de talentos e candidatos do RecrutaHub atual.</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><input id="rtQ" placeholder="Busca livre (nome, e-mail, palavra-chave)" style="flex:2;min-width:220px"><input id="rtCargo" placeholder="Cargo / área" style="flex:1;min-width:140px"><input id="rtCidade" placeholder="Cidade" style="flex:1;min-width:120px"><select id="rtFonte"><option value="">Todas as origens</option><option value="publico">Página pública</option><option value="recrutahub">RecrutaHub atual</option></select><button class="rs-btn rs-primary" id="rtBuscar">Buscar</button></div><div id="rtLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; buscarBanco(); });
@@ -434,7 +461,7 @@ function montarBanco(){
 setInterval(montarBanco, 1500);
 
 /* ===== Fase 4: admissão e onboarding ===== */
-var RS_NOTIFICA_DP_REAL = true; /* homologação: aviso vai só para quem executou a ação */
+var RS_NOTIFICA_DP_REAL = false; /* homologação: aviso vai só para quem executou a ação */
 var GRUPOS_ADM = [["documentos","Documentos admissionais"],["exame_epi","Exame admissional e EPIs"],["onboarding","Onboarding (1º dia, 30/60/90 dias)"]];
 var DP_EMAIL_REAL = "gabrielepaes@elevalife.com.br"; /* e-mail real do DP; usado quando RS_NOTIFICA_DP_REAL = true (produção) */
 function dpEmail(){ return DP_EMAIL_REAL; }
@@ -499,10 +526,10 @@ function montarAdm(){
   var tabs = document.querySelector(".sidebar nav.tabs"), ref = document.getElementById("panel-ajuda"), prev = document.getElementById("rtTab") || document.getElementById("rsTab");
   if (!tabs || !prev || !ref || prev.style.display === "none") return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "adTab"; tab.setAttribute("data-tab","ad");
-  tab.innerHTML = '<span class="tab-icon">&#128221;</span>Admissões';
+  tab.innerHTML = '<span class="tab-icon">&#128221;</span>Admissões (piloto)';
   tabs.insertBefore(tab, prev.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-ad";
-  painel.innerHTML = '<div class="kanban-header"><h2>Admissões e onboarding </h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos contratados: documentos admissionais, exame e EPIs, onboarding de 1º dia, 30, 60 e 90 dias.</div><div id="adLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2>Admissões e onboarding <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos contratados: documentos admissionais, exame e EPIs, onboarding de 1º dia, 30, 60 e 90 dias.</div><div id="adLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregarAdm(); });
 }
@@ -539,10 +566,10 @@ function montarInd(){
   var tabs = document.querySelector(".sidebar nav.tabs"), ref = document.getElementById("panel-ajuda"), prev = document.getElementById("adTab");
   if (!tabs || !prev || !ref) return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "inTab"; tab.setAttribute("data-tab","in");
-  tab.innerHTML = '<span class="tab-icon">&#128202;</span>Indicadores R&S';
+  tab.innerHTML = '<span class="tab-icon">&#128202;</span>Indicadores R&S (piloto)';
   tabs.insertBefore(tab, prev.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-in";
-  painel.innerHTML = '<div class="kanban-header"><h2>Indicadores de Recrutamento e Seleção </h2></div><div id="inLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2>Indicadores de Recrutamento e Seleção <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2></div><div id="inLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregarInd(); });
 }
@@ -558,7 +585,7 @@ function unificarBanco(){
 setInterval(unificarBanco, 1500);
 
 /* ===== Fase 4: avaliação (aprovar/reprovar) migrada para o Banco de Talentos unificado ===== */
-function avalDe(c){ try { return (typeof TALENT_AVALIACOES !== "undefined" && TALENT_AVALIACOES[String(c.id)]) || null; } catch(e){ return null; } }
+function avalDe(c){ try { if (typeof TALENT_AVALIACOES === "undefined") return null; var ids = [c.id].concat(c.origem_ids || []); for (var i = 0; i < ids.length; i++) { var a = TALENT_AVALIACOES[String(ids[i])]; if (a) return a; } return null; } catch(e){ return null; } }
 function avalCelula(c){
   var a = avalDe(c); if (!a || !a.decisao || a.oculto) return '<span style="color:#999">-</span>';
   return '<span class="rs-pill ' + (a.decisao === "Aprovado" ? "rs-green" : "rs-red") + '">' + esc(a.decisao) + '</span>' + (a.coordenador ? '<div style="font-size:11px;color:#777">' + esc(a.coordenador) + '</div>' : '') + (a.decisao === "Reprovado" && a.motivoReprovacao ? '<div style="font-size:11px;color:#777">' + esc(a.motivoReprovacao) + '</div>' : '');
