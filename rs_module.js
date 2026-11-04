@@ -44,13 +44,14 @@ function montar(){
   ["rsTab","rsLabel","panel-rs"].forEach(function(i){ var e = document.getElementById(i); if (e) e.remove(); });
   var tabs = document.querySelector(".sidebar nav.tabs");
   var ancora = tabs && tabs.querySelector('a.tab[href*="elevalife-ats"]');
+  if (tabs && !ancora){ var gl = tabs.querySelectorAll(".tab-group-label"); for (var gi = 0; gi < gl.length; gi++){ if (/suporte/i.test(gl[gi].textContent) && gl[gi].id !== "rsLabel"){ ancora = gl[gi]; break; } } }
   if (!tabs || !ancora) return;
   var lab = document.createElement("p"); lab.className = "tab-group-label"; lab.id = "rsLabel"; lab.textContent = "Recrutamento e Seleção"; lab.style.display = "none";
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "rsTab"; tab.setAttribute("data-tab","rs"); tab.style.display = "none";
-  tab.innerHTML = '<span class="tab-icon">&#128203;</span>Vagas (piloto)';
+  tab.innerHTML = '<span class="tab-icon">&#128203;</span>Vagas';
   tabs.insertBefore(lab, ancora); tabs.insertBefore(tab, ancora);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-rs";
-  painel.innerHTML = '<div class="kanban-header"><h2 class="kanban-client-name">Recrutamento e Seleção <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2><span class="badge-note">Ambiente de homologação - dados separados da produção</span><button type="button" class="btn-new" id="rsNovaBtn" style="margin-left:auto">+ Nova vaga</button></div><div class="rs-kpis" id="rsKpis"></div><div id="rsLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2 class="kanban-client-name">Recrutamento e Seleção</h2><button type="button" class="btn-new" id="rsNovaBtn" style="margin-left:auto">+ Nova vaga</button></div><div class="rs-kpis" id="rsKpis"></div><div id="rsLista"></div>';
   var ref = document.getElementById("panel-ajuda");
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregar(); });
@@ -448,10 +449,10 @@ function montarBanco(){
   var tabs = document.querySelector(".sidebar nav.tabs"), rs = document.getElementById("rsTab"), ref = document.getElementById("panel-ajuda");
   if (!tabs || !rs || !ref || rs.style.display === "none") return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "rtTab"; tab.setAttribute("data-tab","rt");
-  tab.innerHTML = '<span class="tab-icon">&#128269;</span>Talentos R&S (piloto)';
+  tab.innerHTML = '<span class="tab-icon">&#128269;</span>Talentos R&S';
   tabs.insertBefore(tab, rs.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-rt";
-  painel.innerHTML = '<div class="kanban-header"><h2>Talentos R&S (piloto)</h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos da página pública que autorizaram o banco de talentos e candidatos do RecrutaHub atual.</div>' +
+  painel.innerHTML = '<div class="kanban-header"><h2>Talentos R&S</h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos da página pública que autorizaram o banco de talentos e candidatos do RecrutaHub atual.</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><input id="rtQ" placeholder="Busca livre (nome, e-mail, palavra-chave)" style="flex:2;min-width:220px"><input id="rtCargo" placeholder="Cargo / área" style="flex:1;min-width:140px"><input id="rtCidade" placeholder="Cidade" style="flex:1;min-width:120px"><select id="rtFonte"><option value="">Todas as origens</option><option value="publico">Página pública</option><option value="recrutahub">RecrutaHub atual</option></select><button class="rs-btn rs-primary" id="rtBuscar">Buscar</button></div><div id="rtLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; buscarBanco(); });
@@ -461,7 +462,7 @@ function montarBanco(){
 setInterval(montarBanco, 1500);
 
 /* ===== Fase 4: admissão e onboarding ===== */
-var RS_NOTIFICA_DP_REAL = false; /* homologação: aviso vai só para quem executou a ação */
+var RS_NOTIFICA_DP_REAL = true; /* producao: aviso vai ao DP */
 var GRUPOS_ADM = [["documentos","Documentos admissionais"],["exame_epi","Exame admissional e EPIs"],["onboarding","Onboarding (1º dia, 30/60/90 dias)"]];
 var DP_EMAIL_REAL = "gabrielepaes@elevalife.com.br"; /* e-mail real do DP; usado quando RS_NOTIFICA_DP_REAL = true (produção) */
 function dpEmail(){ return DP_EMAIL_REAL; }
@@ -526,10 +527,10 @@ function montarAdm(){
   var tabs = document.querySelector(".sidebar nav.tabs"), ref = document.getElementById("panel-ajuda"), prev = document.getElementById("rtTab") || document.getElementById("rsTab");
   if (!tabs || !prev || !ref || prev.style.display === "none") return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "adTab"; tab.setAttribute("data-tab","ad");
-  tab.innerHTML = '<span class="tab-icon">&#128221;</span>Admissões (piloto)';
+  tab.innerHTML = '<span class="tab-icon">&#128221;</span>Admissões';
   tabs.insertBefore(tab, prev.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-ad";
-  painel.innerHTML = '<div class="kanban-header"><h2>Admissões e onboarding <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos contratados: documentos admissionais, exame e EPIs, onboarding de 1º dia, 30, 60 e 90 dias.</div><div id="adLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2>Admissões e onboarding</h2></div><div style="padding:0 4px 10px;font-size:13px;color:#555">Candidatos contratados: documentos admissionais, exame e EPIs, onboarding de 1º dia, 30, 60 e 90 dias.</div><div id="adLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregarAdm(); });
 }
@@ -566,10 +567,10 @@ function montarInd(){
   var tabs = document.querySelector(".sidebar nav.tabs"), ref = document.getElementById("panel-ajuda"), prev = document.getElementById("adTab");
   if (!tabs || !prev || !ref) return;
   var tab = document.createElement("div"); tab.className = "tab tab-sub"; tab.id = "inTab"; tab.setAttribute("data-tab","in");
-  tab.innerHTML = '<span class="tab-icon">&#128202;</span>Indicadores R&S (piloto)';
+  tab.innerHTML = '<span class="tab-icon">&#128202;</span>Indicadores R&S';
   tabs.insertBefore(tab, prev.nextSibling);
   var painel = document.createElement("div"); painel.className = "panel"; painel.id = "panel-in";
-  painel.innerHTML = '<div class="kanban-header"><h2>Indicadores de Recrutamento e Seleção <span class="rs-pill rs-amber" style="font-size:11px">PILOTO</span></h2></div><div id="inLista"></div>';
+  painel.innerHTML = '<div class="kanban-header"><h2>Indicadores de Recrutamento e Seleção</h2></div><div id="inLista"></div>';
   ref.parentNode.insertBefore(painel, ref);
   tab.addEventListener("click", function(){ document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); }); document.querySelectorAll(".panel").forEach(function(x){ x.classList.remove("active"); }); tab.classList.add("active"); painel.classList.add("active"); var cb = document.getElementById("clientbarWrap"); if (cb) cb.style.display = "none"; carregarInd(); });
 }
@@ -579,7 +580,7 @@ function unificarBanco(){
   var novo = document.getElementById("rtTab");
   if (novo && novo.textContent.indexOf("Talentos R&S") >= 0){ novo.innerHTML = '<span class="tab-icon">&#128269;</span>Banco de Talentos'; var h = document.querySelector("#panel-rt h2"); if (h) h.textContent = "Banco de Talentos"; }
   document.querySelectorAll(".sidebar nav.tabs .tab").forEach(function(t){
-    if (t.id !== "rtTab" && /^\s*\S*\s*Banco de Talentos\s*$/.test(t.textContent) && t.textContent.indexOf("anterior") < 0) t.lastChild.textContent = " Banco de Talentos (anterior)";
+    if (t.id !== "rtTab" && /^\s*\S*\s*Banco de Talentos\s*$/.test(t.textContent) && t.textContent.indexOf("anterior") < 0) t.style.display = "none";
   });
 }
 setInterval(unificarBanco, 1500);
