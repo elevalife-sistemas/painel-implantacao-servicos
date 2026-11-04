@@ -264,7 +264,6 @@ body{background:var(--bg);font-family:-apple-system,Segoe UI,Roboto,Arial,sans-s
         <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('solicitacoes')"><span class="tab-icon">&#128203;</span>Solicitações</div><div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('banco')"><span class="tab-icon">&#128451;</span>Banco de Talentos</div>
         <div class="tab tab-sub" data-tab="coberturas" onclick="switchCoberturaSubTab('historico')"><span class="tab-icon">&#128220;</span>Histórico</div>
         <div class="tab tab-sub" style="opacity:.5;cursor:not-allowed;" title="Em breve"><span class="tab-icon">&#127958;</span>Gestão de Férias</div>
-        <a class="tab" href="https://elevalife-ats.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;"><span class="tab-icon">&#128101;</span>RecrutaHub</a>
       <p class="tab-group-label" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.14);">Suporte</p><div class="tab tab-sub" data-tab="ajuda"><span class="tab-icon">&#10067;</span>Ajuda</div></nav>
     </div>
   </aside>
@@ -1074,7 +1073,7 @@ function areaColor(area){ return AREA_COLORS[area] || {bg:"#F1EFE8", tx:"#444441
 
 var EPI_STEP_NUM = 16;
 var MEETING_STEPS = [1, 11];
-var LINK_STEPS = { 3: "https://elevalife-ats.vercel.app/solicitacao-pessoal" };
+var LINK_STEPS = {};
 var EPI_ITEMS = [
   "Capacete com jugular",
   "Oculos de protecao simples",
@@ -4214,7 +4213,7 @@ document.getElementById("refreshBtn").addEventListener("click", async function()
     }
   }
 })();
-</script><script src="rs_module.js?v=20261104a"></script>
+</script><script src="rs_module.js?v=20261104c"></script>
 <script>
 var cobDetailItem = null; var COB_LIST_WEBURL = null;
 function cobdFmtDate(v){ if (!v) return ""; var d = new Date(v); if (isNaN(d)) return String(v); return d.toLocaleDateString("pt-BR", { timeZone: "UTC" }); }
