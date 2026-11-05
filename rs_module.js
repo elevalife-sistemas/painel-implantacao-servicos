@@ -2,8 +2,8 @@
 var RS_URL = "https://elevalife-ats.vercel.app/api/ats";
 var PUB_URL = "https://elevalife-ats.vercel.app/vagas.html";
 var RS_TESTERS = ["cristiano@elevalife.com.br","gisleiny@elevalife.com.br"];
-var NIVEIS = {"Assistente / Auxiliar":20,"Analista":30,"Coordenador":45,"Especialista / Gerente":60};
-var NIVEIS_DIRETORIA = ["Coordenador","Especialista / Gerente"];
+var NIVEIS = {"Operacional":20,"Técnico":20,"Administrativa":30,"Estratégico":40};
+var NIVEIS_DIRETORIA = ["Estratégico"];
 var MOTIVOS = ["Aumento de Quadro","Substituição Definitiva","Substituição Temporária","Cobertura de Férias/Afastamento"];
 var ETAPAS_FALLBACK = ["Inscrito","Triagem","Entrevista RH","Entrevista Gestor","Aprovado","Carta Oferta","Contratado","Reprovado","Banco de Talentos"];
 var vagas = [];
@@ -128,9 +128,10 @@ function mapMotivo(m){
 }
 function nivelSlaPorCargo(c){
   var s = String(c || "").toLowerCase();
-  if (/coordena|gerente|especialista|diretor/.test(s)) return /gerente|especialista|diretor/.test(s) ? "Especialista / Gerente" : "Coordenador";
-  if (/assistente|auxiliar|estagi|recepcion/.test(s)) return "Assistente / Auxiliar";
-  return "Analista";
+  if (/coordena|ger[eê]n|especialista|diretor|supervis/.test(s)) return "Estratégico";
+  if (/enfermag|enfermeir|fisioter|ergonom|m[eé]dic/.test(s)) return "Técnico";
+  if (/orientador|instrutor|ativ.*f[ií]s|educador f[ií]sico/.test(s)) return "Operacional";
+  return "Administrativa";
 }
 function deRequisicao(f){
   var sig = f.PselSigiloso === true || String(f.PselSigiloso || f.Sigiloso || "").toLowerCase() === "sim";
@@ -170,7 +171,7 @@ function formVaga(pre){
     '<div class="rs-full"><label>Requisitos diferenciais</label><textarea id="f_rdif" rows="2">' + esc(pre.requisitos_dif) + '</textarea></div>' +
     '<div class="rs-full"><label>Benefícios</label><textarea id="f_ben" rows="2">' + esc(pre.beneficios) + '</textarea></div>' +
     '<div><label>Equipamentos</label><input id="f_equip"></div><div><label>EPIs / uniforme</label><input id="f_epis"></div>' +
-    '<div><label>Nível do cargo (define o SLA)</label><select id="f_nivel">' + nv + '</select></div><div><label>SLA (dias úteis)</label><input id="f_sla" type="number" min="1"></div>' +
+    '<div><label>Grupo do cargo (define o SLA)</label><select id="f_nivel">' + nv + '</select></div><div><label>SLA (dias úteis)</label><input id="f_sla" type="number" min="1"></div>' +
     '<div><label><input type="checkbox" id="f_dir" style="width:auto"> Exige aprovação da Diretoria</label></div><div><label><input type="checkbox" id="f_sig" style="width:auto"' + (pre.sigilosa ? ' checked' : '') + '> Vaga sigilosa</label></div>' +
     '</div><div class="rs-act"><button class="rs-btn o" id="f_cancel">Cancelar</button><button class="rs-btn" id="f_ok">Criar vaga</button></div>');
   var q = function(i){ return ov.querySelector("#" + i); };
