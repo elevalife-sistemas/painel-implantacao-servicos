@@ -130,7 +130,7 @@ function nivelSlaPorCargo(c){
   var s = String(c || "").toLowerCase();
   if (/coordena|ger[eê]n|especialista|diretor|supervis/.test(s)) return "Estratégico";
   if (/enfermag|enfermeir|fisioter|ergonom|m[eé]dic/.test(s)) return "Técnico";
-  if (/orientador|instrutor|ativ.*f[ií]s|educador f[ií]sico/.test(s)) return "Operacional";
+  if (/orientador|\boaf|instrutor|ativ.*f[ií]s|educador f[ií]sico/.test(s)) return "Operacional";
   return "Administrativa";
 }
 function deRequisicao(f){
