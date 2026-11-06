@@ -3719,10 +3719,10 @@ function toPrazoIso(date){
 // preservam os mesmos intervalos relativos de antes, apenas sob a nova numeracao
 // (o intervalo que a antiga etapa 4 consumia foi incorporado no calculo da nova etapa 4).
 /* 03/11/2026 — Léo: prazos não podem cair em fim de semana NEM feriado nacional (mesma lista do SIGE). */
-var _REG={uf:'',cid:''};
+var _REG={uf:"SP",cid:"Mogi das Cruzes"};
 /* Feriados regionais: CONFERIR antes de ampliar. Formato MM-DD. */
 var _FER_UF={SP:['07-09'],RJ:['04-23'],RS:['09-20'],PR:['12-19'],BA:['07-02'],DF:['11-30']};
-var _FER_MUN={'SP|sao paulo':['01-25'],'RJ|rio de janeiro':['01-20']};
+var _FER_MUN={'SP|sao paulo':['01-25'],'RJ|rio de janeiro':['01-20'],"SP|mogi das cruzes":["09-01","12-08"]};
 function _semAc(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
 function _regionais(a,add){var uf=String(_REG.uf||'').toUpperCase();(_FER_UF[uf]||[]).forEach(function(s){add(+s.slice(0,2),+s.slice(3,5));});var c=_semAc(_REG.cid);Object.keys(_FER_MUN).forEach(function(k){var p=k.split('|');if(p[0]===uf&&c.indexOf(p[1])>=0)_FER_MUN[k].forEach(function(s){add(+s.slice(0,2),+s.slice(3,5));});});}
 function _feriadosBR(a){var f={};var add=function(m,d){f[a+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2)]=1;};[[1,1],[4,21],[5,1],[9,7],[10,12],[11,2],[11,15],[11,20],[12,25]].forEach(function(x){add(x[0],x[1]);});var g=a%19,c=Math.floor(a/100),h=(c-Math.floor(c/4)-Math.floor((8*c+13)/25)+19*g+15)%30,i=h-Math.floor(h/28)*(1-Math.floor(29/(h+1))*Math.floor((21-g)/11)),j=(a+Math.floor(a/4)+i+2-c+Math.floor(c/4))%7,e=i-j,m=3+Math.floor((e+40)/44),d=e+28-31*Math.floor(m/4);var p=new Date(Date.UTC(a,m-1,d-2));add(p.getUTCMonth()+1,p.getUTCDate());_regionais(a,add);return f;}
