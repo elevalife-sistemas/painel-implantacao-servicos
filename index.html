@@ -1728,6 +1728,7 @@ function refreshClientFilter(){
   var clients = allClientLabels();
   // Remove da selecao clientes que nao existem mais.
   selectedClients = selectedClients.filter(function(c){ return clients.indexOf(c) !== -1; });
+  try { var __kc = JSON.parse(localStorage.getItem("knownClients") || "null"); var __nonTpl = clients.filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; }); if (!Array.isArray(__kc)) { __kc = (selectedClients.length >= __nonTpl.length - 2) ? selectedClients.slice() : __nonTpl.slice(); } __nonTpl.forEach(function(c){ if (__kc.indexOf(c) === -1 && selectedClients.indexOf(c) === -1) selectedClients.push(c); }); localStorage.setItem("knownClients", JSON.stringify(clients)); } catch (e) {}
   if (selectedClients.length === 0 && clients.length){
     selectedClients = clients.filter(function(c){ return c !== TEMPLATE_CLIENT_LABEL; });
     if (selectedClients.length === 0) selectedClients = [clients[0]];
