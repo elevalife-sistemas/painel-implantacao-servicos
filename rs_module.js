@@ -23,8 +23,14 @@ async function api(method, params, body){
   if (params && params.r === 'talentos') window.__rsTotal = (j && j.total != null) ? j.total : null; return j.data;
 }
 
-function addDU(d, n){ var x = new Date(d.getTime()); var c = 0; while (c < n){ x.setDate(x.getDate()+1); var w = x.getDay(); if (w !== 0 && w !== 6) c++; } return x; }
-function duEntre(a, b){ var s = a < b ? 1 : -1; var x = new Date(Math.min(a,b)); var y = new Date(Math.max(a,b)); var c = 0; x.setHours(0,0,0,0); y.setHours(0,0,0,0); while (x < y){ x.setDate(x.getDate()+1); var w = x.getDay(); if (w !== 0 && w !== 6) c++; } return s*c; }
+var FERIADOS_FIXOS = ["01-01","04-21","05-01","09-01","09-07","10-12","11-02","11-15","11-20","12-08","12-25"]; // nacionais + Mogi das Cruzes (01/09 aniversario; 08/12 N. Sra. da Conceicao)
+var _feriCache = {};
+function pascoa(y){ var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1; return new Date(y,mes-1,dia); }
+function pad2(n){ return ("0"+n).slice(-2); }
+function feriadosAno(y){ if (_feriCache[y]) return _feriCache[y]; var set = {}; FERIADOS_FIXOS.forEach(function(k){ set[y+"-"+k] = 1; }); var sx = pascoa(y); sx.setDate(sx.getDate()-2); set[sx.getFullYear()+"-"+pad2(sx.getMonth()+1)+"-"+pad2(sx.getDate())] = 1; _feriCache[y] = set; return set; }
+function ehUtil(x){ var w = x.getDay(); if (w === 0 || w === 6) return false; return !feriadosAno(x.getFullYear())[x.getFullYear()+"-"+pad2(x.getMonth()+1)+"-"+pad2(x.getDate())]; }
+function addDU(d, n){ var x = new Date(d.getTime()); var c = 0; while (c < n){ x.setDate(x.getDate()+1); if (ehUtil(x)) c++; } return x; }
+function duEntre(a, b){ var s = a < b ? 1 : -1; var x = new Date(Math.min(a,b)); var y = new Date(Math.max(a,b)); var c = 0; x.setHours(0,0,0,0); y.setHours(0,0,0,0); while (x < y){ x.setDate(x.getDate()+1); if (ehUtil(x)) c++; } return s*c; }
 function sla(v){
   if (!v.sla_inicio || !v.sla_dias || v.status === "Preenchida" || v.status === "Recusada" || v.status === "Cancelada") return null;
   var ini = new Date(v.sla_inicio + "T00:00:00"); var fim = addDU(ini, Number(v.sla_dias));
@@ -130,7 +136,7 @@ function nivelSlaPorCargo(c){
   var s = String(c || "").toLowerCase();
   if (/coordena|ger[eê]n|especialista|diretor|supervis/.test(s)) return "Estratégico";
   if (/enfermag|enfermeir|fisioter|ergonom|m[eé]dic/.test(s)) return "Técnico";
-  if (/orientador|\boaf|instrutor|ativ.*f[ií]s|educador f[ií]sico/.test(s)) return "Operacional";
+  if (/orientador|\boaf|quick massage|massagem|instrutor|ativ.*f[ií]s|educador f[ií]sico/.test(s)) return "Operacional";
   return "Administrativa";
 }
 function deRequisicao(f){
