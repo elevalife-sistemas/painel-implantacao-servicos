@@ -1,0 +1,348 @@
+{
+ "geradoEm": "2026-11-17T19:24:21.032Z",
+ "dados": {
+  "empresa": {
+   "emAberto": 141,
+   "atrasadas": 3,
+   "concluidasSemana": 0,
+   "concluidas30d": 39,
+   "pctNoPrazo30d": 94,
+   "semanas": [
+    {
+     "inicio": "2026-09-28",
+     "concluidas": 2,
+     "pctNoPrazo": 0
+    },
+    {
+     "inicio": "2026-10-05",
+     "concluidas": 16,
+     "pctNoPrazo": 0
+    },
+    {
+     "inicio": "2026-10-12",
+     "concluidas": 1,
+     "pctNoPrazo": 100
+    },
+    {
+     "inicio": "2026-10-19",
+     "concluidas": 1,
+     "pctNoPrazo": 100
+    },
+    {
+     "inicio": "2026-10-26",
+     "concluidas": 2,
+     "pctNoPrazo": 100
+    },
+    {
+     "inicio": "2026-11-02",
+     "concluidas": 20,
+     "pctNoPrazo": 94
+    },
+    {
+     "inicio": "2026-11-09",
+     "concluidas": 16,
+     "pctNoPrazo": 91
+    },
+    {
+     "inicio": "2026-11-16",
+     "concluidas": 0,
+     "pctNoPrazo": null
+    }
+   ],
+   "alertas": {
+    "enviados30d": 0,
+    "pctRespondidos30d": null,
+    "semResposta30d": 0,
+    "pedidosAjuda30d": 0,
+    "tempoMedioMin": null
+   }
+  },
+  "areas": [
+   {
+    "area": "Atividades Físicas",
+    "emAberto": 85,
+    "atrasadas": 2,
+    "concluidasSemana": 0,
+    "concluidas30d": 14,
+    "pctNoPrazo30d": 88,
+    "semanas": [
+     {
+      "inicio": "2026-09-28",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-05",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-12",
+      "concluidas": 1,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-10-19",
+      "concluidas": 1,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-10-26",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-02",
+      "concluidas": 3,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-11-09",
+      "concluidas": 10,
+      "pctNoPrazo": 83
+     },
+     {
+      "inicio": "2026-11-16",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     }
+    ],
+    "alertas": {
+     "enviados30d": 0,
+     "pctRespondidos30d": null,
+     "semResposta30d": 0,
+     "pedidosAjuda30d": 0,
+     "tempoMedioMin": null
+    }
+   },
+   {
+    "area": "Departamento Pessoal",
+    "emAberto": 28,
+    "atrasadas": 0,
+    "concluidasSemana": 0,
+    "concluidas30d": 2,
+    "pctNoPrazo30d": 100,
+    "semanas": [
+     {
+      "inicio": "2026-09-28",
+      "concluidas": 2,
+      "pctNoPrazo": 0
+     },
+     {
+      "inicio": "2026-10-05",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-12",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-19",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-26",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-02",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-09",
+      "concluidas": 2,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-11-16",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     }
+    ],
+    "alertas": {
+     "enviados30d": 0,
+     "pctRespondidos30d": null,
+     "semResposta30d": 0,
+     "pedidosAjuda30d": 0,
+     "tempoMedioMin": null
+    }
+   },
+   {
+    "area": "Ergonomia",
+    "emAberto": 1,
+    "atrasadas": 1,
+    "concluidasSemana": 0,
+    "concluidas30d": 1,
+    "pctNoPrazo30d": null,
+    "semanas": [
+     {
+      "inicio": "2026-09-28",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-05",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-12",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-19",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-26",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-02",
+      "concluidas": 1,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-09",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-16",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     }
+    ],
+    "alertas": {
+     "enviados30d": 0,
+     "pctRespondidos30d": null,
+     "semResposta30d": 0,
+     "pedidosAjuda30d": 0,
+     "tempoMedioMin": null
+    }
+   },
+   {
+    "area": "Novas Receitas",
+    "emAberto": 1,
+    "atrasadas": 0,
+    "concluidasSemana": 0,
+    "concluidas30d": 14,
+    "pctNoPrazo30d": 93,
+    "semanas": [
+     {
+      "inicio": "2026-09-28",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-05",
+      "concluidas": 16,
+      "pctNoPrazo": 0
+     },
+     {
+      "inicio": "2026-10-12",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-19",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-26",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-02",
+      "concluidas": 14,
+      "pctNoPrazo": 93
+     },
+     {
+      "inicio": "2026-11-09",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-11-16",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     }
+    ],
+    "alertas": {
+     "enviados30d": 0,
+     "pctRespondidos30d": null,
+     "semResposta30d": 0,
+     "pedidosAjuda30d": 0,
+     "tempoMedioMin": null
+    }
+   },
+   {
+    "area": "Recursos Humanos",
+    "emAberto": 26,
+    "atrasadas": 0,
+    "concluidasSemana": 0,
+    "concluidas30d": 8,
+    "pctNoPrazo30d": 100,
+    "semanas": [
+     {
+      "inicio": "2026-09-28",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-05",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-12",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-19",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     },
+     {
+      "inicio": "2026-10-26",
+      "concluidas": 2,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-11-02",
+      "concluidas": 2,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-11-09",
+      "concluidas": 4,
+      "pctNoPrazo": 100
+     },
+     {
+      "inicio": "2026-11-16",
+      "concluidas": 0,
+      "pctNoPrazo": null
+     }
+    ],
+    "alertas": {
+     "enviados30d": 0,
+     "pctRespondidos30d": null,
+     "semResposta30d": 0,
+     "pedidosAjuda30d": 0,
+     "tempoMedioMin": null
+    }
+   }
+  ]
+ }
+}
