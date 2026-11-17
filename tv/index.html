@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElevaLife · Desempenho das áreas</title>
+<style>
+  :root{--grena:#6e1423;--grena-dark:#4d0e19;--grena-bg:#fbeef0;--bg:#f4f5f7;--card:#ffffff;--line:#e5e6e9;--txt:#1f2124;--mut:#6b6f76;--ok:#1e7d38;--warn:#a8620a;--bad:#b02a2a;--acc:#6e1423}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden}
+  header{display:flex;justify-content:space-between;align-items:center;padding:2vh 3vw;background:linear-gradient(90deg,var(--grena),var(--grena-dark));color:#fff}
+  header .marca{display:flex;align-items:center;gap:1.6vw}
+  header img{height:4.6vh;display:none}
+  header h1{font-size:3vh;font-weight:400;opacity:.92}
+  header .meta{font-size:2vh;color:rgba(255,255,255,.75);text-align:right}
+  #relogio{font-size:3.2vh;color:#fff}
+  .kpi{border-top:.6vh solid var(--grena)}
+  .titulo{color:var(--grena)}
+  main{padding:3vh 3vw;height:84vh}
+  .titulo{font-size:4.2vh;font-weight:500;margin-bottom:2.5vh}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-bottom:3vh}
+  .kpi{background:var(--card);border-radius:1.2vh;padding:2.2vh 1.6vw}
+  .kpi .l{font-size:2.1vh;color:var(--mut)}
+  .kpi .v{font-size:7vh;font-weight:500;line-height:1.15}
+  .kpi .s{font-size:1.8vh;color:var(--mut)}
+  table{width:100%;border-collapse:collapse;font-size:2.5vh}
+  th{color:var(--mut);font-weight:400;text-align:right;padding:1vh .8vw;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:1.15vh .8vw;text-align:right;border-bottom:1px solid var(--line)}
+  .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.mut{color:var(--mut)}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:2vw}
+  .painel{background:var(--card);border-radius:1.2vh;padding:2.4vh 1.6vw}
+  .painel h3{font-size:2.3vh;font-weight:400;color:var(--mut);margin-bottom:2vh}
+  .barras{display:flex;align-items:flex-end;gap:1vw;height:26vh}
+  .barra{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .barra .b{width:100%;border-radius:.6vh .6vh 0 0;background:var(--acc);min-height:2px}
+  .barra .n{font-size:1.9vh;margin-bottom:.6vh}
+  .barra .d{font-size:1.6vh;color:var(--mut);margin-top:.8vh}
+  .linha{display:flex;justify-content:space-between;font-size:2.6vh;padding:1.3vh 0;border-bottom:1px solid var(--line)}
+  .linha:last-child{border:0}
+  footer{position:fixed;bottom:0;left:0;right:0;height:6vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;color:var(--mut);font-size:1.8vh;border-top:1px solid var(--line)}
+  #pontos span{display:inline-block;width:1.1vh;height:1.1vh;border-radius:50%;background:var(--line);margin-left:.6vh}
+  #pontos span.on{background:var(--acc)}
+  .aviso{font-size:3vh;color:var(--mut);margin-top:20vh;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="marca"><img id="logo" alt="elevalife"><h1 id="nomeTxt">Desempenho das áreas</h1></div>
+  <div class="meta"><div id="relogio"></div><div id="atualizado">Carregando dados…</div></div>
+</header>
+<main id="tela"><div class="aviso">Carregando…</div></main>
+<footer><span>15 anos elevando pessoas e resultados · indicadores por área, sem dados individuais</span><span id="pontos"></span></footer>
+<script>
+const FONTES = [
+  'https://raw.githubusercontent.com/elevalife-sistemas/painel-implantacao-servicos/HEAD/tv/dados.json',
+  'dados.json'
+];
+const TEMPO_TELA = 15000, TEMPO_DADOS = 5 * 60000;
+let dados = null, telas = [], idx = 0, geradoEm = null;
+
+const fmt = v => (v === null || v === undefined ? '—' : v);
+const pctTxt = v => (v === null || v === undefined ? '—' : v + '%');
+const cor = v => (v === null || v === undefined ? 'mut' : v >= 85 ? 'ok' : v >= 70 ? 'warn' : 'bad');
+const corAtraso = v => (v === 0 ? 'ok' : v <= 3 ? 'warn' : 'bad');
+const tempo = m => { if (m === null || m === undefined) return '—'; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + 'h' + (r ? String(r).padStart(2, '0') : ''); };
+const ddmm = s => s.slice(8, 10) + '/' + s.slice(5, 7);
+
+async function carregar() {
+  for (const url of FONTES) {
+    try {
+      const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) continue;
+      const j = await r.json();
+      dados = j.dados; geradoEm = j.geradoEm; montar(); return;
+    } catch (e) {}
+  }
+  if (!dados) document.getElementById('tela').innerHTML = '<div class="aviso">Ainda sem dados. A primeira atualização acontece em até 15 minutos.</div>';
+}
+
+function telaGeral() {
+  const e = dados.empresa;
+  const linhas = dados.areas.map(a => `<tr><td>${a.area}</td><td class="${corAtraso(a.atrasadas)}">${a.atrasadas}</td><td>${a.emAberto}</td>
+    <td class="${cor(a.pctNoPrazo30d)}">${pctTxt(a.pctNoPrazo30d)}</td><td>${a.concluidasSemana}</td>
+    <td class="${cor(a.alertas.pctRespondidos30d)}">${pctTxt(a.alertas.pctRespondidos30d)}</td><td>${tempo(a.alertas.tempoMedioMin)}</td></tr>`).join('');
+  return `<div class="titulo">Visão geral da empresa</div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Entregas no prazo (30 dias)</div><div class="v ${cor(e.pctNoPrazo30d)}">${pctTxt(e.pctNoPrazo30d)}</div><div class="s">${e.concluidas30d} etapas concluídas</div></div>
+    <div class="kpi"><div class="l">Etapas atrasadas agora</div><div class="v ${corAtraso(e.atrasadas)}">${e.atrasadas}</div><div class="s">de ${e.emAberto} em aberto</div></div>
+    <div class="kpi"><div class="l">Concluídas nesta semana</div><div class="v">${e.concluidasSemana}</div><div class="s">desde segunda-feira</div></div>
+    <div class="kpi"><div class="l">Alertas respondidos (30 dias)</div><div class="v ${cor(e.alertas.pctRespondidos30d)}">${pctTxt(e.alertas.pctRespondidos30d)}</div><div class="s">tempo médio ${tempo(e.alertas.tempoMedioMin)}</div></div>
+  </div>
+  <table><thead><tr><th>Área</th><th>Atrasadas</th><th>Em aberto</th><th>No prazo 30d</th><th>Concl. semana</th><th>Alertas resp.</th><th>Tempo resp.</th></tr></thead><tbody>${linhas}</tbody></table>`;
+}
+
+function telaArea(a) {
+  const max = Math.max(1, ...a.semanas.map(s => s.concluidas));
+  const barras = a.semanas.map(s => `<div class="barra"><div class="n">${s.concluidas}${s.pctNoPrazo !== null ? ' · <span class="' + cor(s.pctNoPrazo) + '">' + s.pctNoPrazo + '%</span>' : ''}</div>
+    <div class="b" style="height:${Math.round(s.concluidas / max * 85)}%"></div><div class="d">${ddmm(s.inicio)}</div></div>`).join('');
+  return `<div class="titulo">${a.area}</div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Entregas no prazo (30 dias)</div><div class="v ${cor(a.pctNoPrazo30d)}">${pctTxt(a.pctNoPrazo30d)}</div><div class="s">${a.concluidas30d} etapas concluídas</div></div>
+    <div class="kpi"><div class="l">Atrasadas agora</div><div class="v ${corAtraso(a.atrasadas)}">${a.atrasadas}</div><div class="s">de ${a.emAberto} em aberto</div></div>
+    <div class="kpi"><div class="l">Concluídas nesta semana</div><div class="v">${a.concluidasSemana}</div><div class="s">desde segunda-feira</div></div>
+    <div class="kpi"><div class="l">Alertas respondidos (30 dias)</div><div class="v ${cor(a.alertas.pctRespondidos30d)}">${pctTxt(a.alertas.pctRespondidos30d)}</div><div class="s">${fmt(a.alertas.enviados30d)} alertas enviados</div></div>
+  </div>
+  <div class="duas">
+    <div class="painel"><h3>Etapas concluídas por semana · % no prazo</h3><div class="barras">${barras}</div></div>
+    <div class="painel"><h3>Resposta aos alertas do Teams (30 dias)</h3>
+      <div class="linha"><span>Tempo médio até responder</span><b>${tempo(a.alertas.tempoMedioMin)}</b></div>
+      <div class="linha"><span>Alertas sem resposta em 24h</span><b class="${a.alertas.semResposta30d ? 'warn' : 'ok'}">${a.alertas.semResposta30d}</b></div>
+      <div class="linha"><span>Pedidos de ajuda</span><b>${a.alertas.pedidosAjuda30d}</b></div>
+      <div class="linha"><span>Alertas enviados</span><b>${a.alertas.enviados30d}</b></div>
+    </div>
+  </div>`;
+}
+
+function montar() {
+  telas = [telaGeral, ...dados.areas.map(a => () => telaArea(a))];
+  if (idx >= telas.length) idx = 0;
+  mostrar();
+  if (geradoEm) { const d = new Date(geradoEm); document.getElementById('atualizado').textContent = 'Dados de ' + d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+}
+
+function mostrar() {
+  if (!telas.length) return;
+  document.getElementById('tela').innerHTML = telas[idx]();
+  document.getElementById('pontos').innerHTML = telas.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('');
+}
+
+// Usa a mesma logo do Sistema de Gestão Operacional (lida da página principal)
+(async () => {
+  try {
+    const html = await fetch('../index.html', { cache: 'no-store' }).then(r => r.text());
+    const img = new DOMParser().parseFromString(html, 'text/html').querySelector('img.header-logo');
+    if (img && img.getAttribute('src')) { const el = document.getElementById('logo'); el.src = img.getAttribute('src'); el.style.display = 'block'; }
+    else document.getElementById('nomeTxt').textContent = 'ElevaLife · Desempenho das áreas';
+  } catch (e) { document.getElementById('nomeTxt').textContent = 'ElevaLife · Desempenho das áreas'; }
+})();
+
+setInterval(() => { if (telas.length) { idx = (idx + 1) % telas.length; mostrar(); } }, TEMPO_TELA);
+setInterval(carregar, TEMPO_DADOS);
+setInterval(() => location.reload(), 6 * 3600e3);
+setInterval(() => { document.getElementById('relogio').textContent = new Date().toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }, 1000);
+carregar();
+</script>
+</body>
+</html>
