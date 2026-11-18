@@ -1,5 +1,5 @@
 {
- "geradoEm": "2026-11-18T12:35:47.224Z",
+ "geradoEm": "2026-11-18T18:30:53.804Z",
  "versao": 2,
  "dados": {
   "empresa": {
@@ -368,27 +368,27 @@
    "mes": "nov/2026",
    "empresa": {
     "total": 214,
-    "resolvidas": 54,
-    "pendentes": 160,
+    "resolvidas": 55,
+    "pendentes": 159,
     "aguardandoCoord": 0,
     "faltas": 34,
     "atrasos": 53,
     "horaExtra": 44,
     "ajustes": 49,
-    "pctResolvidas": 25
+    "pctResolvidas": 26
    },
    "areas": [
     {
      "nome": "Administrativo",
      "total": 42,
-     "resolvidas": 4,
-     "pendentes": 38,
+     "resolvidas": 5,
+     "pendentes": 37,
      "aguardandoCoord": 0,
      "faltas": 5,
      "atrasos": 10,
      "horaExtra": 9,
      "ajustes": 12,
-     "pctResolvidas": 10
+     "pctResolvidas": 12
     },
     {
      "nome": "Atividades Físicas",
@@ -448,7 +448,7 @@
     },
     {
      "inicio": "02/11",
-     "pctNoPrazo": 22,
+     "pctNoPrazo": 23,
      "concluidas": 191
     },
     {
