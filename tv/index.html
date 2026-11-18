@@ -164,7 +164,7 @@ async function carregar() {
       const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) continue;
       const j = await r.json();
-      if (!j.dados || !j.dados.empresa || !j.dados.empresa.semanas) continue;
+      if (!j.versao || j.versao < 2 || !j.dados || !j.dados.empresa) continue;
       const novo = JSON.stringify(j.dados) !== JSON.stringify(D);
       D = j.dados; geradoEm = j.geradoEm; if (novo || !telas.length) montar(); return;
     } catch (e) {}
