@@ -160,7 +160,7 @@ function telaPonto(p) {
     </div>
   </div>
   <div class="baixo">
-    <div class="card"><h3>Evolução mensal · % resolvidas e ocorrências <em>${pctTxt(e.pctResolvidas)}${e.pctResolvidas === null ? '' : '%'}</em></h3>${grafico(p.meses)}</div>
+    <div class="card"><h3>Evolução ${p.serie === 'semanal' ? 'semanal' : 'mensal'} · % resolvidas e ocorrências <em>${pctTxt(e.pctResolvidas)}${e.pctResolvidas === null ? '' : '%'}</em></h3>${grafico(p.meses)}</div>
     <div class="card"><h3>Tratativas resolvidas por área</h3><div class="rank" id="rank"></div></div>
   </div></div>`;
   const rank = [...p.areas].sort((x, y) => (y.pctResolvidas ?? -1) - (x.pctResolvidas ?? -1));
