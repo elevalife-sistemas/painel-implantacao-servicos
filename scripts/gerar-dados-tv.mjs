@@ -1,4 +1,5 @@
 // Gera tv/dados.json com indicadores AGREGADOS por area (sem nomes de pessoas, clientes ou etapas).
+// Regras de calculo IGUAIS as do Sistema de Gestao Operacional (computeDelayStats do index.html).
 // Roda no GitHub Actions. A senha do cracha vem do segredo TV_CLIENT_SECRET.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
@@ -10,6 +11,7 @@ const LISTA_KANBAN = '4563517e-40d7-4fa4-99ff-bf126b15c95c';
 const LISTA_RESPOSTAS = 'b0c0a8bf-7cb8-476f-b245-c519c9b93611';
 const ARQUIVO = 'tv/dados.json';
 const SEMANAS = 8;
+const DIA = 86400000;
 
 if (!CLIENT_SECRET) { console.error('Falta o segredo TV_CLIENT_SECRET no GitHub.'); process.exit(1); }
 
@@ -37,13 +39,7 @@ async function itens(tk, lista, campos) {
   return out;
 }
 
-// Data no fuso de Brasilia (yyyy-mm-dd)
-const diaBR = iso => { if (!iso) return null; const d = new Date(iso); if (isNaN(d)) return null; return new Date(d.getTime() - 3 * 3600e3).toISOString().slice(0, 10); };
-const hojeBR = diaBR(new Date().toISOString());
-const somaDias = (dia, n) => { const d = new Date(dia + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-const inicioSemana = dia => { const d = new Date(dia + 'T12:00:00Z'); const w = (d.getUTCDay() + 6) % 7; return somaDias(dia, -w); };
-
-const ACENTOS = { 'Atividades Fisicas': 'Atividades Físicas', 'Saude Corporativa': 'Saúde Corporativa', 'Nutricao': 'Nutrição', 'Psicologia': 'Psicologia' };
+const ACENTOS = { 'Atividades Fisicas': 'Atividades Físicas', 'Saude Corporativa': 'Saúde Corporativa', 'Nutricao': 'Nutrição' };
 function areaDe(f) {
   const a = String(f.field_5 || '').trim().toUpperCase();
   let nome;
@@ -56,80 +52,83 @@ function areaDe(f) {
   return ACENTOS[nome] || nome;
 }
 
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
+// Inicio da semana (segunda 00:00 em Brasilia) em ms UTC
+function inicioSemanaMs(ms) {
+  const br = new Date(ms - 3 * 3600e3);
+  const w = (br.getUTCDay() + 6) % 7;
+  return Date.UTC(br.getUTCFullYear(), br.getUTCMonth(), br.getUTCDate() - w) + 3 * 3600e3;
+}
+const ddmm = ms => { const d = new Date(ms - 3 * 3600e3); return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0'); };
 
-function novoBloco() {
-  return { emAberto: 0, atrasadas: 0, concluidas30d: 0, comPrazo30d: 0, noPrazo30d: 0, concluidasSemana: 0,
-    semanas: [], alertas: { enviados30d: 0, respondidos30d: 0, semResposta30d: 0, pedidosAjuda30d: 0, somaMin: 0, nMin: 0 } };
+const agora = Date.now();
+const semanaAtual = inicioSemanaMs(agora);
+const inicios = Array.from({ length: SEMANAS }, (_, i) => semanaAtual - 7 * DIA * (SEMANAS - 1 - i));
+
+function calcula(itensArea) {
+  let total = 0, concluidas = 0, andamento = 0, atrasadas = 0, diasAtraso = 0, noPrazo = 0, avaliadas = 0;
+  const atrasosConcluidas = [];
+  for (const it of itensArea) {
+    total++;
+    if (it.status === 'Concluido') concluidas++;
+    if (it.status === 'Em andamento') andamento++;
+    if (it.status === 'Atrasado') atrasadas++;
+    let atraso = 0;
+    if (it.status === 'Concluido' && it.real && it.prev) {
+      atraso = Math.round((it.real - it.prev) / DIA);
+      atrasosConcluidas.push(atraso); avaliadas++;
+      if (atraso <= 0) noPrazo++;
+    } else if (it.status === 'Atrasado' && it.prev) {
+      atraso = Math.max(0, Math.round((agora - it.prev) / DIA)); avaliadas++;
+    }
+    if (atraso > 0) diasAtraso += atraso;
+  }
+  const pct = avaliadas ? Math.round(noPrazo / avaliadas * 100) : null;
+  const tempoMedio = atrasosConcluidas.length ? Math.round(atrasosConcluidas.reduce((s, d) => s + d, 0) / atrasosConcluidas.length * 10) / 10 : null;
+
+  // Evolucao: situacao ao fim de cada semana (a ultima semana usa o numero atual, igual ao sistema)
+  const semanas = inicios.map((ini, k) => {
+    const fim = ini + 7 * DIA;
+    let c = 0, av = 0, ok = 0;
+    for (const it of itensArea) {
+      if (it.real && it.real >= ini && it.real < fim) c++;
+      if (!it.prev) continue;
+      if (it.status === 'Concluido' && it.real && it.real < fim) { av++; if (Math.round((it.real - it.prev) / DIA) <= 0) ok++; }
+      else if (it.prev < fim && (!it.real || it.real >= fim) && it.status !== 'A definir' && (it.status === 'Atrasado' || it.real)) av++;
+    }
+    const p = k === SEMANAS - 1 ? pct : (av ? Math.round(ok / av * 100) : null);
+    return { inicio: ddmm(ini), pctNoPrazo: p, concluidas: c };
+  });
+  return { total, concluidas, andamento, atrasadas, diasAtraso, noPrazo, avaliadas, pctNoPrazo: pct, tempoMedio, semanas };
 }
 
 const tk = await token();
-const kanban = await itens(tk, LISTA_KANBAN, 'field_2,field_5,field_10,field_11,field_12');
+const kanban = await itens(tk, LISTA_KANBAN, 'field_1,field_2,field_5,field_10,field_11,field_12');
 const respostas = await itens(tk, LISTA_RESPOSTAS, 'Area,Acao,EnviadoEm,MinutosAteResposta');
 
-const lim30 = somaDias(hojeBR, -30);
-const semanaAtual = inicioSemana(hojeBR);
-const iniciosSemanas = Array.from({ length: SEMANAS }, (_, i) => somaDias(semanaAtual, -7 * (SEMANAS - 1 - i)));
+// Mesmo recorte do sistema: todos os clientes, exceto o "Checklist Mestre (modelo)" (itens sem cliente)
+const base = kanban.filter(f => String(f.field_1 || '').trim() !== '').map(f => ({
+  area: areaDe(f), status: String(f.field_12 || 'A definir'),
+  prev: f.field_10 ? Date.parse(f.field_10) : null, real: f.field_11 ? Date.parse(f.field_11) : null
+}));
 
-const areas = {};
-const total = novoBloco();
-const bloco = nome => (areas[nome] ||= novoBloco());
-const semMap = new Map(); // chave area|semana
+const nomes = [...new Set(base.map(i => i.area))].sort((a, b) => a.localeCompare(b, 'pt'));
 
-for (const f of kanban) {
-  const st = String(f.field_12 || '');
-  const nome = areaDe(f);
-  const alvos = [bloco(nome), total];
-  const real = diaBR(f.field_11), prev = diaBR(f.field_10);
-  for (const b of alvos) {
-    if (['A fazer', 'Em andamento', 'Atrasado'].includes(st)) b.emAberto++;
-    if (st === 'Atrasado') b.atrasadas++;
-    if (st === 'Concluido' && real) {
-      if (real >= lim30) { b.concluidas30d++; if (prev) { b.comPrazo30d++; if (real <= prev) b.noPrazo30d++; } }
-      if (real >= semanaAtual) b.concluidasSemana++;
-    }
-  }
-  if (st === 'Concluido' && real) {
-    const s = inicioSemana(real);
-    if (s >= iniciosSemanas[0]) for (const k of [nome + '|' + s, '__total|' + s]) {
-      const v = semMap.get(k) || { c: 0, p: 0, n: 0 }; v.c++; if (prev) { v.p++; if (real <= prev) v.n++; } semMap.set(k, v);
-    }
-  }
-}
-
-for (const f of respostas) {
-  const env = diaBR(f.EnviadoEm);
-  if (!env || env < lim30) continue;
-  const nome = ACENTOS[f.Area] || f.Area || 'Outras';
-  for (const b of [bloco(nome), total]) {
-    const a = b.alertas; a.enviados30d++;
-    if (['concluir', 'prazo', 'ajuda'].includes(f.Acao)) { a.respondidos30d++; if (typeof f.MinutosAteResposta === 'number') { a.somaMin += f.MinutosAteResposta; a.nMin++; } }
-    if (f.Acao === 'sem_resposta') a.semResposta30d++;
-    if (f.Acao === 'ajuda') a.pedidosAjuda30d++;
-  }
-}
-
-function finaliza(b, chave) {
-  const a = b.alertas;
-  return {
-    emAberto: b.emAberto, atrasadas: b.atrasadas, concluidasSemana: b.concluidasSemana,
-    concluidas30d: b.concluidas30d, pctNoPrazo30d: pct(b.noPrazo30d, b.comPrazo30d),
-    semanas: iniciosSemanas.map(s => { const v = semMap.get(chave + '|' + s) || { c: 0, p: 0, n: 0 }; return { inicio: s, concluidas: v.c, pctNoPrazo: pct(v.n, v.p) }; }),
-    alertas: { enviados30d: a.enviados30d, pctRespondidos30d: pct(a.respondidos30d, a.enviados30d), semResposta30d: a.semResposta30d,
-      pedidosAjuda30d: a.pedidosAjuda30d, tempoMedioMin: a.nMin ? Math.round(a.somaMin / a.nMin) : null }
-  };
+const lim30 = agora - 30 * DIA;
+function alertas(nome) {
+  const lst = respostas.filter(r => r.EnviadoEm && Date.parse(r.EnviadoEm) >= lim30 && (!nome || (ACENTOS[r.Area] || r.Area) === nome));
+  const resp = lst.filter(r => ['concluir', 'prazo', 'ajuda'].includes(r.Acao));
+  const mins = resp.map(r => r.MinutosAteResposta).filter(m => typeof m === 'number');
+  return { enviados30d: lst.length, pctRespondidos30d: lst.length ? Math.round(resp.length / lst.length * 100) : null,
+    semResposta30d: lst.filter(r => r.Acao === 'sem_resposta').length, tempoMedioMin: mins.length ? Math.round(mins.reduce((s, m) => s + m, 0) / mins.length) : null };
 }
 
 const dados = {
-  empresa: finaliza(total, '__total'),
-  areas: Object.keys(areas).sort((x, y) => x.localeCompare(y, 'pt'))
-    .map(n => ({ area: n, ...finaliza(areas[n], n) }))
-    .filter(a => a.emAberto || a.concluidas30d || a.alertas.enviados30d)
+  empresa: { nome: 'Visão geral da ElevaLife', ...calcula(base), alertas: alertas(null) },
+  areas: nomes.map(n => ({ nome: n, ...calcula(base.filter(i => i.area === n)), alertas: alertas(n) }))
 };
 
-// So grava se os numeros mudaram (evita commits desnecessarios)
 if (existsSync(ARQUIVO)) {
   try { const antigo = JSON.parse(readFileSync(ARQUIVO, 'utf8')); if (JSON.stringify(antigo.dados) === JSON.stringify(dados)) { console.log('Sem mudancas.'); process.exit(0); } } catch {}
 }
-writeFileSync(ARQUIVO, JSON.stringify({ geradoEm: new Date().toISOString(), dados }, null, 1));
-console.log(`Atualizado: ${dados.areas.length} areas, ${kanban.length} etapas, ${respostas.length} respostas.`);
+writeFileSync(ARQUIVO, JSON.stringify({ geradoEm: new Date().toISOString(), versao: 2, dados }, null, 1));
+console.log(`Atualizado: ${dados.areas.length} areas, ${base.length} etapas (sem o modelo), ${respostas.length} respostas. No prazo: ${dados.empresa.pctNoPrazo}% (${dados.empresa.noPrazo}/${dados.empresa.avaliadas}).`);
