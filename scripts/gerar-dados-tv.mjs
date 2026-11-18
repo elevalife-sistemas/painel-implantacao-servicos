@@ -105,6 +105,7 @@ function calcula(itensArea) {
 // ---------- Ponto (PontoCheck · site Departamento Pessoal - Ponto) ----------
 const PONTO_SITE = 'elevalife.sharepoint.com,81c02d70-5179-4b9a-aaba-532156fe4596,9ab13a96-fd43-41d9-bd5a-3a90d2dda0bf';
 const AREAS_PONTO = { AF: 'Atividades Físicas', ERGO: 'Ergonomia', FISIO: 'Fisioterapia', ENFERMAGEM: 'Enfermagem', ADMINISTRATIVO: 'Administrativo' };
+const PONTO_INICIO = '2026-11-01'; // mesmo inicio de tratativas do PontoCheck (meses antes sao de teste)
 const MESES_NOME = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 async function gget(tk, url, tipo) {
   const r = await fetch('https://graph.microsoft.com/v1.0' + url, { headers: { Authorization: `Bearer ${tk}` } });
@@ -117,13 +118,14 @@ async function lerPonto(tk) {
   const cfgItem = arq.find(f => f.name === 'config.json');
   const cfg = cfgItem ? JSON.parse(await gget(tk, `/sites/${PONTO_SITE}/drive/items/${cfgItem.id}/content`)) : {};
   const colabsCfg = cfg.colaboradores || {};
-  const meses = arq.map(f => ({ id: f.id, mk: (f.name.match(/^mes-(\d{4}-\d{2})\.json$/) || [])[1] })).filter(f => f.mk).sort((a, b) => a.mk.localeCompare(b.mk)).slice(-6);
+  const meses = arq.map(f => ({ id: f.id, mk: (f.name.match(/^mes-(\d{4}-\d{2})\.json$/) || [])[1] })).filter(f => f.mk && f.mk >= PONTO_INICIO.slice(0, 7)).sort((a, b) => a.mk.localeCompare(b.mk)).slice(-6);
   if (!meses.length) return null;
-  const resumoMes = [];
+  const resumoMes = [], todas = [];
   let atual = null;
   for (const m of meses) {
     const dado = JSON.parse(await gget(tk, `/sites/${PONTO_SITE}/drive/items/${m.id}/content`));
-    const ocorr = Object.values(dado.ocorr || {}).filter(o => !['foto', 'geo'].includes(o.tipo));
+    const ocorr = Object.values(dado.ocorr || {}).filter(o => !['foto', 'geo'].includes(o.tipo) && (!o.dt || String(o.dt).slice(0, 10) >= PONTO_INICIO));
+    ocorr.forEach(o => todas.push({ dt: String(o.dt || '').slice(0, 10), ok: o.status === 'CONCLUIDO' || !!o.resolvidoSolides }));
     const areaDoColab = ck => AREAS_PONTO[(colabsCfg[ck] || {}).area] || 'Outras';
     // Areas com menos de 3 colaboradores no mes entram em "Outras" (para nao identificar pessoas)
     const pessoas = {};
@@ -148,7 +150,16 @@ async function lerPonto(tk) {
     atual = { mes: MESES_NOME[+mm - 1] + '/' + ano, empresa: fin(emp),
       areas: Object.keys(porArea).sort((a, b) => a.localeCompare(b, 'pt')).map(n => ({ nome: n, ...fin(porArea[n]) })) };
   }
-  return { ...atual, meses: resumoMes };
+  if (resumoMes.length >= 3) return { ...atual, serie: 'mensal', meses: resumoMes };
+  // Poucos meses de tratativa: mostra a evolucao por semana (data da ocorrencia)
+  const semanasP = Array.from({ length: 6 }, (_, i) => semanaAtual - 7 * DIA * (5 - i));
+  const serie = semanasP.map(ini => {
+    const fim = ini + 7 * DIA;
+    const doIntervalo = todas.filter(o => { if (!o.dt) return false; const t = Date.parse(o.dt + 'T12:00:00Z'); return t >= ini && t < fim; });
+    const ok = doIntervalo.filter(o => o.ok).length;
+    return { inicio: ddmm(ini), pctNoPrazo: doIntervalo.length ? Math.round(ok / doIntervalo.length * 100) : null, concluidas: doIntervalo.length };
+  }).filter((s, i, arr) => s.concluidas || arr.slice(0, i).some(x => x.concluidas));
+  return { ...atual, serie: 'semanal', meses: serie };
 }
 
 const tk = await token();
