@@ -1,5 +1,5 @@
 {
- "geradoEm": "2026-11-18T12:31:17.574Z",
+ "geradoEm": "2026-11-18T12:35:47.224Z",
  "versao": 2,
  "dados": {
   "empresa": {
@@ -439,26 +439,27 @@
      "pctResolvidas": 0
     }
    ],
+   "serie": "semanal",
    "meses": [
     {
-     "inicio": "ago/26",
-     "pctNoPrazo": 0,
-     "concluidas": 522
+     "inicio": "26/10",
+     "pctNoPrazo": 50,
+     "concluidas": 8
     },
     {
-     "inicio": "set/26",
-     "pctNoPrazo": 0,
-     "concluidas": 541
+     "inicio": "02/11",
+     "pctNoPrazo": 22,
+     "concluidas": 191
     },
     {
-     "inicio": "out/26",
-     "pctNoPrazo": 0,
-     "concluidas": 584
+     "inicio": "09/11",
+     "pctNoPrazo": 53,
+     "concluidas": 15
     },
     {
-     "inicio": "nov/26",
-     "pctNoPrazo": 25,
-     "concluidas": 214
+     "inicio": "16/11",
+     "pctNoPrazo": null,
+     "concluidas": 0
     }
    ]
   }
