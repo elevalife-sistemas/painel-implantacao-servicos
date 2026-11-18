@@ -1,5 +1,5 @@
 {
- "geradoEm": "2026-11-18T11:15:40.605Z",
+ "geradoEm": "2026-11-18T12:31:17.574Z",
  "versao": 2,
  "dados": {
   "empresa": {
@@ -363,6 +363,104 @@
      "tempoMedioMin": null
     }
    }
-  ]
+  ],
+  "ponto": {
+   "mes": "nov/2026",
+   "empresa": {
+    "total": 214,
+    "resolvidas": 54,
+    "pendentes": 160,
+    "aguardandoCoord": 0,
+    "faltas": 34,
+    "atrasos": 53,
+    "horaExtra": 44,
+    "ajustes": 49,
+    "pctResolvidas": 25
+   },
+   "areas": [
+    {
+     "nome": "Administrativo",
+     "total": 42,
+     "resolvidas": 4,
+     "pendentes": 38,
+     "aguardandoCoord": 0,
+     "faltas": 5,
+     "atrasos": 10,
+     "horaExtra": 9,
+     "ajustes": 12,
+     "pctResolvidas": 10
+    },
+    {
+     "nome": "Atividades Físicas",
+     "total": 64,
+     "resolvidas": 0,
+     "pendentes": 64,
+     "aguardandoCoord": 0,
+     "faltas": 18,
+     "atrasos": 18,
+     "horaExtra": 8,
+     "ajustes": 8,
+     "pctResolvidas": 0
+    },
+    {
+     "nome": "Enfermagem",
+     "total": 73,
+     "resolvidas": 50,
+     "pendentes": 23,
+     "aguardandoCoord": 0,
+     "faltas": 7,
+     "atrasos": 20,
+     "horaExtra": 16,
+     "ajustes": 23,
+     "pctResolvidas": 68
+    },
+    {
+     "nome": "Ergonomia",
+     "total": 13,
+     "resolvidas": 0,
+     "pendentes": 13,
+     "aguardandoCoord": 0,
+     "faltas": 0,
+     "atrasos": 4,
+     "horaExtra": 5,
+     "ajustes": 1,
+     "pctResolvidas": 0
+    },
+    {
+     "nome": "Fisioterapia",
+     "total": 22,
+     "resolvidas": 0,
+     "pendentes": 22,
+     "aguardandoCoord": 0,
+     "faltas": 4,
+     "atrasos": 1,
+     "horaExtra": 6,
+     "ajustes": 5,
+     "pctResolvidas": 0
+    }
+   ],
+   "meses": [
+    {
+     "inicio": "ago/26",
+     "pctNoPrazo": 0,
+     "concluidas": 522
+    },
+    {
+     "inicio": "set/26",
+     "pctNoPrazo": 0,
+     "concluidas": 541
+    },
+    {
+     "inicio": "out/26",
+     "pctNoPrazo": 0,
+     "concluidas": 584
+    },
+    {
+     "inicio": "nov/26",
+     "pctNoPrazo": 25,
+     "concluidas": 214
+    }
+   ]
+  }
  }
 }
