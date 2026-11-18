@@ -101,6 +101,56 @@ function calcula(itensArea) {
   return { total, concluidas, andamento, atrasadas, diasAtraso, noPrazo, avaliadas, pctNoPrazo: pct, tempoMedio, semanas };
 }
 
+
+// ---------- Ponto (PontoCheck · site Departamento Pessoal - Ponto) ----------
+const PONTO_SITE = 'elevalife.sharepoint.com,81c02d70-5179-4b9a-aaba-532156fe4596,9ab13a96-fd43-41d9-bd5a-3a90d2dda0bf';
+const AREAS_PONTO = { AF: 'Atividades Físicas', ERGO: 'Ergonomia', FISIO: 'Fisioterapia', ENFERMAGEM: 'Enfermagem', ADMINISTRATIVO: 'Administrativo' };
+const MESES_NOME = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+async function gget(tk, url, tipo) {
+  const r = await fetch('https://graph.microsoft.com/v1.0' + url, { headers: { Authorization: `Bearer ${tk}` } });
+  if (!r.ok) throw new Error('Ponto ' + r.status + ' em ' + url.split('?')[0]);
+  return tipo === 'json' ? r.json() : r.text();
+}
+async function lerPonto(tk) {
+  const pasta = await gget(tk, `/sites/${PONTO_SITE}/drive/root:/Sistema%20Ponto:/children?$select=id,name&$top=999`, 'json');
+  const arq = pasta.value || [];
+  const cfgItem = arq.find(f => f.name === 'config.json');
+  const cfg = cfgItem ? JSON.parse(await gget(tk, `/sites/${PONTO_SITE}/drive/items/${cfgItem.id}/content`)) : {};
+  const colabsCfg = cfg.colaboradores || {};
+  const meses = arq.map(f => ({ id: f.id, mk: (f.name.match(/^mes-(\d{4}-\d{2})\.json$/) || [])[1] })).filter(f => f.mk).sort((a, b) => a.mk.localeCompare(b.mk)).slice(-6);
+  if (!meses.length) return null;
+  const resumoMes = [];
+  let atual = null;
+  for (const m of meses) {
+    const dado = JSON.parse(await gget(tk, `/sites/${PONTO_SITE}/drive/items/${m.id}/content`));
+    const ocorr = Object.values(dado.ocorr || {}).filter(o => !['foto', 'geo'].includes(o.tipo));
+    const areaDoColab = ck => AREAS_PONTO[(colabsCfg[ck] || {}).area] || 'Outras';
+    // Areas com menos de 3 colaboradores no mes entram em "Outras" (para nao identificar pessoas)
+    const pessoas = {};
+    Object.keys(dado.colabs || {}).forEach(ck => { const a = areaDoColab(ck); (pessoas[a] ||= new Set()).add(ck); });
+    const areaFinal = ck => { const a = areaDoColab(ck); return (pessoas[a] && pessoas[a].size >= 3) ? a : 'Outras'; };
+    const novo = () => ({ total: 0, resolvidas: 0, pendentes: 0, aguardandoCoord: 0, faltas: 0, atrasos: 0, horaExtra: 0, ajustes: 0 });
+    const emp = novo(), porArea = {};
+    for (const o of ocorr) {
+      const alvo = [emp, (porArea[areaFinal(o.ck)] ||= novo())];
+      const ok = o.status === 'CONCLUIDO' || !!o.resolvidoSolides;
+      for (const b of alvo) {
+        b.total++; if (ok) b.resolvidas++; else { b.pendentes++; if (o.aguardando) b.aguardandoCoord++; }
+        if (o.tipo === 'falta') b.faltas++;
+        if (o.tipo === 'atraso') b.atrasos++;
+        if (o.tipo === 'he') b.horaExtra++;
+        if (o.tipo === 'ajuste' || o.tipo === 'nao_registrado') b.ajustes++;
+      }
+    }
+    const fin = b => ({ ...b, pctResolvidas: b.total ? Math.round(b.resolvidas / b.total * 100) : null });
+    const [ano, mm] = m.mk.split('-');
+    resumoMes.push({ inicio: MESES_NOME[+mm - 1] + '/' + ano.slice(2), pctNoPrazo: fin(emp).pctResolvidas, concluidas: emp.total });
+    atual = { mes: MESES_NOME[+mm - 1] + '/' + ano, empresa: fin(emp),
+      areas: Object.keys(porArea).sort((a, b) => a.localeCompare(b, 'pt')).map(n => ({ nome: n, ...fin(porArea[n]) })) };
+  }
+  return { ...atual, meses: resumoMes };
+}
+
 const tk = await token();
 const kanban = await itens(tk, LISTA_KANBAN, 'field_1,field_2,field_5,field_10,field_11,field_12');
 const respostas = await itens(tk, LISTA_RESPOSTAS, 'Area,Acao,EnviadoEm,MinutosAteResposta');
@@ -126,9 +176,11 @@ const dados = {
   empresa: { nome: 'Visão geral da ElevaLife', ...calcula(base), alertas: alertas(null) },
   areas: nomes.map(n => ({ nome: n, ...calcula(base.filter(i => i.area === n)), alertas: alertas(n) }))
 };
+try { dados.ponto = await lerPonto(tk); } catch (e) { console.error('Ponto indisponivel:', e.message); dados.ponto = null; }
 
 if (existsSync(ARQUIVO)) {
   try { const antigo = JSON.parse(readFileSync(ARQUIVO, 'utf8')); if (JSON.stringify(antigo.dados) === JSON.stringify(dados)) { console.log('Sem mudancas.'); process.exit(0); } } catch {}
 }
 writeFileSync(ARQUIVO, JSON.stringify({ geradoEm: new Date().toISOString(), versao: 2, dados }, null, 1));
+console.log(`Ponto: ${dados.ponto ? dados.ponto.mes + ' ' + dados.ponto.empresa.total + ' tratativas, ' + dados.ponto.areas.length + ' areas' : 'sem dados'}`);
 console.log(`Atualizado: ${dados.areas.length} areas, ${base.length} etapas (sem o modelo), ${respostas.length} respostas. No prazo: ${dados.empresa.pctNoPrazo}% (${dados.empresa.noPrazo}/${dados.empresa.avaliadas}).`);
