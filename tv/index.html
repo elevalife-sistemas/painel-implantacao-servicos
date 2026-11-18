@@ -6,66 +6,157 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElevaLife · Desempenho das áreas</title>
 <style>
-  :root{--grena:#6e1423;--grena-dark:#4d0e19;--grena-bg:#fbeef0;--bg:#f4f5f7;--card:#ffffff;--line:#e5e6e9;--txt:#1f2124;--mut:#6b6f76;--ok:#1e7d38;--warn:#a8620a;--bad:#b02a2a;--acc:#6e1423}
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden}
-  header{display:flex;justify-content:space-between;align-items:center;padding:2vh 3vw;background:linear-gradient(90deg,var(--grena),var(--grena-dark));color:#fff}
-  header .marca{display:flex;align-items:center;gap:1.6vw}
-  header img{height:4.6vh;display:none}
-  header h1{font-size:3vh;font-weight:400;opacity:.92}
-  header .meta{font-size:2vh;color:rgba(255,255,255,.75);text-align:right}
-  #relogio{font-size:3.2vh;color:#fff}
-  .kpi{border-top:.6vh solid var(--grena)}
-  .titulo{color:var(--grena)}
-  main{padding:3vh 3vw;height:84vh}
-  .titulo{font-size:4.2vh;font-weight:500;margin-bottom:2.5vh}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw;margin-bottom:3vh}
-  .kpi{background:var(--card);border-radius:1.2vh;padding:2.2vh 1.6vw}
-  .kpi .l{font-size:2.1vh;color:var(--mut)}
-  .kpi .v{font-size:7vh;font-weight:500;line-height:1.15}
-  .kpi .s{font-size:1.8vh;color:var(--mut)}
-  table{width:100%;border-collapse:collapse;font-size:2.5vh}
-  th{color:var(--mut);font-weight:400;text-align:right;padding:1vh .8vw;border-bottom:1px solid var(--line)}
-  th:first-child,td:first-child{text-align:left}
-  td{padding:1.15vh .8vw;text-align:right;border-bottom:1px solid var(--line)}
-  .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.mut{color:var(--mut)}
-  .duas{display:grid;grid-template-columns:1fr 1fr;gap:2vw}
-  .painel{background:var(--card);border-radius:1.2vh;padding:2.4vh 1.6vw}
-  .painel h3{font-size:2.3vh;font-weight:400;color:var(--mut);margin-bottom:2vh}
-  .barras{display:flex;align-items:flex-end;gap:1vw;height:26vh}
-  .barra{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
-  .barra .b{width:100%;border-radius:.6vh .6vh 0 0;background:var(--acc);min-height:2px}
-  .barra .n{font-size:1.9vh;margin-bottom:.6vh}
-  .barra .d{font-size:1.6vh;color:var(--mut);margin-top:.8vh}
-  .linha{display:flex;justify-content:space-between;font-size:2.6vh;padding:1.3vh 0;border-bottom:1px solid var(--line)}
-  .linha:last-child{border:0}
-  footer{position:fixed;bottom:0;left:0;right:0;height:6vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;color:var(--mut);font-size:1.8vh;border-top:1px solid var(--line)}
-  #pontos span{display:inline-block;width:1.1vh;height:1.1vh;border-radius:50%;background:var(--line);margin-left:.6vh}
-  #pontos span.on{background:var(--acc)}
-  .aviso{font-size:3vh;color:var(--mut);margin-top:20vh;text-align:center}
+:root{--g:#6e1423;--gd:#4d0e19;--gbg:#fbeef0;--bg:#f4f5f7;--card:#fff;--line:#e5e6e9;--tx:#1f2124;--mut:#6b6f76;--ok:#1e7d38;--warn:#a8620a;--bad:#b02a2a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden}
+header{height:10vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;background:linear-gradient(90deg,var(--g),var(--gd));color:#fff;position:relative;overflow:hidden}
+header::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.10) 50%,transparent 70%);transform:translateX(-100%);animation:brilho 7s ease-in-out infinite}
+@keyframes brilho{0%,60%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.marca{display:flex;align-items:center;gap:1.4vw;font-size:2.8vh}
+.marca b{font-size:3.6vh;letter-spacing:-.02em}
+.vivo{display:flex;align-items:center;gap:.6vw;font-size:1.8vh;background:rgba(255,255,255,.14);padding:.6vh 1vw;border-radius:99px}
+.vivo i{width:1.1vh;height:1.1vh;border-radius:50%;background:#4ade80;box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:pulso 1.6s infinite}
+@keyframes pulso{70%{box-shadow:0 0 0 1.2vh rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+.hora{text-align:right}.hora div:first-child{font-size:3.2vh}.hora div:last-child{font-size:1.7vh;opacity:.75}
+main{height:83vh;padding:2.4vh 3vw;display:grid;grid-template-rows:auto 1fr;gap:2.4vh}
+.tit{display:flex;align-items:baseline;justify-content:space-between}
+.tit h2{font-size:4vh;font-weight:600;color:var(--g)}
+.tit span{font-size:1.9vh;color:var(--mut)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:1.2vw}
+.k{background:var(--card);border-radius:1.4vh;padding:2vh 1.2vw;position:relative;overflow:hidden;border-top:.6vh solid var(--g)}
+.k .l{font-size:1.6vh;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.k .v{font-size:6vh;font-weight:600;line-height:1.1;margin-top:.6vh}
+.k .s{font-size:1.6vh;color:var(--mut)}
+.k.alerta{border-top-color:var(--bad)}
+.k.alerta .v{color:var(--bad);animation:bate 2.4s ease-in-out infinite}
+@keyframes bate{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.barra{height:.9vh;background:#eef0f2;border-radius:99px;margin-top:1.2vh;overflow:hidden}
+.barra div{height:100%;width:0;border-radius:99px;background:repeating-linear-gradient(45deg,var(--g) 0 10px,#8a2033 10px 20px);background-size:28px 28px;animation:listra 1.2s linear infinite;transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
+@keyframes listra{to{background-position:28px 0}}
+.gauge{display:flex;align-items:center;gap:1vw}
+.gauge svg{width:9vh;height:9vh;transform:rotate(-90deg)}
+.gauge circle{fill:none;stroke-width:9}
+.gauge .fundo{stroke:#eef0f2}.gauge .arco{stroke:var(--g);stroke-linecap:round;transition:stroke-dashoffset 1.8s cubic-bezier(.2,.8,.2,1)}
+.baixo{display:grid;grid-template-columns:1.25fr 1fr;gap:1.6vw;min-height:0}
+.card{background:var(--card);border-radius:1.4vh;padding:2.2vh 1.6vw;display:flex;flex-direction:column;min-height:0}
+.card h3{font-size:2.1vh;font-weight:500;color:var(--mut);margin-bottom:1.4vh;display:flex;justify-content:space-between}
+.card h3 em{font-style:normal;color:var(--g);font-weight:600}
+svg.graf{flex:1;width:100%;min-height:0}
+.linha{fill:none;stroke:var(--g);stroke-width:4;stroke-linejoin:round;stroke-linecap:round}
+.area{fill:url(#grad);opacity:0;transition:opacity 1.2s .8s}
+.ponto{fill:#fff;stroke:var(--g);stroke-width:3}
+.ponto.ult{fill:var(--g);animation:piscar 1.4s infinite}
+@keyframes piscar{50%{r:9}}
+.colu{fill:#e9cfd4;transform-origin:bottom;transform-box:fill-box;transform:scaleY(0);transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.eixo{font-size:13px;fill:var(--mut)}
+.rank{display:flex;flex-direction:column;gap:1.6vh;flex:1;justify-content:center}
+.rk{display:grid;grid-template-columns:13vw 1fr 6vw;align-items:center;gap:1vw;font-size:2.2vh;transition:transform .8s}
+.rk .t{height:3.2vh;background:#f3f4f6;border-radius:.8vh;overflow:hidden;position:relative}
+.rk .t div{height:100%;width:0;border-radius:.8vh;transition:width 1.6s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden}
+.rk .t div::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-100%);animation:corre 2.8s infinite}
+@keyframes corre{to{transform:translateX(100%)}}
+.rk b{text-align:right;font-weight:600}
+.rk small{display:block;font-size:1.5vh;color:var(--mut);font-weight:400}
+footer{height:7vh;display:flex;align-items:center;background:#fff;border-top:1px solid var(--line);overflow:hidden;position:relative}
+footer .rot{flex:none;height:100%;display:flex;align-items:center;padding:0 2vw;background:var(--g);color:#fff;font-size:1.9vh;font-weight:600;z-index:1}
+.fita{white-space:nowrap;display:inline-block;padding-left:100%;animation:fita 45s linear infinite;font-size:2.2vh}
+.fita span{margin-right:5vw}.fita span::before{content:"●";color:var(--g);margin-right:1vw}
+@keyframes fita{to{transform:translateX(-100%)}}
+.pontos{position:absolute;right:0;top:0;height:100%;align-items:center;display:flex;gap:.5vw;z-index:2;background:#fff;padding:0 2vw;box-shadow:-2vw 0 2vw #fff}
+.pontos i{width:1.2vh;height:1.2vh;border-radius:50%;background:var(--line)}.pontos i.on{background:var(--g)}
+.tela{animation:entra .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes entra{from{opacity:0;transform:translateY(2vh)}to{opacity:1;transform:none}}
+.selo{position:fixed;top:11vh;right:1vw;background:#fff3cd;color:#7a5a00;font-size:1.5vh;padding:.4vh .8vw;border-radius:99px;z-index:9}
 </style>
 </head>
 <body>
 <header>
-  <div class="marca"><img id="logo" alt="elevalife"><h1 id="nomeTxt">Desempenho das áreas</h1></div>
-  <div class="meta"><div id="relogio"></div><div id="atualizado">Carregando dados…</div></div>
+  <div class="marca"><img id="logo" alt="elevalife" style="height:4.6vh;display:none"><b id="logoTxt">elevalife</b><span style="opacity:.9">Desempenho das áreas</span><div class="vivo"><i></i>AO VIVO</div></div>
+  <div class="hora"><div id="relogio"></div><div id="atualizado">carregando dados…</div></div>
 </header>
-<main id="tela"><div class="aviso">Carregando…</div></main>
-<footer><span>15 anos elevando pessoas e resultados · indicadores por área, sem dados individuais</span><span id="pontos"></span></footer>
+<main id="main"><div style="margin:auto;font-size:3vh;color:var(--mut)">Carregando…</div></main>
+<footer><div class="rot">DESTAQUES</div><div style="flex:1;overflow:hidden"><div class="fita" id="fita"></div></div><div class="pontos" id="pontos"></div></footer>
 <script>
-const FONTES = [
-  'https://raw.githubusercontent.com/elevalife-sistemas/painel-implantacao-servicos/HEAD/tv/dados.json',
-  'dados.json'
-];
-const TEMPO_TELA = 15000, TEMPO_DADOS = 5 * 60000;
-let dados = null, telas = [], idx = 0, geradoEm = null;
+const FONTES = ['https://raw.githubusercontent.com/elevalife-sistemas/painel-implantacao-servicos/HEAD/tv/dados.json', 'dados.json'];
+const TEMPO_TELA = 20000, TEMPO_DADOS = 5 * 60000;
+let D = null, geradoEm = null, telas = [], idx = 0;
 
-const fmt = v => (v === null || v === undefined ? '—' : v);
-const pctTxt = v => (v === null || v === undefined ? '—' : v + '%');
-const cor = v => (v === null || v === undefined ? 'mut' : v >= 85 ? 'ok' : v >= 70 ? 'warn' : 'bad');
-const corAtraso = v => (v === 0 ? 'ok' : v <= 3 ? 'warn' : 'bad');
-const tempo = m => { if (m === null || m === undefined) return '—'; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + 'h' + (r ? String(r).padStart(2, '0') : ''); };
-const ddmm = s => s.slice(8, 10) + '/' + s.slice(5, 7);
+const cor = p => p === null || p === undefined ? 'var(--mut)' : p >= 70 ? 'var(--ok)' : p >= 50 ? 'var(--warn)' : 'var(--bad)';
+const pctTxt = p => p === null || p === undefined ? '—' : p;
+const fmtDia = v => v === null || v === undefined ? '—' : (v > 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + '<span style="font-size:2.6vh;font-weight:400"> dias</span>';
+
+function conta(el, ate, suf) {
+  const ini = performance.now(), dur = 1600;
+  (function passo(t) { const k = Math.min(1, (t - ini) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(ate * e) + (suf || ''); if (k < 1) requestAnimationFrame(passo); })(ini);
+}
+
+function grafico(sem) {
+  const W = 900, H = 300, pl = 62, pr = 45, pt = 20, pb = 40, n = sem.length, maxC = Math.max(1, ...sem.map(s => s.concluidas));
+  const x = i => pl + i * (W - pl - pr) / (n - 1), y = p => pt + (100 - p) * (H - pt - pb) / 100, bw = (W - pl - pr) / n * 0.5;
+  const pts = sem.map((s, i) => s.pctNoPrazo === null ? null : [x(i), y(s.pctNoPrazo)]).filter(Boolean);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+  const cols = sem.map((s, i) => { const h = (s.concluidas / maxC) * (H - pt - pb) * 0.55;
+    return `<rect class="colu" x="${x(i) - bw / 2}" y="${H - pb - h}" width="${bw}" height="${Math.max(h, 0.5)}" rx="4" style="transition-delay:${i * 90}ms"/>`; }).join('');
+  const grade = [25, 50, 75].map(p => `<line x1="${pl}" x2="${W - pr}" y1="${y(p)}" y2="${y(p)}" stroke="#eef0f2"/><text class="eixo" x="0" y="${y(p) + 4}">${p}%</text>`).join('');
+  const lbl = sem.map((s, i) => `<text class="eixo" x="${x(i)}" y="${H - 12}" text-anchor="middle">${s.inicio}</text>`).join('');
+  const dots = pts.map((p, i) => `<circle class="ponto${i === pts.length - 1 ? ' ult' : ''}" cx="${p[0]}" cy="${p[1]}" r="6" style="opacity:0;transition:opacity .4s ${1.6 + i * 0.08}s"/>`).join('');
+  const area = pts.length > 1 ? `<path class="area" d="${d} L ${pts[pts.length - 1][0]} ${H - pb} L ${pts[0][0]} ${H - pb} Z"/>` : '';
+  return `<svg class="graf" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e1423" stop-opacity=".25"/><stop offset="1" stop-color="#6e1423" stop-opacity="0"/></linearGradient></defs>
+    ${grade}${cols}${area}${pts.length > 1 ? `<path class="linha" d="${d}"/>` : ''}${dots}${lbl}</svg>`;
+}
+
+function tela(a, geral) {
+  const m = document.getElementById('main');
+  const pc = a.total ? Math.round(a.concluidas / a.total * 100) : 0;
+  const ult = a.semanas[a.semanas.length - 1];
+  m.innerHTML = `<div class="tela" style="display:contents">
+  <div>
+    <div class="tit"><h2>${a.nome}</h2><span>${a.total} etapas no checklist</span></div>
+    <div class="kpis" style="margin-top:1.6vh">
+      <div class="k"><div class="l">Etapas concluídas</div><div class="v"><span data-c="${a.concluidas}">0</span><span style="font-size:3vh;color:var(--mut)">/${a.total}</span></div><div class="barra"><div data-w="${pc}"></div></div><div class="s" style="margin-top:.6vh">${pc}% do checklist</div></div>
+      <div class="k"><div class="l">Em andamento</div><div class="v" data-c="${a.andamento}">0</div><div class="s">etapas sendo executadas</div></div>
+      <div class="k ${a.atrasadas ? 'alerta' : ''}"><div class="l">Atrasadas</div><div class="v" data-c="${a.atrasadas}">0</div><div class="s">${a.atrasadas ? 'precisam de atenção' : 'tudo em dia'}</div></div>
+      <div class="k"><div class="l">Etapas no prazo</div><div class="gauge"><svg viewBox="0 0 100 100"><circle class="fundo" cx="50" cy="50" r="42"/><circle class="arco" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-p="${a.pctNoPrazo || 0}" style="stroke:${cor(a.pctNoPrazo)}"/></svg><div class="v" ${a.pctNoPrazo === null ? '' : `data-c="${a.pctNoPrazo}" data-suf="%"`}>${a.pctNoPrazo === null ? '—' : '0'}</div></div><div class="s">${a.noPrazo} no prazo de ${a.avaliadas} avaliadas</div></div>
+      <div class="k"><div class="l">Total dias de atraso</div><div class="v" data-c="${a.diasAtraso}">0</div><div class="s">soma dos atrasos</div></div>
+      <div class="k"><div class="l">Tempo médio</div><div class="v" style="color:${a.tempoMedio === null ? 'var(--mut)' : a.tempoMedio <= 0 ? 'var(--ok)' : 'var(--bad)'}">${fmtDia(a.tempoMedio)}</div><div class="s">${a.tempoMedio === null ? 'sem conclusões avaliadas' : a.tempoMedio <= 0 ? 'entregue antes do prazo' : 'entregue após o prazo'}</div></div>
+    </div>
+  </div>
+  <div class="baixo">
+    <div class="card"><h3>Evolução semanal · % no prazo e etapas concluídas <em>${pctTxt(ult.pctNoPrazo)}${ult.pctNoPrazo === null ? '' : '%'}</em></h3>${grafico(a.semanas)}</div>
+    <div class="card"><h3>${geral ? 'Etapas no prazo por área' : 'Comparação com as outras áreas'}</h3><div class="rank" id="rank"></div></div>
+  </div></div>`;
+  const rank = [...D.areas].sort((x, y) => (y.pctNoPrazo ?? -1) - (x.pctNoPrazo ?? -1));
+  document.getElementById('rank').innerHTML = rank.map(r => `<div class="rk" style="${!geral && r.nome !== a.nome ? 'opacity:.45' : ''}"><span>${r.nome}<small>${r.atrasadas ? r.atrasadas + ' atrasada(s)' : 'sem atrasos'}</small></span><div class="t"><div data-w="${r.pctNoPrazo || 0}" style="background:${cor(r.pctNoPrazo)}"></div></div><b>${r.pctNoPrazo === null ? '—' : r.pctNoPrazo + '%'}</b></div>`).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    m.querySelectorAll('[data-c]').forEach(el => conta(el, +el.dataset.c, el.dataset.suf));
+    m.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
+    m.querySelectorAll('.arco').forEach(el => el.style.strokeDashoffset = 263.9 * (1 - el.dataset.p / 100));
+    m.querySelectorAll('.colu').forEach(el => el.style.transform = 'scaleY(1)');
+    m.querySelectorAll('.area').forEach(el => el.style.opacity = 1);
+    m.querySelectorAll('.ponto').forEach(el => el.style.opacity = 1);
+    const ln = m.querySelector('.linha');
+    if (ln) { const L = ln.getTotalLength(); ln.style.strokeDasharray = L; ln.style.strokeDashoffset = L; ln.getBoundingClientRect(); ln.style.transition = 'stroke-dashoffset 2s cubic-bezier(.4,0,.2,1)'; ln.style.strokeDashoffset = 0; }
+  }));
+}
+
+function mostra() {
+  if (!telas.length) return;
+  telas[idx]();
+  document.getElementById('pontos').innerHTML = telas.map((_, i) => `<i class="${i === idx ? 'on' : ''}"></i>`).join('');
+}
+
+function montar() {
+  telas = [() => tela(D.empresa, true), ...D.areas.map(a => () => tela(a, false))];
+  if (idx >= telas.length) idx = 0;
+  const e = D.empresa, itens = [`${pctTxt(e.pctNoPrazo)}% das etapas entregues no prazo`, `${e.concluidas} de ${e.total} etapas concluídas`];
+  D.areas.forEach(a => itens.push(`${a.nome}: ${a.pctNoPrazo === null ? 'sem entregas avaliadas' : a.pctNoPrazo + '% no prazo'}${a.atrasadas ? ' · ' + a.atrasadas + ' atrasada(s)' : ' · sem atrasos'}`));
+  if (e.alertas && e.alertas.enviados30d) itens.push(`${e.alertas.pctRespondidos30d}% dos alertas do Teams respondidos nos últimos 30 dias`);
+  itens.push('15 anos elevando pessoas e resultados');
+  document.getElementById('fita').innerHTML = itens.map(t => `<span>${t}</span>`).join('');
+  if (geradoEm) document.getElementById('atualizado').textContent = 'dados de ' + new Date(geradoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  mostra();
+}
 
 async function carregar() {
   for (const url of FONTES) {
@@ -73,73 +164,22 @@ async function carregar() {
       const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) continue;
       const j = await r.json();
-      dados = j.dados; geradoEm = j.geradoEm; montar(); return;
+      if (!j.dados || !j.dados.empresa || !j.dados.empresa.semanas) continue;
+      const novo = JSON.stringify(j.dados) !== JSON.stringify(D);
+      D = j.dados; geradoEm = j.geradoEm; if (novo || !telas.length) montar(); return;
     } catch (e) {}
   }
-  if (!dados) document.getElementById('tela').innerHTML = '<div class="aviso">Ainda sem dados. A primeira atualização acontece em até 15 minutos.</div>';
 }
 
-function telaGeral() {
-  const e = dados.empresa;
-  const linhas = dados.areas.map(a => `<tr><td>${a.area}</td><td class="${corAtraso(a.atrasadas)}">${a.atrasadas}</td><td>${a.emAberto}</td>
-    <td class="${cor(a.pctNoPrazo30d)}">${pctTxt(a.pctNoPrazo30d)}</td><td>${a.concluidasSemana}</td>
-    <td class="${cor(a.alertas.pctRespondidos30d)}">${pctTxt(a.alertas.pctRespondidos30d)}</td><td>${tempo(a.alertas.tempoMedioMin)}</td></tr>`).join('');
-  return `<div class="titulo">Visão geral da empresa</div>
-  <div class="kpis">
-    <div class="kpi"><div class="l">Entregas no prazo (30 dias)</div><div class="v ${cor(e.pctNoPrazo30d)}">${pctTxt(e.pctNoPrazo30d)}</div><div class="s">${e.concluidas30d} etapas concluídas</div></div>
-    <div class="kpi"><div class="l">Etapas atrasadas agora</div><div class="v ${corAtraso(e.atrasadas)}">${e.atrasadas}</div><div class="s">de ${e.emAberto} em aberto</div></div>
-    <div class="kpi"><div class="l">Concluídas nesta semana</div><div class="v">${e.concluidasSemana}</div><div class="s">desde segunda-feira</div></div>
-    <div class="kpi"><div class="l">Alertas respondidos (30 dias)</div><div class="v ${cor(e.alertas.pctRespondidos30d)}">${pctTxt(e.alertas.pctRespondidos30d)}</div><div class="s">tempo médio ${tempo(e.alertas.tempoMedioMin)}</div></div>
-  </div>
-  <table><thead><tr><th>Área</th><th>Atrasadas</th><th>Em aberto</th><th>No prazo 30d</th><th>Concl. semana</th><th>Alertas resp.</th><th>Tempo resp.</th></tr></thead><tbody>${linhas}</tbody></table>`;
-}
-
-function telaArea(a) {
-  const max = Math.max(1, ...a.semanas.map(s => s.concluidas));
-  const barras = a.semanas.map(s => `<div class="barra"><div class="n">${s.concluidas}${s.pctNoPrazo !== null ? ' · <span class="' + cor(s.pctNoPrazo) + '">' + s.pctNoPrazo + '%</span>' : ''}</div>
-    <div class="b" style="height:${Math.round(s.concluidas / max * 85)}%"></div><div class="d">${ddmm(s.inicio)}</div></div>`).join('');
-  return `<div class="titulo">${a.area}</div>
-  <div class="kpis">
-    <div class="kpi"><div class="l">Entregas no prazo (30 dias)</div><div class="v ${cor(a.pctNoPrazo30d)}">${pctTxt(a.pctNoPrazo30d)}</div><div class="s">${a.concluidas30d} etapas concluídas</div></div>
-    <div class="kpi"><div class="l">Atrasadas agora</div><div class="v ${corAtraso(a.atrasadas)}">${a.atrasadas}</div><div class="s">de ${a.emAberto} em aberto</div></div>
-    <div class="kpi"><div class="l">Concluídas nesta semana</div><div class="v">${a.concluidasSemana}</div><div class="s">desde segunda-feira</div></div>
-    <div class="kpi"><div class="l">Alertas respondidos (30 dias)</div><div class="v ${cor(a.alertas.pctRespondidos30d)}">${pctTxt(a.alertas.pctRespondidos30d)}</div><div class="s">${fmt(a.alertas.enviados30d)} alertas enviados</div></div>
-  </div>
-  <div class="duas">
-    <div class="painel"><h3>Etapas concluídas por semana · % no prazo</h3><div class="barras">${barras}</div></div>
-    <div class="painel"><h3>Resposta aos alertas do Teams (30 dias)</h3>
-      <div class="linha"><span>Tempo médio até responder</span><b>${tempo(a.alertas.tempoMedioMin)}</b></div>
-      <div class="linha"><span>Alertas sem resposta em 24h</span><b class="${a.alertas.semResposta30d ? 'warn' : 'ok'}">${a.alertas.semResposta30d}</b></div>
-      <div class="linha"><span>Pedidos de ajuda</span><b>${a.alertas.pedidosAjuda30d}</b></div>
-      <div class="linha"><span>Alertas enviados</span><b>${a.alertas.enviados30d}</b></div>
-    </div>
-  </div>`;
-}
-
-function montar() {
-  telas = [telaGeral, ...dados.areas.map(a => () => telaArea(a))];
-  if (idx >= telas.length) idx = 0;
-  mostrar();
-  if (geradoEm) { const d = new Date(geradoEm); document.getElementById('atualizado').textContent = 'Dados de ' + d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
-}
-
-function mostrar() {
-  if (!telas.length) return;
-  document.getElementById('tela').innerHTML = telas[idx]();
-  document.getElementById('pontos').innerHTML = telas.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('');
-}
-
-// Usa a mesma logo do Sistema de Gestão Operacional (lida da página principal)
 (async () => {
   try {
     const html = await fetch('../index.html', { cache: 'no-store' }).then(r => r.text());
     const img = new DOMParser().parseFromString(html, 'text/html').querySelector('img.header-logo');
-    if (img && img.getAttribute('src')) { const el = document.getElementById('logo'); el.src = img.getAttribute('src'); el.style.display = 'block'; }
-    else document.getElementById('nomeTxt').textContent = 'ElevaLife · Desempenho das áreas';
-  } catch (e) { document.getElementById('nomeTxt').textContent = 'ElevaLife · Desempenho das áreas'; }
+    if (img && img.getAttribute('src')) { const el = document.getElementById('logo'); el.src = img.getAttribute('src'); el.style.display = 'block'; document.getElementById('logoTxt').style.display = 'none'; }
+  } catch (e) {}
 })();
 
-setInterval(() => { if (telas.length) { idx = (idx + 1) % telas.length; mostrar(); } }, TEMPO_TELA);
+setInterval(() => { if (telas.length) { idx = (idx + 1) % telas.length; mostra(); } }, TEMPO_TELA);
 setInterval(carregar, TEMPO_DADOS);
 setInterval(() => location.reload(), 6 * 3600e3);
 setInterval(() => { document.getElementById('relogio').textContent = new Date().toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }, 1000);
