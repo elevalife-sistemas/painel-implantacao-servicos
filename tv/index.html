@@ -128,6 +128,11 @@ function tela(a, geral) {
   </div></div>`;
   const rank = [...D.areas].sort((x, y) => (y.pctNoPrazo ?? -1) - (x.pctNoPrazo ?? -1));
   document.getElementById('rank').innerHTML = rank.map(r => `<div class="rk" style="${!geral && r.nome !== a.nome ? 'opacity:.45' : ''}"><span>${r.nome}<small>${r.atrasadas ? r.atrasadas + ' atrasada(s)' : 'sem atrasos'}</small></span><div class="t"><div data-w="${r.pctNoPrazo || 0}" style="background:${cor(r.pctNoPrazo)}"></div></div><b>${r.pctNoPrazo === null ? '—' : r.pctNoPrazo + '%'}</b></div>`).join('');
+  animar(m);
+}
+
+
+function animar(m) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     m.querySelectorAll('[data-c]').forEach(el => conta(el, +el.dataset.c, el.dataset.suf));
     m.querySelectorAll('[data-w]').forEach(el => el.style.width = el.dataset.w + '%');
@@ -140,6 +145,29 @@ function tela(a, geral) {
   }));
 }
 
+function telaPonto(p) {
+  const m = document.getElementById('main'); const e = p.empresa;
+  m.innerHTML = `<div class="tela" style="display:contents">
+  <div>
+    <div class="tit"><h2>Ponto · tratativas de ${p.mes}</h2><span>${e.total} ocorrências no mês</span></div>
+    <div class="kpis" style="margin-top:1.6vh">
+      <div class="k"><div class="l">Tratativas resolvidas</div><div class="v"><span data-c="${e.resolvidas}">0</span><span style="font-size:3vh;color:var(--mut)">/${e.total}</span></div><div class="barra"><div data-w="${e.pctResolvidas || 0}"></div></div><div class="s" style="margin-top:.6vh">${pctTxt(e.pctResolvidas)}% resolvidas</div></div>
+      <div class="k"><div class="l">% resolvidas</div><div class="gauge"><svg viewBox="0 0 100 100"><circle class="fundo" cx="50" cy="50" r="42"/><circle class="arco" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-p="${e.pctResolvidas || 0}" style="stroke:${cor(e.pctResolvidas)}"/></svg><div class="v" ${e.pctResolvidas === null ? '' : `data-c="${e.pctResolvidas}" data-suf="%"`}>${e.pctResolvidas === null ? '—' : '0'}</div></div><div class="s">do mês corrente</div></div>
+      <div class="k ${e.pendentes ? 'alerta' : ''}"><div class="l">Pendentes</div><div class="v" data-c="${e.pendentes}">0</div><div class="s">aguardando tratativa</div></div>
+      <div class="k"><div class="l">Com o coordenador</div><div class="v" data-c="${e.aguardandoCoord}">0</div><div class="s">aguardando resposta</div></div>
+      <div class="k"><div class="l">Faltas</div><div class="v" data-c="${e.faltas}">0</div><div class="s">ocorrências no mês</div></div>
+      <div class="k"><div class="l">Atrasos</div><div class="v" data-c="${e.atrasos}">0</div><div class="s">ocorrências no mês</div></div>
+    </div>
+  </div>
+  <div class="baixo">
+    <div class="card"><h3>Evolução mensal · % resolvidas e ocorrências <em>${pctTxt(e.pctResolvidas)}${e.pctResolvidas === null ? '' : '%'}</em></h3>${grafico(p.meses)}</div>
+    <div class="card"><h3>Tratativas resolvidas por área</h3><div class="rank" id="rank"></div></div>
+  </div></div>`;
+  const rank = [...p.areas].sort((x, y) => (y.pctResolvidas ?? -1) - (x.pctResolvidas ?? -1));
+  document.getElementById('rank').innerHTML = rank.map(r => `<div class="rk"><span>${r.nome}<small>${r.pendentes ? r.pendentes + ' pendente(s)' : 'tudo tratado'}</small></span><div class="t"><div data-w="${r.pctResolvidas || 0}" style="background:${cor(r.pctResolvidas)}"></div></div><b>${r.pctResolvidas === null ? '—' : r.pctResolvidas + '%'}</b></div>`).join('');
+  animar(m);
+}
+
 function mostra() {
   if (!telas.length) return;
   telas[idx]();
@@ -147,10 +175,11 @@ function mostra() {
 }
 
 function montar() {
-  telas = [() => tela(D.empresa, true), ...D.areas.map(a => () => tela(a, false))];
+  telas = [() => tela(D.empresa, true), ...(D.ponto && D.ponto.empresa && D.ponto.empresa.total ? [() => telaPonto(D.ponto)] : []), ...D.areas.map(a => () => tela(a, false))];
   if (idx >= telas.length) idx = 0;
   const e = D.empresa, itens = [`${pctTxt(e.pctNoPrazo)}% das etapas entregues no prazo`, `${e.concluidas} de ${e.total} etapas concluídas`];
   D.areas.forEach(a => itens.push(`${a.nome}: ${a.pctNoPrazo === null ? 'sem entregas avaliadas' : a.pctNoPrazo + '% no prazo'}${a.atrasadas ? ' · ' + a.atrasadas + ' atrasada(s)' : ' · sem atrasos'}`));
+  if (D.ponto && D.ponto.empresa && D.ponto.empresa.total) itens.push(`Ponto ${D.ponto.mes}: ${pctTxt(D.ponto.empresa.pctResolvidas)}% das tratativas resolvidas · ${D.ponto.empresa.pendentes} pendente(s)`);
   if (e.alertas && e.alertas.enviados30d) itens.push(`${e.alertas.pctRespondidos30d}% dos alertas do Teams respondidos nos últimos 30 dias`);
   itens.push('15 anos elevando pessoas e resultados');
   document.getElementById('fita').innerHTML = itens.map(t => `<span>${t}</span>`).join('');
@@ -164,7 +193,7 @@ async function carregar() {
       const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) continue;
       const j = await r.json();
-      if (!j.versao || j.versao < 2 || !j.dados || !j.dados.empresa) continue;
+      if (!j.dados || !j.dados.empresa || !j.dados.empresa.semanas) continue;
       const novo = JSON.stringify(j.dados) !== JSON.stringify(D);
       D = j.dados; geradoEm = j.geradoEm; if (novo || !telas.length) montar(); return;
     } catch (e) {}
