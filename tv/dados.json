@@ -1,10 +1,10 @@
 {
- "geradoEm": "2026-11-19T00:44:42.600Z",
+ "geradoEm": "2026-11-19T18:44:40.828Z",
  "versao": 2,
  "dados": {
   "empresa": {
    "nome": "Visão geral da ElevaLife",
-   "total": 300,
+   "total": 346,
    "concluidas": 73,
    "andamento": 45,
    "atrasadas": 3,
@@ -56,16 +56,16 @@
     }
    ],
    "alertas": {
-    "enviados30d": 0,
-    "pctRespondidos30d": null,
-    "semResposta30d": 0,
+    "enviados30d": 3,
+    "pctRespondidos30d": 0,
+    "semResposta30d": 3,
     "tempoMedioMin": null
    }
   },
   "areas": [
    {
     "nome": "Atividades Físicas",
-    "total": 144,
+    "total": 168,
     "concluidas": 23,
     "andamento": 32,
     "atrasadas": 2,
@@ -117,15 +117,15 @@
      }
     ],
     "alertas": {
-     "enviados30d": 0,
-     "pctRespondidos30d": null,
-     "semResposta30d": 0,
+     "enviados30d": 2,
+     "pctRespondidos30d": 0,
+     "semResposta30d": 2,
      "tempoMedioMin": null
     }
    },
    {
     "nome": "Departamento Pessoal",
-    "total": 53,
+    "total": 61,
     "concluidas": 5,
     "andamento": 0,
     "atrasadas": 0,
@@ -237,15 +237,15 @@
      }
     ],
     "alertas": {
-     "enviados30d": 0,
-     "pctRespondidos30d": null,
-     "semResposta30d": 0,
+     "enviados30d": 1,
+     "pctRespondidos30d": 0,
+     "semResposta30d": 1,
      "tempoMedioMin": null
     }
    },
    {
     "nome": "Novas Receitas",
-    "total": 35,
+    "total": 39,
     "concluidas": 35,
     "andamento": 0,
     "atrasadas": 0,
@@ -305,7 +305,7 @@
    },
    {
     "nome": "Recursos Humanos",
-    "total": 56,
+    "total": 66,
     "concluidas": 9,
     "andamento": 13,
     "atrasadas": 0,
