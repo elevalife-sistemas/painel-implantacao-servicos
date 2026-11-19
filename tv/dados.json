@@ -1,5 +1,5 @@
 {
- "geradoEm": "2026-11-18T18:30:53.804Z",
+ "geradoEm": "2026-11-19T00:44:42.600Z",
  "versao": 2,
  "dados": {
   "empresa": {
@@ -8,7 +8,7 @@
    "concluidas": 73,
    "andamento": 45,
    "atrasadas": 3,
-   "diasAtraso": 118,
+   "diasAtraso": 121,
    "noPrazo": 34,
    "avaliadas": 66,
    "pctNoPrazo": 52,
@@ -69,7 +69,7 @@
     "concluidas": 23,
     "andamento": 32,
     "atrasadas": 2,
-    "diasAtraso": 64,
+    "diasAtraso": 66,
     "noPrazo": 9,
     "avaliadas": 19,
     "pctNoPrazo": 47,
@@ -189,7 +189,7 @@
     "concluidas": 1,
     "andamento": 0,
     "atrasadas": 1,
-    "diasAtraso": 6,
+    "diasAtraso": 7,
     "noPrazo": 0,
     "avaliadas": 1,
     "pctNoPrazo": 0,
