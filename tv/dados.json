@@ -1,24 +1,19 @@
 {
- "geradoEm": "2026-11-20T18:09:21.922Z",
+ "geradoEm": "2026-11-23T21:50:24.082Z",
  "versao": 2,
  "dados": {
   "empresa": {
    "nome": "Visão geral da ElevaLife",
    "total": 346,
-   "concluidas": 73,
-   "andamento": 45,
+   "concluidas": 74,
+   "andamento": 47,
    "atrasadas": 3,
-   "diasAtraso": 124,
+   "diasAtraso": 137,
    "noPrazo": 34,
-   "avaliadas": 66,
-   "pctNoPrazo": 52,
-   "tempoMedio": -0.4,
+   "avaliadas": 67,
+   "pctNoPrazo": 51,
+   "tempoMedio": -0.3,
    "semanas": [
-    {
-     "inicio": "28/09",
-     "pctNoPrazo": 27,
-     "concluidas": 2
-    },
     {
      "inicio": "05/10",
      "pctNoPrazo": 13,
@@ -53,13 +48,18 @@
      "inicio": "16/11",
      "pctNoPrazo": 52,
      "concluidas": 0
+    },
+    {
+     "inicio": "23/11",
+     "pctNoPrazo": 51,
+     "concluidas": 1
     }
    ],
    "alertas": {
-    "enviados30d": 6,
-    "pctRespondidos30d": 0,
-    "semResposta30d": 6,
-    "tempoMedioMin": null
+    "enviados30d": 10,
+    "pctRespondidos30d": 10,
+    "semResposta30d": 9,
+    "tempoMedioMin": 21
    }
   },
   "areas": [
@@ -69,17 +69,12 @@
     "concluidas": 23,
     "andamento": 32,
     "atrasadas": 2,
-    "diasAtraso": 68,
+    "diasAtraso": 74,
     "noPrazo": 9,
     "avaliadas": 19,
     "pctNoPrazo": 47,
     "tempoMedio": -0.1,
     "semanas": [
-     {
-      "inicio": "28/09",
-      "pctNoPrazo": 13,
-      "concluidas": 0
-     },
      {
       "inicio": "05/10",
       "pctNoPrazo": 13,
@@ -114,12 +109,17 @@
       "inicio": "16/11",
       "pctNoPrazo": 47,
       "concluidas": 0
+     },
+     {
+      "inicio": "23/11",
+      "pctNoPrazo": 47,
+      "concluidas": 0
      }
     ],
     "alertas": {
-     "enviados30d": 4,
+     "enviados30d": 6,
      "pctRespondidos30d": 0,
-     "semResposta30d": 4,
+     "semResposta30d": 6,
      "tempoMedioMin": null
     }
    },
@@ -127,7 +127,7 @@
     "nome": "Departamento Pessoal",
     "total": 61,
     "concluidas": 5,
-    "andamento": 0,
+    "andamento": 2,
     "atrasadas": 0,
     "diasAtraso": 29,
     "noPrazo": 1,
@@ -135,11 +135,6 @@
     "pctNoPrazo": 25,
     "tempoMedio": 1.8,
     "semanas": [
-     {
-      "inicio": "28/09",
-      "pctNoPrazo": 0,
-      "concluidas": 2
-     },
      {
       "inicio": "05/10",
       "pctNoPrazo": 0,
@@ -172,6 +167,11 @@
      },
      {
       "inicio": "16/11",
+      "pctNoPrazo": 25,
+      "concluidas": 0
+     },
+     {
+      "inicio": "23/11",
       "pctNoPrazo": 25,
       "concluidas": 0
      }
@@ -189,17 +189,12 @@
     "concluidas": 1,
     "andamento": 0,
     "atrasadas": 1,
-    "diasAtraso": 8,
+    "diasAtraso": 11,
     "noPrazo": 0,
     "avaliadas": 1,
     "pctNoPrazo": 0,
     "tempoMedio": null,
     "semanas": [
-     {
-      "inicio": "28/09",
-      "pctNoPrazo": null,
-      "concluidas": 0
-     },
      {
       "inicio": "05/10",
       "pctNoPrazo": null,
@@ -232,34 +227,34 @@
      },
      {
       "inicio": "16/11",
+      "pctNoPrazo": null,
+      "concluidas": 0
+     },
+     {
+      "inicio": "23/11",
       "pctNoPrazo": 0,
       "concluidas": 0
      }
     ],
     "alertas": {
-     "enviados30d": 2,
+     "enviados30d": 3,
      "pctRespondidos30d": 0,
-     "semResposta30d": 2,
+     "semResposta30d": 3,
      "tempoMedioMin": null
     }
    },
    {
     "nome": "Novas Receitas",
     "total": 39,
-    "concluidas": 35,
+    "concluidas": 36,
     "andamento": 0,
     "atrasadas": 0,
-    "diasAtraso": 19,
+    "diasAtraso": 23,
     "noPrazo": 15,
-    "avaliadas": 33,
-    "pctNoPrazo": 45,
-    "tempoMedio": 0.5,
+    "avaliadas": 34,
+    "pctNoPrazo": 44,
+    "tempoMedio": 0.6,
     "semanas": [
-     {
-      "inicio": "28/09",
-      "pctNoPrazo": 67,
-      "concluidas": 0
-     },
      {
       "inicio": "05/10",
       "pctNoPrazo": 11,
@@ -292,15 +287,20 @@
      },
      {
       "inicio": "16/11",
-      "pctNoPrazo": 45,
+      "pctNoPrazo": 44,
       "concluidas": 0
+     },
+     {
+      "inicio": "23/11",
+      "pctNoPrazo": 44,
+      "concluidas": 1
      }
     ],
     "alertas": {
-     "enviados30d": 0,
-     "pctRespondidos30d": null,
+     "enviados30d": 1,
+     "pctRespondidos30d": 100,
      "semResposta30d": 0,
-     "tempoMedioMin": null
+     "tempoMedioMin": 21
     }
    },
    {
@@ -315,11 +315,6 @@
     "pctNoPrazo": 100,
     "tempoMedio": -5.1,
     "semanas": [
-     {
-      "inicio": "28/09",
-      "pctNoPrazo": 100,
-      "concluidas": 0
-     },
      {
       "inicio": "05/10",
       "pctNoPrazo": 100,
@@ -352,6 +347,11 @@
      },
      {
       "inicio": "16/11",
+      "pctNoPrazo": 100,
+      "concluidas": 0
+     },
+     {
+      "inicio": "23/11",
       "pctNoPrazo": 100,
       "concluidas": 0
      }
@@ -458,6 +458,11 @@
     },
     {
      "inicio": "16/11",
+     "pctNoPrazo": null,
+     "concluidas": 0
+    },
+    {
+     "inicio": "23/11",
      "pctNoPrazo": null,
      "concluidas": 0
     }
