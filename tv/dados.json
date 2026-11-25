@@ -1,18 +1,18 @@
 {
- "geradoEm": "2026-11-25T03:38:35.947Z",
+ "geradoEm": "2026-11-25T19:40:13.212Z",
  "versao": 2,
  "dados": {
   "empresa": {
    "nome": "Visão geral da ElevaLife",
    "total": 346,
-   "concluidas": 80,
-   "andamento": 42,
+   "concluidas": 90,
+   "andamento": 33,
    "atrasadas": 5,
-   "diasAtraso": 147,
-   "noPrazo": 39,
-   "avaliadas": 74,
-   "pctNoPrazo": 53,
-   "tempoMedio": -0.9,
+   "diasAtraso": 148,
+   "noPrazo": 48,
+   "avaliadas": 84,
+   "pctNoPrazo": 57,
+   "tempoMedio": -1.5,
    "semanas": [
     {
      "inicio": "05/10",
@@ -51,29 +51,29 @@
     },
     {
      "inicio": "23/11",
-     "pctNoPrazo": 53,
-     "concluidas": 3
+     "pctNoPrazo": 57,
+     "concluidas": 13
     }
    ],
    "alertas": {
-    "enviados30d": 13,
-    "pctRespondidos30d": 8,
-    "semResposta30d": 12,
-    "tempoMedioMin": 21
+    "enviados30d": 19,
+    "pctRespondidos30d": 11,
+    "semResposta30d": 17,
+    "tempoMedioMin": 176
    }
   },
   "areas": [
    {
     "nome": "Atividades Físicas",
     "total": 168,
-    "concluidas": 23,
-    "andamento": 31,
+    "concluidas": 32,
+    "andamento": 22,
     "atrasadas": 3,
     "diasAtraso": 80,
-    "noPrazo": 9,
-    "avaliadas": 20,
-    "pctNoPrazo": 45,
-    "tempoMedio": -0.1,
+    "noPrazo": 18,
+    "avaliadas": 29,
+    "pctNoPrazo": 62,
+    "tempoMedio": -2.2,
     "semanas": [
      {
       "inicio": "05/10",
@@ -112,14 +112,14 @@
      },
      {
       "inicio": "23/11",
-      "pctNoPrazo": 45,
-      "concluidas": 0
+      "pctNoPrazo": 62,
+      "concluidas": 9
      }
     ],
     "alertas": {
-     "enviados30d": 8,
+     "enviados30d": 11,
      "pctRespondidos30d": 0,
-     "semResposta30d": 8,
+     "semResposta30d": 11,
      "tempoMedioMin": null
     }
    },
@@ -128,11 +128,11 @@
     "total": 61,
     "concluidas": 5,
     "andamento": 2,
-    "atrasadas": 0,
-    "diasAtraso": 29,
+    "atrasadas": 1,
+    "diasAtraso": 30,
     "noPrazo": 1,
-    "avaliadas": 4,
-    "pctNoPrazo": 25,
+    "avaliadas": 5,
+    "pctNoPrazo": 20,
     "tempoMedio": 1.8,
     "semanas": [
      {
@@ -172,7 +172,7 @@
      },
      {
       "inicio": "23/11",
-      "pctNoPrazo": 25,
+      "pctNoPrazo": 20,
       "concluidas": 0
      }
     ],
@@ -237,18 +237,18 @@
      }
     ],
     "alertas": {
-     "enviados30d": 4,
+     "enviados30d": 5,
      "pctRespondidos30d": 0,
-     "semResposta30d": 4,
+     "semResposta30d": 5,
      "tempoMedioMin": null
     }
    },
    {
     "nome": "Novas Receitas",
     "total": 39,
-    "concluidas": 38,
+    "concluidas": 39,
     "andamento": 0,
-    "atrasadas": 1,
+    "atrasadas": 0,
     "diasAtraso": 25,
     "noPrazo": 16,
     "avaliadas": 36,
@@ -293,14 +293,14 @@
      {
       "inicio": "23/11",
       "pctNoPrazo": 44,
-      "concluidas": 3
+      "concluidas": 4
      }
     ],
     "alertas": {
-     "enviados30d": 1,
-     "pctRespondidos30d": 100,
-     "semResposta30d": 0,
-     "tempoMedioMin": 21
+     "enviados30d": 3,
+     "pctRespondidos30d": 67,
+     "semResposta30d": 1,
+     "tempoMedioMin": 176
     }
    },
    {
