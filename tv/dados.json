@@ -1,18 +1,18 @@
 {
- "geradoEm": "2026-11-26T02:26:31.071Z",
+ "geradoEm": "2026-11-26T19:21:39.769Z",
  "versao": 2,
  "dados": {
   "empresa": {
    "nome": "Visão geral da ElevaLife",
    "total": 346,
-   "concluidas": 90,
+   "concluidas": 91,
    "andamento": 33,
-   "atrasadas": 5,
-   "diasAtraso": 153,
+   "atrasadas": 6,
+   "diasAtraso": 155,
    "noPrazo": 48,
-   "avaliadas": 84,
-   "pctNoPrazo": 57,
-   "tempoMedio": -1.5,
+   "avaliadas": 86,
+   "pctNoPrazo": 56,
+   "tempoMedio": -1.4,
    "semanas": [
     {
      "inicio": "05/10",
@@ -51,15 +51,15 @@
     },
     {
      "inicio": "23/11",
-     "pctNoPrazo": 57,
-     "concluidas": 13
+     "pctNoPrazo": 56,
+     "concluidas": 14
     }
    ],
    "alertas": {
-    "enviados30d": 19,
-    "pctRespondidos30d": 11,
-    "semResposta30d": 17,
-    "tempoMedioMin": 176
+    "enviados30d": 25,
+    "pctRespondidos30d": 12,
+    "semResposta30d": 22,
+    "tempoMedioMin": 119
    }
   },
   "areas": [
@@ -68,11 +68,11 @@
     "total": 168,
     "concluidas": 32,
     "andamento": 22,
-    "atrasadas": 3,
-    "diasAtraso": 83,
+    "atrasadas": 5,
+    "diasAtraso": 85,
     "noPrazo": 18,
-    "avaliadas": 29,
-    "pctNoPrazo": 62,
+    "avaliadas": 31,
+    "pctNoPrazo": 58,
     "tempoMedio": -2.2,
     "semanas": [
      {
@@ -112,23 +112,23 @@
      },
      {
       "inicio": "23/11",
-      "pctNoPrazo": 62,
+      "pctNoPrazo": 58,
       "concluidas": 9
      }
     ],
     "alertas": {
-     "enviados30d": 11,
+     "enviados30d": 14,
      "pctRespondidos30d": 0,
-     "semResposta30d": 11,
+     "semResposta30d": 14,
      "tempoMedioMin": null
     }
    },
    {
     "nome": "Departamento Pessoal",
     "total": 61,
-    "concluidas": 5,
+    "concluidas": 6,
     "andamento": 2,
-    "atrasadas": 1,
+    "atrasadas": 0,
     "diasAtraso": 31,
     "noPrazo": 1,
     "avaliadas": 5,
@@ -173,14 +173,14 @@
      {
       "inicio": "23/11",
       "pctNoPrazo": 20,
-      "concluidas": 0
+      "concluidas": 1
      }
     ],
     "alertas": {
-     "enviados30d": 0,
-     "pctRespondidos30d": null,
-     "semResposta30d": 0,
-     "tempoMedioMin": null
+     "enviados30d": 2,
+     "pctRespondidos30d": 50,
+     "semResposta30d": 1,
+     "tempoMedioMin": 4
     }
    },
    {
@@ -237,9 +237,9 @@
      }
     ],
     "alertas": {
-     "enviados30d": 5,
+     "enviados30d": 6,
      "pctRespondidos30d": 0,
-     "semResposta30d": 5,
+     "semResposta30d": 6,
      "tempoMedioMin": null
     }
    },
