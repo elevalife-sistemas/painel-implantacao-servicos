@@ -1,5 +1,5 @@
 {
- "geradoEm": "2026-11-27T02:19:04.533Z",
+ "geradoEm": "2026-11-27T19:15:58.056Z",
  "versao": 2,
  "dados": {
   "empresa": {
@@ -56,9 +56,9 @@
     }
    ],
    "alertas": {
-    "enviados30d": 25,
-    "pctRespondidos30d": 12,
-    "semResposta30d": 22,
+    "enviados30d": 31,
+    "pctRespondidos30d": 10,
+    "semResposta30d": 28,
     "tempoMedioMin": 119
    }
   },
@@ -117,9 +117,9 @@
      }
     ],
     "alertas": {
-     "enviados30d": 14,
+     "enviados30d": 19,
      "pctRespondidos30d": 0,
-     "semResposta30d": 14,
+     "semResposta30d": 19,
      "tempoMedioMin": null
     }
    },
@@ -237,9 +237,9 @@
      }
     ],
     "alertas": {
-     "enviados30d": 6,
+     "enviados30d": 7,
      "pctRespondidos30d": 0,
-     "semResposta30d": 6,
+     "semResposta30d": 7,
      "tempoMedioMin": null
     }
    },
